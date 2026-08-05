@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import {DatabaseError, Pool} from "pg";
+import {Pool} from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import {validate} from "uuid";
+import {v4 as uuidv4} from "uuid";
 import {createClient} from "redis";
 
 // 1. build a common context
@@ -15,10 +15,6 @@ function ContextObject(env:any, db?:any, pool?:any, hash?:any) : any
         hash
     };
 }
-
-
-// 2. build an env
-dotenv.config();
 
 function Env()
 {
@@ -35,10 +31,10 @@ function Env()
         JWT_SECRET : process.env.JWT_SECRET,
         JWT_TTL : process.env.JWT_TTL,
         JWT_REFRESH_SECRET : process.env.JWT_REFRESH_SECRET,
-        JWT_REFRESH_TTL : process.env.JWT_REFRESH_TTL
+        JWT_REFRESH_TTL : process.env.JWT_REFRESH_TTL,
+        AUTH_TOKEN_BLOCKLIST_REDIS_KEY : process.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY,
     }
 }
-
 
 // 3. database setup
 function Database(env:any)
@@ -85,13 +81,6 @@ function Pass(env:any)
     }
 }
 
-const env = Env();
-const hash = Pass(env);
-const db = Database(env);
-const pool = db.connect();
-const context = ContextObject(env, db, pool, hash);
-
-
 function dbHealth(context:any)
 {
     async function health(req: any, res:any)
@@ -130,7 +119,6 @@ function dbHealth(context:any)
         health
     }
 }
-
 
 function User(context:any)
 {
@@ -561,9 +549,12 @@ function Token(context:any)
 {
     function signature(payload:any, secret:any, ttl:any)
     {
+        payload.jti = uuidv4();
+
         if (payload?.exp) {
             return jwt.sign(payload, secret);
         } else {
+            console.log("logged in token", payload, secret, ttl);
             return jwt.sign(payload, secret, {
                 expiresIn: ttl
             });
@@ -583,8 +574,8 @@ function Token(context:any)
     function expired(exp:any)
     {
         const currentTimestamp = Math.floor(Date.now() / 1000);
-
-        return currentTimestamp <= exp;
+        console.log("current date :", currentTimestamp);
+        return currentTimestamp > exp;
     }
 
     function refreshToken()
@@ -638,9 +629,6 @@ function Token(context:any)
 
     return {signature, verify, refreshToken, accessToken, dualToken, expired}
 }
-
-context.token = Token(context);
-
 
 function Login(context:any, User: any)
 {
@@ -861,35 +849,111 @@ function RefreshToken(context:any, User: any)
 
 function Auth(context:any)
 {
-    function validate(req:any, res:any, next:any)
+    async function validate(req:any, res:any, next:any)
     {
-        const authorization = req.headers.authorization;
+        try {
+            const authorization = req.headers.authorization;
+            console.log(authorization);
+            if (!authorization) {
+                return res.status(401).json({
+                    status: "failed",
+                    message: "incorrect authorization"
+                });
+            }
 
-        if (!authorization) {
+            const [type, token] = authorization.split(" ");
+
+            if (type !== "Bearer") {
+                return res.status(401).json({
+                    status: "failed",
+                    message: "invalid authorization"
+                });
+            }
+
+            const payload = context.token.accessToken().validate(token);
+
+            console.log('token validate:',payload);
+
+            const expired = context.token.expired(payload.exp);
+
+            if (expired) {
+                return res.status(401).json({
+                    status: "failed",
+                    message: "invalid authorization"
+                });
+            }
+
+            if (!payload) {
+                return res.status(401).json({
+                    status: "failed",
+                    message: "invalid authorization"
+                });
+            }
+
+            const blacklist = context.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY;
+
+            const isBlacklisted = await context.redisClient.get(`${blacklist}:${payload.jti}`);
+
+            if (isBlacklisted) {
+                return res.status(401).json({
+                    status: "failed",
+                    message: "Token has been revoked by user"
+                });
+            }
+
+            req.user = payload;
+
+            next();
+        } catch (error:any) {
+
+            console.error("Database store error:", error);
+
             return res.status(401).json({
                 status: "failed",
-                message: "incorrect authorization"
+                message: "Token validation failed"
             });
+
         }
-
-        const [ type, token ] = authorization.split(" ");
-
-        if ( type !== "Bearer" ) {
-            return res.status(401).json({
-                status: "failed",
-                message: "invalid authorization"
-            })
-        }
-
-        req.user = context.token.accessToken().validate(token);
-
-        next();
 
     }
 
-    return { validate };
-}
+    async function logout(req:any, res:any)
+    {
+        try {
+            const {jti, exp, id} = req.user;
 
+
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            const secondsLeft = exp - currentTimestamp;
+
+            if (secondsLeft > 0) {
+                const blackListKey = context.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY;
+                await context.redisClient.setEx(`${blackListKey}:${jti}`, secondsLeft, 'true');
+            }
+
+            /** it will make the remaining valid access tokens the last if they are expired then relogin
+             const refreshToken = await context.pool.query('DELETE FROM master.refresh_tokens WHERE user_id = $1', [id]);
+             */
+
+            return res.status(200).json({
+                status: "success",
+                message: "logout completed"
+            });
+
+        } catch (error:any) {
+
+            console.error("logout error:", error);
+
+            return res.status(401).json({
+                status: "failed",
+                message: "logout failed"
+            });
+        }
+
+    }
+
+    return { validate, logout };
+}
 
 function Redis(context:any)
 {
@@ -907,24 +971,30 @@ function Redis(context:any)
 
     }
 
-    function set()
-    {
-
-    }
-
-    function get()
-    {
-
-    }
-
-    return {connect, set, get}
+    return {connect}
 }
 
+
+dotenv.config();
+const env = Env();
+const hash = Pass(env);
+const db = Database(env);
+const pool = db.connect();
+const context = ContextObject(env, db, pool, hash);
+
+context.token = Token(context);
 context.redis = Redis(context);
-context.client = context.redis.connect();
+
+(async () => {
+    context.redisClient = await context.redis.connect();
+    console.log("Redis client initialized successfully.");
+})().catch(err => {
+    console.error("Failed to connect to Redis inline:", err);
+});
 
 context.refreshToken = RefreshToken(context, User(context));
 context.auth = Auth(context);
+
 module.exports = function ecomRoutes(app: any)
 {
     app.get('/health', dbHealth(context).health);
@@ -937,7 +1007,7 @@ module.exports = function ecomRoutes(app: any)
     app.get('/users-list', User(context).getUsers);
     app.post('/login', Login(context, User(context)).validate);
     app.post('/refresh-token', RefreshToken(context, User(context)).getToken);
-    app.post('/logout', Login(context, User(context)).validate);
+    app.post('/logout', context.auth.validate, context.auth.logout);
 
 };
 
