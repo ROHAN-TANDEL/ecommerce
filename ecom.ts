@@ -150,15 +150,12 @@ function User(context:any)
                 };
             }
 
-            if (roles.some((roleObj: { name: any; }) => roleObj.name === role)) {
-
-                const foundRole = roles.find((r: { name: string; id: string }) =>
-                    r.name.toLowerCase() === 'admin' || r.name.toLowerCase() === 'user'
-                );
+            let roleDetail = roles.find((roleObj: { name: any; }) => roleObj.name.toLowerCase() === role.toLowerCase());
+            if (roleDetail) {
 
                 return {
                     status: "success",
-                    data : parseInt(foundRole.id)
+                    data : parseInt(roleDetail.id)
                 };
 
             } else {
@@ -192,7 +189,8 @@ function User(context:any)
         }
     }
 
-    async function insertUser(user:any) {
+    async function insertUser(user:any)
+    {
 
         try {
 
@@ -211,7 +209,7 @@ function User(context:any)
                 user.email,
                 user.password_hash,
                 user.role_id,
-                user.status,
+                user.status.toUpperCase(),
             ];
 
             const result = await context.pool.query(query, inputs);
@@ -231,10 +229,13 @@ function User(context:any)
 
     }
 
-    async function createUser(req:any, res:any) {
+    async function createUser(req:any, res:any)
+    {
 
         try {
             const user = req.body;
+
+            user.status = 'ACTIVE';
 
             if (!user) {
                 res.status(400).json({
@@ -356,7 +357,7 @@ function User(context:any)
                                     role_id = COALESCE($3, role_id),
                                     updated_at = NOW()
                                 WHERE id = $4
-                                    AND status = 'active'
+                                    AND status = 'ACTIVE'
                                     AND deleted_at IS NULL
                                 RETURNING id, first_name, last_name, updated_at;
             `;
@@ -393,10 +394,121 @@ function User(context:any)
         }
     }
 
+    async function updateUserStatus(req:any, res:any)
+    {
+        try {
+            const user = req.body;
+            const userId = parseInt(req.params.id);
+
+            const statusList = new Set(['active', 'inactive']);
+
+            if (!statusList.has(user?.status.toLowerCase())) {
+                return res.status(400).json({
+                    status: "failed",
+                    message: "invalid status provided"
+                })
+            }
+
+            const userStatus = user?.status.toUpperCase();
+            const query = `UPDATE master.users
+                           SET status='${userStatus}'
+                           WHERE id = ${userId}
+                             AND status!='${userStatus}'
+                            RETURNING id, first_name, last_name, status, updated_at;`;
+
+            console.log(query);
+            const result = await context.pool.query(query);
+
+            if (result && result.rowCount && result.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    data: result.rows.at(0)
+                })
+            }
+
+            return res.status(400).json({
+                status: "failed",
+                message: 'status update failed'
+            });
+        } catch (error:any) {
+            console.log(error);
+            return res.status(500).json({
+                status: "failed",
+                message: error.message
+            })
+        }
+    }
+
+    async function getUsers(req:any, res:any)
+    {
+        try {
+            const filter = req.query;
+
+            let query = `SELECT id, first_name, last_name, email, status, role_id, created_at, updated_at, deleted_at, last_login_at FROM master.users where 1=1 `;
+
+            /** filters added */
+            if (filter?.role?.toLowerCase() === "admin"  ||
+                filter?.role?.toLowerCase() === "user") {
+
+                const role = await getRole(filter.role);
+
+                if(role.status === "failed") {
+                    return res.status(400).json({
+                        "status": "failed",
+                        message: role.message
+                    })
+                }
+
+                const roleId = role.data;
+
+                query +=` AND role_id = ${roleId}`;
+            }
+
+
+            if (filter?.status?.toLowerCase() === "active"  ||
+                filter?.status?.toLowerCase() === "inactive") {
+
+                query +=` AND status = '${filter.status.toUpperCase()}' `;
+            }
+
+
+            if (filter?.deleted !== undefined && !Boolean(filter.deleted)) {
+                query +=` AND deleted_at IS NOT NULL `;
+            } else if(filter?.deleted !== undefined && Boolean(filter?.deleted)) {
+                query +=` AND deleted_at IS NULL `;
+            }
+
+
+            /** Add standard sorting */
+            query += ` ORDER BY created_at DESC `;
+
+            const result = await context.pool.query(query);
+
+            return res.status(200).json({
+                status: "success",
+                data: result.rows
+            });
+
+        } catch (error:any) {
+            console.log(error);
+            return res.status(500).json({
+                status: "failed",
+                message: error.message
+            })
+        }
+    }
+
+    async function getUser()
+    {
+
+    }
+
     return {
         createUser,
         deleteUser,
-        updateUser
+        updateUser,
+        updateUserStatus,
+        getUsers
     }
 }
 
@@ -407,6 +519,8 @@ module.exports = function ecomRoutes(app: any)
     app.post('/user', User(context).createUser);
     app.delete('/user/:id', User(context).deleteUser);
     app.post('/user/:id', User(context).updateUser);
+    app.post('/user/:id/status', User(context).updateUserStatus);
+    app.get('/users-list', User(context).getUsers);
 };
 
 
