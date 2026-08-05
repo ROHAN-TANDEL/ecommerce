@@ -137,10 +137,66 @@ function User(context:any)
         }
     }
 
+    async function getRole(role: string)
+    {
+
+        try {
+            const roles = await getRoles();
+
+            if (!roles) {
+                return {
+                    status: "failed",
+                    message: "user not created, can not get roles"
+                };
+            }
+
+            if (roles.some((roleObj: { name: any; }) => roleObj.name === role)) {
+
+                const foundRole = roles.find((r: { name: string; id: string }) =>
+                    r.name.toLowerCase() === 'admin' || r.name.toLowerCase() === 'user'
+                );
+
+                return {
+                    status: "success",
+                    data : parseInt(foundRole.id)
+                };
+
+            } else {
+                return {
+                    status: "failed",
+                    message: "Invalid role provided"
+                };
+            }
+        } catch (error) {
+            console.log(error);
+            return {
+                status: "failed",
+                message: "role fetch error"
+            };
+        }
+    }
+
+    async function userExists(userId: number)
+    {
+        try {
+            const query = 'SELECT 1 FROM mater.users WHERE id=$1';
+            const result = await context.pool.query(query, userId);
+
+            return result.rows;
+        } catch (error:any) {
+            console.log(error);
+            return {
+                "status": "failed",
+                "message": error.message
+            };
+        }
+    }
+
     async function insertUser(user:any) {
 
         try {
 
+            console.log(user);
             const query = `INSERT INTO master.users (first_name,
                                               last_name,
                                               email,
@@ -169,7 +225,7 @@ function User(context:any)
                    "message" : "user already exists"
                };
             }
-
+            console.log(error);
             throw error;
         }
 
@@ -195,14 +251,16 @@ function User(context:any)
                     "message": "user not created, can not get roles"
                 });
             }
-            console.log(roles, user, roles.some((roleObj: { name: any; }) => roleObj.name === user.role), roles.includes(user.role));
+
+
+
             if (roles.some((roleObj: { name: any; }) => roleObj.name === user.role)) {
 
                 const foundRole = roles.find((r: { name: string; id: string }) =>
                     r.name.toLowerCase() === 'admin' || r.name.toLowerCase() === 'user'
                 );
 
-                user.role_id = foundRole.id;
+                user.role_id = parseInt(foundRole.id);
 
                 delete user.role;
             } else {
@@ -224,13 +282,6 @@ function User(context:any)
 
             const result = await insertUser(user);
 
-            if(result && result.rows && result.rows.length > 0) {
-                return res.status(201).json({
-                    status: "success",
-                    message: result.rows
-                });
-            }
-
             if (result && result.status === "error" ) {
                 return res.status(400).json({
                     "status": "failed",
@@ -238,10 +289,10 @@ function User(context:any)
                 });
             }
 
-            if (!result || result.rows === undefined) {
-                return res.status(400).json({
-                    "status": "failed",
-                    "message": "user not created, new user insertion failed"
+            if (!result || result.length > 0) {
+                return res.status(201).json({
+                    status: "success",
+                    data: result.at(0)
                 });
             }
 
@@ -254,11 +305,98 @@ function User(context:any)
         }
     }
 
-    async function deleteUser(req:any, res:any) {}
-    async function updateUser(req:any, res:any) {}
+    async function deleteUser(req:any, res:any)
+    {
+        try {
+            const userId = req.params.id;
+
+            const query = `UPDATE master.users
+                           SET deleted_at = NOW()
+                           WHERE id = $1
+                                AND deleted_at IS NULL
+                                RETURNING id, email, deleted_at`;
+
+            const result = await context.pool.query(query, [userId]);
+
+            return res.status(200).json({
+                status: "success",
+                data: result.rows.at(0)
+            });
+        } catch (error:any) {
+            console.log(error);
+            return res.status(400).json({
+                status: "failed",
+                message: error.message
+            })
+        }
+    }
+
+    async function updateUser(req:any, res:any)
+    {
+        try {
+
+            const user = req.body;
+            const userId = parseInt(req.params.id);
+
+            const role = await getRole(user.role);
+
+            if(role.status === "failed") {
+                return res.status(400).json({
+                    "status": "failed",
+                    message: role.message
+                })
+            }
+
+            const roleId = role.data;
+
+            const query = `UPDATE master.users 
+                                SET 
+                                    first_name = COALESCE($1, first_name),
+                                    last_name = COALESCE($2, last_name),
+                                    role_id = COALESCE($3, role_id),
+                                    updated_at = NOW()
+                                WHERE id = $4
+                                    AND status = 'active'
+                                    AND deleted_at IS NULL
+                                RETURNING id, first_name, last_name, updated_at;
+            `;
+
+            const result = await context.pool.query(query,
+                [
+                    user.first_name,
+                    user.last_name,
+                    roleId,
+                    userId
+                ]);
+
+
+            if (result && result.rowCount && result.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    data: result.rows.at(0)
+                });
+            }
+
+
+            return res.status(400).json({
+                status: "failed",
+                message: "update is invalid for the user"
+            });
+
+        } catch (error:any) {
+
+            console.log(error);
+            return res.status(500).json({
+                status: "failed",
+                message: error.message
+            })
+        }
+    }
 
     return {
-        createUser
+        createUser,
+        deleteUser,
+        updateUser
     }
 }
 
@@ -267,6 +405,8 @@ module.exports = function ecomRoutes(app: any)
 {
     app.get('/health', dbHealth(context).health);
     app.post('/user', User(context).createUser);
+    app.delete('/user/:id', User(context).deleteUser);
+    app.post('/user/:id', User(context).updateUser);
 };
 
 
