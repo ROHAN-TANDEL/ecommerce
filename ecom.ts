@@ -712,7 +712,7 @@ function RefreshToken(context:any, User: any)
                 [userId]
             );
 
-            await pool.query('DELETE FROM master.refresh_tokens WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM master.refresh_tokens WHERE user_id = $1', [userId]);
 
             const insertQuery = `
                 INSERT INTO master.refresh_tokens (user_id, token, expires_at) 
@@ -974,28 +974,30 @@ function Redis(context:any)
     return {connect}
 }
 
+let context:any;
+{
+    dotenv.config();
+    const env = Env();
+    const hash = Pass(env);
+    const db = Database(env);
+    const pool = db.connect();
+    context = ContextObject(env, db, pool, hash);
 
-dotenv.config();
-const env = Env();
-const hash = Pass(env);
-const db = Database(env);
-const pool = db.connect();
-const context = ContextObject(env, db, pool, hash);
+    context.token = Token(context);
+    context.redis = Redis(context);
 
-context.token = Token(context);
-context.redis = Redis(context);
+    (async () => {
+        context.redisClient = await context.redis.connect();
+        console.log("Redis client initialized successfully.");
+    })().catch(err => {
+        console.error("Failed to connect to Redis inline:", err);
+    });
 
-(async () => {
-    context.redisClient = await context.redis.connect();
-    console.log("Redis client initialized successfully.");
-})().catch(err => {
-    console.error("Failed to connect to Redis inline:", err);
-});
+    context.refreshToken = RefreshToken(context, User(context));
+    context.auth = Auth(context);
+}
 
-context.refreshToken = RefreshToken(context, User(context));
-context.auth = Auth(context);
-
-module.exports = function ecomRoutes(app: any)
+function ecomRoutes(app: any)
 {
     app.get('/health', dbHealth(context).health);
     app.post('/user', User(context).createUser);
@@ -1009,6 +1011,416 @@ module.exports = function ecomRoutes(app: any)
     app.post('/refresh-token', RefreshToken(context, User(context)).getToken);
     app.post('/logout', context.auth.validate, context.auth.logout);
 
+}
+
+function Paginate(context:any)
+{
+
+
+    function offset(req:any)
+    {
+        const parsed = parseInt(req?.query?.offset, 10);
+        return isNaN(parsed) ? 10 : parsed;
+    }
+
+
+    function limit(req:any)
+    {
+        const parsed = parseInt(req?.query?.limit, 10);
+        return isNaN(parsed) ? 10 : parsed;
+    }
+
+    function cursor(req:any)
+    {
+        return parseInt(req?.query?.cursor ?? 0, 10);
+    }
+
+    function cursorPage(req:any)
+    {
+
+        const queryInputs : any[] = [];
+
+        let finalQuery = '';
+
+        if(req.query?.cursor) {
+            finalQuery = finalQuery + ` WHERE id < $1`;
+            queryInputs.push(cursor(req));
+        }
+
+        finalQuery = finalQuery + ` ORDER BY id DESC `;
+
+        if(req.query?.limit) {
+            finalQuery = finalQuery + ` LIMIT  $${queryInputs.length + 1} `;
+            queryInputs.push(limit(req));
+        }
+
+
+        return {queryInputs, finalQuery}
+
+    }
+
+
+
+    function offsetPage(req:any, totalCount:any, inputCount:any=0)
+    {
+
+        let finalQuery = '';
+
+        const queryInputs = [];
+
+        finalQuery = finalQuery + ` ORDER BY id ASC `;
+
+        const {offsetNo, limitNo, next, prev, pageNo} = offsetLimitPage(req, totalCount);
+
+        finalQuery = finalQuery + ` OFFSET  $${inputCount + queryInputs.length + 1} `;
+        queryInputs.push(offsetNo);
+
+        finalQuery = finalQuery + ` LIMIT  $${inputCount + queryInputs.length + 1} `;
+        queryInputs.push(limitNo);
+
+        const totalPages = Math.ceil(totalCount / limitNo);
+        return {queryInputs, finalQuery, next, prev, pageNo, totalPages};
+
+    }
+
+    function nextPage(req:any)
+    {
+        return cursor(req) + limit(req);
+    }
+
+    function prevPage(req:any)
+    {
+        let length = cursor(req) - limit(req);
+        if(length < 1) {
+            return cursor(req) - limit(req);
+        }
+    }
+
+
+    function offsetLimitPage(req:any, totalCount:any)
+    {
+        let limitNo = 10;
+        let pageNo = 1;
+        let offsetNo = 0;
+
+        if(req.query?.limit) {
+            const limit = parseInt(req.query.limit, 10);
+            limitNo = isNaN(limit) ? 10 : limit;
+
+            if(limitNo < 1 || limitNo > 5) {
+                limitNo = 1;
+            }
+        }
+
+        if(req.query?.page) {
+            const page = parseInt(req.query.page, 10);
+            pageNo = isNaN(page) ? 20 : page;
+
+            if(pageNo > (totalCount?.data?.count/limitNo)) {
+                pageNo = 1;
+            }
+            if (pageNo < 1) {
+                pageNo = 1;
+            }
+        }
+
+
+        if(pageNo) {
+            /** * offset = 10 * limit = 2 * page = 6 * * (6 - 1) * 2 = offset * * page 10 * * (10 - 1) * 2 = 18 * */
+            offsetNo = (pageNo - 1) * limitNo;
+        }
+
+        let  next = pageNo + 1;
+
+        console.log(pageNo,totalCount/limitNo, next)
+        if ((pageNo + 1) > Math.ceil(totalCount/limitNo)) {
+            next = 0;
+        }
+
+        let  prev = pageNo - 1;
+
+        if ((pageNo - 1) < 1) {
+            prev = 0;
+        }
+
+        if (prev - 1 > Math.ceil(totalCount/limitNo)) {
+            prev = Math.ceil(totalCount/limitNo);
+        }
+
+        return {offsetNo, limitNo, next, prev, pageNo};
+    }
+
+
+    return {cursorPage, offsetPage};
+
+}
+
+context.paginate = Paginate(context);
+
+function Product(context:any)
+{
+
+    async function productCount(partQuery?:any, queryInput?:any)
+    {
+        try {
+            let query = 'SELECT COUNT(*) FROM master.products ';
+
+            if (partQuery) {
+                query += partQuery;
+            }
+
+            const result = await context.pool.query(query, queryInput);
+
+            if (result.rowCount === 0) {
+                return {
+                    "status": "success",
+                    data : {
+                        count : result.rowCount,
+                    }
+                };
+            }
+
+            return {
+                "status": "success",
+                data : {
+                    count : result?.rows?.at(0)?.count,
+                }
+            };
+        } catch (error : any) {
+            console.error("Product count failed:", error);
+            return {
+                "status": "failed",
+                message: "Product count failed:" + error.message,
+            }
+        }
+    }
+
+    async function products(req:any, res:any)
+    {
+        try {
+
+            let query = ` SELECT * FROM master.products `;
+            let inputCount = 0;
+            const inputs = [];
+            let partQuery = '';
+            /**filters and sorting */
+            if(req.query?.search) {
+                // sanitize for SQL injection
+                partQuery = ` WHERE name ILIKE '%' || $1 || '%' `;
+                query = query + partQuery;
+                inputCount = 1;
+                inputs.push(req.query?.search);
+
+            }
+
+            const totalCount = await productCount(partQuery, inputs);
+
+            if(totalCount.status === "failed") {
+                return res.status(400).json({
+                    status : "failed",
+                    message: "Product count failed:",
+                });
+            }
+
+            const productsCount = totalCount?.data?.count;
+
+
+            const {queryInputs, finalQuery, next, prev, pageNo, totalPages} = context.paginate.offsetPage(req, productsCount, inputCount);
+
+            query = query + finalQuery;
+
+            console.log(query);
+            const result = await context.pool.query(query, [...inputs, ...queryInputs]);
+
+            if(result.rows.length > 0) {
+
+                return res.status(200).json({
+                    status: "success",
+                    data:
+                        {
+                            items: result.rows,
+                            nextPage : next,
+                            prevPage : prev,
+                            currentPage : pageNo,
+                            totalPages : totalPages
+                        }
+                });
+
+            }
+
+            return res.status(200).json({
+                status: "success",
+                data: {
+                    items: [],
+                    nextPage: next,
+                    prevPage: prev,
+                    currentPage : pageNo,
+                    totalPages : totalPages
+                }
+            });
+
+        } catch (error:any) {
+
+            console.error("Product error:", error);
+
+            return res.status(400).json({
+                status: "error",
+                message: error.message
+            });
+        }
+    }
+
+
+    async function product(req:any, res:any)
+    {
+        try {
+            const id = req.params.id;
+
+            const query = `SELECT * FROM master.products 
+                            WHERE id=$1 AND deleted_at IS NULL`;
+
+            const result = await context.pool.query(query, [id]);
+
+            if(result.rowCount > 0) {
+
+                return res.status(200).json({
+                    status: "success",
+                    data: result.rows
+                });
+
+            }
+        } catch (error:any) {
+
+            console.error("Product error:", error);
+
+            return res.status(400).json({
+                status: "error",
+                message: error.message
+            });
+        }
+    }
+
+
+    async function updateProduct(res:any, req:any)
+    {
+        try {
+            const id = req.params.id;
+
+            const data = req.body;
+
+            const query = `UPDATE master.products SET 
+                            sku = COALESCE($1, sku),
+                            name = COALESCE($2, name),
+                            description = COALESCE($3, description),
+                            price = COALESCE($4, price),
+                            stock_quantity = COALESCE($5, stock_quantity),
+                            status = COALESCE($6, status),
+                            version = COALESCE($7, version)
+                            
+                            WHERE id=$8 AND deleted_at IS NOT NULL`;`
+                           `;
+
+            const input = [
+                data?.sku,
+                data?.name,
+                data?.description,
+                data?.price,
+                data?.stock_quantity,
+                data?.status,
+                data?.version,
+                id
+            ];
+            const result = await context.pool.query(query, input);
+
+            if(result.rowCount > 0) {
+
+                return res.status(200).json({
+                    status: "success",
+                    data: result.rowCount
+                });
+
+            }
+        } catch (error:any) {
+
+            console.error("Product error:", error);
+
+            return res.status(400).json({
+                status: "error",
+                message: error.message
+            });
+        }
+    }
+
+    async function patchProduct(req:any, res:any)
+    {
+        const id = req.params.id;
+        const payload = req.body;
+
+        const keys = Object.keys(payload);
+        if (keys.length === 0) {
+            return res.status(400).json({
+                status: "failed",
+                message: "No fields provided for update"
+            });
+        }
+
+        const queryParts = keys.map((key, index) => `${key} = $${index + 1}`);
+
+        let query = `UPDATE master.products SET ${queryParts.join(', ')} `;
+
+        const idPosition = keys.length + 1;
+        query += `WHERE id = $${idPosition}`;
+
+        const values = [...Object.values(payload), id];
+
+    }
+
+    async function deleteProduct(res:any, req:any)
+    {
+        try {
+            const id = req.params.id;
+
+            const query = `UPDATE master.products SET deleted_at=NOW() WHERE id=$$1`;
+
+            const result = await context.pool.query(query, [id]);
+
+            if (result.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    data: {id: id}
+                })
+            }
+        } catch (error:any) {
+            console.error("Product error:", error);
+            return res.status(400).json({
+                status: "error",
+                message: error.message
+            });
+        }
+    }
+
+    return {products, product, updateProduct, patchProduct, deleteProduct };
+}
+
+
+function productRoutes(app: any)
+{
+    app.get('/products', Product(context).products);
+
+    app.get('/products/:id', Product(context).product);
+
+    app.post('/products', Product(context).updateProduct);
+
+    app.patch('/products/:id', Product(context).patchProduct);
+
+    app.delete('/products/:id', Product(context).deleteProduct);
+}
+
+module.exports = {
+    ecomRoutes,
+    productRoutes
 };
+
+
 
 
