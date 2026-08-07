@@ -1116,7 +1116,7 @@ function Paginate(context:any)
             const page = parseInt(req.query.page, 10);
             pageNo = isNaN(page) ? 20 : page;
 
-            if(pageNo > (totalCount?.data?.count/limitNo)) {
+            if(pageNo > Math.ceil(totalCount/limitNo)) {
                 pageNo = 1;
             }
             if (pageNo < 1) {
