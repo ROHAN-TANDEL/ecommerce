@@ -1274,7 +1274,16 @@ function Product(context:any)
     async function product(req:any, res:any)
     {
         try {
+
             const id = req.params.id;
+
+            const cacheKey = `get-product:${id}`;
+
+            const cachedProduct = await context.redisClient.get(cacheKey);
+            if (cachedProduct) {
+                return res.json({ status: "success", data: JSON.parse(cachedProduct) });
+            }
+
 
             const query = `SELECT * FROM master.products 
                             WHERE id=$1 AND deleted_at IS NULL`;
@@ -1282,6 +1291,8 @@ function Product(context:any)
             const result = await context.pool.query(query, [id]);
 
             if(result.rowCount > 0) {
+                console.log("from db");
+                await context.redisClient.setEx(cacheKey, 30, JSON.stringify(result.rows));
 
                 return res.status(200).json({
                     status: "success",
@@ -1289,6 +1300,14 @@ function Product(context:any)
                 });
 
             }
+
+            await context.redisClient.setEx(cacheKey, 30, JSON.stringify(product));
+
+            return res.status(200).json({
+                status: "success",
+                data: []
+            });
+
         } catch (error:any) {
 
             console.error("Product error:", error);
@@ -1317,7 +1336,7 @@ function Product(context:any)
                             status = COALESCE($6, status),
                             version = COALESCE($7, version)
                             
-                            WHERE id=$8 AND deleted_at IS NOT NULL`;`
+                            WHERE id=$8 and version = $9 AND deleted_at IS NOT NULL`;`
                            `;
 
             const input = [
@@ -1327,13 +1346,15 @@ function Product(context:any)
                 data?.price,
                 data?.stock_quantity,
                 data?.status,
-                data?.version,
+                data?.version + 1,
                 id
             ];
+
             const result = await context.pool.query(query, input);
 
             if(result.rowCount > 0) {
-
+                const cacheKey = `get-product:${id}`;
+                await context.redisClient.del(cacheKey);
                 return res.status(200).json({
                     status: "success",
                     data: result.rowCount
@@ -1385,6 +1406,8 @@ function Product(context:any)
             const result = await context.pool.query(query, [id]);
 
             if (result.rowCount > 0) {
+                const cacheKey = `get-product:${id}`;
+                await context.redisClient.del(cacheKey);
                 return res.status(200).json({
                     status: "success",
                     data: {id: id}
