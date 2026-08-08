@@ -2191,26 +2191,43 @@ function fileUploader(context:any, records:any)
 let context:any;
 {
     dotenv.config();
+
     const env = Env();
+
     const hash = Pass(env);
+
     const db = Database(env);
+
     const pool = db.connect();
+
     context = ContextObject(env, db, pool, hash);
+
     context.paginate = Paginate(context);
+
     context.token = Token(context);
+
     context.redis = Redis(context);
 
     context.file = fileUploadConfig(context);
+
     (async () => {
+
         context.redisClient = await context.redis.connect();
+
         console.log("Redis client initialized successfully.");
+
     })().catch(err => {
+
         console.error("Failed to connect to Redis inline:", err);
+
     });
 
     context.refreshToken = RefreshToken(context, User(context));
+
     context.auth = Auth(context);
 }
+
+function 
 
 function ecomRoutes(app: any)
 {
@@ -2251,6 +2268,7 @@ function productRoutes(app: any)
 
     app.delete('/products/:id', Product(context).deleteProduct);
 }
+
 
 function cartRoutes(app: any)
 {
