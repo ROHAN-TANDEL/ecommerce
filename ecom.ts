@@ -997,22 +997,6 @@ let context:any;
     context.auth = Auth(context);
 }
 
-function ecomRoutes(app: any)
-{
-    app.get('/health', dbHealth(context).health);
-    app.post('/user', User(context).createUser);
-    app.post('/register', User(context).createUser);
-    app.delete('/user/:id', User(context).deleteUser);
-    app.post('/user/:id', User(context).updateUser);
-    app.get('/me', context.auth.validate, User(context).getUser);
-    app.post('/user/:id/status', User(context).updateUserStatus);
-    app.get('/users-list', User(context).getUsers);
-    app.post('/login', Login(context, User(context)).validate);
-    app.post('/refresh-token', RefreshToken(context, User(context)).getToken);
-    app.post('/logout', context.auth.validate, context.auth.logout);
-
-}
-
 function Paginate(context:any)
 {
 
@@ -1426,6 +1410,182 @@ function Product(context:any)
 }
 
 
+function Cart(context:any)
+{
+    async function getCart(req:any, res:any) {
+        try {
+            const userId = req.user.id;
+            const query = `SELECT *, ci.unit_price * ci.quantity AS subtotal,
+                                  SUM(ci.unit_price * ci.quantity) OVER() AS overall_sum_total
+            FROM master.carts AS ca
+
+                            JOIN master.cart_items as ci 
+                            ON ca.id = ci.cart_id
+                            
+                            left JOIN master.products as pr 
+                            ON ci.product_id = pr.id
+                            
+                            WHERE user_id = $1
+                            AND pr.status = $2
+                            ORDER BY ci.updated_at ASC
+                        `;
+            const result = await context.pool.query(query, [userId, 'ACTIVE']);
+
+            if (result.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    data: {
+                        "items": result.rows,
+                        "subtotal":result.rows.at(0).overall_sum_total,
+                        "totalItems" : result.rowCount
+                    }
+                });
+            }
+
+            return res.status(200).json({
+                status: "success",
+                data: []
+            });
+
+        } catch (error:any) {
+                console.log(error.message);
+                return res.status(400).json({
+                    status: "error",
+                    message: error.message
+                })
+        }
+    }
+
+    async function addItem(req:any, res:any)
+    {
+        const userId = req.user.id;
+        const {productId, quantity} = req.body;
+
+        // check product exists
+        const productQuery = `SELECT id, name, status, stock_quantity, price  FROM master.products WHERE id=$1 AND deleted_at IS NULL LIMIT 1`;
+        const productResult = await context.pool.query(productQuery, [productId]);
+
+        const product = productResult.rowCount > 0;
+
+        if(!product) {
+            return res.status(404).json({
+                "status": "failed",
+                message: "Product not found"
+            });
+        }
+
+        if(productResult.rows.at(0).status !== "ACTIVE") {
+            return res.status(404).json({
+                "status": "failed",
+                message: "Product is unavailable"
+            });
+        }
+
+        // check cart exists
+        const cartQuery = `SELECT id FROM master.carts WHERE status=$1 AND user_id = $2 LIMIT 1`;
+        let cartResult = await context.pool.query(cartQuery, ['ACTIVE' , userId]);
+
+        let cartCheck = cartResult.rowCount > 0;
+
+        if (!cartCheck) {
+            const cartQuery = `INSERT INTO master.carts (user_id) VALUES($1) RETURNING id`;
+            cartResult = await context.pool.query(cartQuery, [userId]);
+            let cart = cartResult.rowCount > 0;
+
+            if(!cart) {
+                return res.status(404).json({
+                    "status": "failed",
+                    "message": "failed to add cart"
+                });
+            }
+        }
+
+        if (!cartCheck) {
+
+            const cartItem = 'INSERT INTO master.cart_items (cart_id, product_id, quantity, unit_price) VALUES ($1, $2, $3, $4) RETURNING *';
+
+            const cartItemRes = await context.pool.query(cartItem, [cartResult.rows.at(0).id, productResult.rows.at(0).id, quantity, productResult.rows.at(0).price]);
+            if (cartItemRes.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    message: `item ${productResult.rows.at(0).name} added by ${quantity}`
+                });
+            }
+
+            return res.status(400).json({
+                status: "success",
+                message: `failed to add ${productResult.rows.at(0).name} added by ${quantity}`
+            });
+        }
+
+        const cartItem = 'UPDATE master.cart_items SET quantity = quantity + $1 WHERE product_id = $2 AND cart_id=$3 RETURNING *';
+        const cartItemRes = await context.pool.query(cartItem, [quantity, productResult.rows.at(0).id, cartResult.rows.at(0).id]);
+        console.log([[quantity, productResult.rows.at(0).id, cartResult.rows.at(0).id]], cartItemRes);
+        if (cartItemRes.rowCount > 0) {
+            return res.status(200).json({
+                status: "success",
+                message: `item ${productResult.rows.at(0).name} quantity updated by ${quantity}`
+            });
+        }
+
+
+        const cartIte = 'INSERT INTO master.cart_items (cart_id, product_id, quantity, unit_price) VALUES ($1, $2, $3, $4) RETURNING *';
+
+        const cartItemRe = await context.pool.query(cartIte, [cartResult.rows.at(0).id, productResult.rows.at(0).id, quantity, productResult.rows.at(0).price]);
+        if (cartItemRe.rowCount > 0) {
+            return res.status(200).json({
+                status: "success",
+                message: `item ${productResult.rows.at(0).name} added by ${quantity}`
+            });
+        }
+
+        return res.status(400).json({
+            status: "success",
+            message: `failed to add ${productResult.rows.at(0).name} added by ${quantity}`
+        });
+
+    }
+
+    async function updateItem(req:any, res:any)
+    {
+        const query = '';
+        const result = await context.pool.query(query);
+    }
+
+    async function deleteItem(req:any, res:any)
+    {
+        const query = '';
+        const result = await context.pool.query(query);
+    }
+
+    async function deleteCart(req:any, res:any)
+    {
+        const query = '';
+        const result = await context.pool.query(query);
+    }
+
+
+    return { getCart, addItem, updateItem, deleteItem, deleteCart };
+}
+
+
+function ecomRoutes(app: any)
+{
+    app.get('/health', dbHealth(context).health);
+    app.post('/user', User(context).createUser);
+    app.post('/register', User(context).createUser);
+    app.delete('/user/:id', User(context).deleteUser);
+    app.post('/user/:id', User(context).updateUser);
+    app.get('/me', context.auth.validate, User(context).getUser);
+    app.post('/user/:id/status', User(context).updateUserStatus);
+    app.get('/users-list', User(context).getUsers);
+    app.post('/login', Login(context, User(context)).validate);
+    app.post('/refresh-token', RefreshToken(context, User(context)).getToken);
+    app.post('/logout', context.auth.validate, context.auth.logout);
+
+}
+
+
 function productRoutes(app: any)
 {
     app.get('/products', Product(context).products);
@@ -1439,9 +1599,22 @@ function productRoutes(app: any)
     app.delete('/products/:id', Product(context).deleteProduct);
 }
 
+function cartRoutes(app: any)
+{
+   app.get('/cart', context.auth.validate, Cart(context).getCart);
+
+    app.post('/cart/items', context.auth.validate, Cart(context).addItem);
+
+  //  app.patch('/card/items/:id', Cart(context));
+
+    //app.delete('/cart/items/:id', Cart(context));
+
+    //app.delete('/cart', Cart(context));
+}
 module.exports = {
     ecomRoutes,
-    productRoutes
+    productRoutes,
+    cartRoutes
 };
 
 
