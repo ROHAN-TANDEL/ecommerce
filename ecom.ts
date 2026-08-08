@@ -1548,20 +1548,93 @@ function Cart(context:any)
 
     async function updateItem(req:any, res:any)
     {
-        const query = '';
-        const result = await context.pool.query(query);
+
+        const itemId = req.params.id;
+        const quantity = parseInt(req.body.quantity, 10);
+        const userId = req.user.id;
+        const query =  `SELECT *, ci.id as ciid, p.  FROM master.cart_items as ci
+                            JOIN master.products as p
+                                ON p.id = ci.product_id
+                            JOIN master.carts as c
+                                 ON c.user_id = $3
+                            WHERE p.status = $1 AND
+                             ci.id = $2
+                        `;
+        const result = await context.pool.query(query, ['ACTIVE' , itemId, userId]);
+
+        if(result.rowCount > 0) {
+            const query = `UPDATE master.cart_items SET quantity = $1 WHERE id=$2 RETURNING *`;
+
+            const cartRes = await context.pool.query(query, [quantity, result.rows.at(0).ciid ]);
+
+            if(cartRes.rowCount > 0) {
+                return res.status(200).json({
+                    status: "success",
+                    message: `item ${cartRes.rows.at(0).id} changed by ${quantity}`
+                });
+            }
+
+            return res.status(400).json({
+                status: "failed",
+                message : "empty cart no such item"
+            })
+        }
+
+        return res.status(400).json({
+            status: "failed",
+            message: "Invalid cart item"
+        })
     }
 
     async function deleteItem(req:any, res:any)
     {
-        const query = '';
-        const result = await context.pool.query(query);
+        const query = `DELETE FROM master.cart_items WHERE id = $1 RETURNING *`;
+        const result = await context.pool.query(query, [req.params.id]);
+
+        if (result.rowCount > 0) {
+            return res.status(200).json({
+                status: "success",
+                message: `item ${req.params.id} successfully deleted`
+            });
+        }
+
+        return res.status(400).json({
+            status: "failed",
+            message: `failed to delete item ${req.params.id}`
+        });
     }
 
     async function deleteCart(req:any, res:any)
     {
-        const query = '';
-        const result = await context.pool.query(query);
+        const  cartQ = `SELECT id FROM master.carts WHERE user_id=$1`;
+
+        const cartRes = await context.pool.query(cartQ, [req.user.id]);
+
+        console.log(cartRes);
+
+        if (cartRes.rowCount > 0) {
+            const query = `DELETE FROM master.cart_items WHERE cart_id = $1 RETURNING *`;
+            const result = await context.pool.query(query, [cartRes.rows.at(0).id]);
+
+            if (result.rowCount > 0) {
+
+                const  cartQ = `DELETE FROM master.carts WHERE user_id=$1`;
+
+                const cartRes = await context.pool.query(cartQ, [req.user.id]);
+
+                if(cartRes.rowCount > 0) {
+                    return res.status(200).json({
+                        status: "success",
+                        message: `cart successfully deleted`
+                    });
+                }
+            }
+        }
+
+        return res.status(400).json({
+            status: "failed",
+            message: `failed to delete cart`
+        });
     }
 
 
@@ -1605,11 +1678,11 @@ function cartRoutes(app: any)
 
     app.post('/cart/items', context.auth.validate, Cart(context).addItem);
 
-  //  app.patch('/card/items/:id', Cart(context));
+   app.patch('/card/items/:id', context.auth.validate, Cart(context).updateItem);
 
-    //app.delete('/cart/items/:id', Cart(context));
+    app.delete('/cart/items/:id', context.auth.validate, Cart(context).deleteItem);
 
-    //app.delete('/cart', Cart(context));
+    app.delete('/cart', context.auth.validate, Cart(context).deleteCart);
 }
 module.exports = {
     ecomRoutes,
