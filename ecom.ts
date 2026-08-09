@@ -7,7 +7,7 @@ import {createClient} from "redis";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { sqsHandler, sqsTest } from "./sqs";
+import {sqsHandler, sqsTest, createQueueWorker, workers} from "./sqs";
 
 
 // 1. build a common context
@@ -2190,17 +2190,13 @@ function fileUploader(context:any, records:any)
 
 function SQSService(context:any)
 {
-    async function test(req:any, res:any)
+    async function sendMessage(req:any, res:any)
     {
         try {
 
-            const message = {
-                "name" : "Raku pre",
-                "id" : 12234,
-                "email" : "demo@example.com"
-            };
+            const message = req.body;
 
-            const response = await context.queue.publish('clean_up_deleted_files_queue', JSON.stringify(message));
+            const response = await context.queue.publish('clean-up-delete-files', JSON.stringify(message));
 
             return res.status(200).send({
                 status: 'success',
@@ -2216,8 +2212,42 @@ function SQSService(context:any)
         }
 
     }
+    return {test : sendMessage}
+}
 
-    return {test}
+
+function cleanDeletedFiles()
+{
+    async function execute(message: any)
+    {
+        // 1. Extract the unique SQS metadata if needed
+        const messageId = message.MessageId;
+        const receiptHandle = message.ReceiptHandle;
+        // console.log(`[Worker] Started processing message ID: `, message);
+        // console.log(`[Worker] Started processing message ID: ${messageId}`);
+
+        // 2. Parse the body safely
+        if (!message.Body) {
+            throw new Error("Received an empty SQS message body");
+        }
+
+        const payload = JSON.parse(message.Body);
+        console.log("Core business payload data:", payload);
+
+        // 3. Your actual file deletion business logic goes here
+        // e.g., await fs.promises.unlink(payload.filePath);
+        return message;
+    }
+
+    return {execute}
+}
+
+
+function queueBind()
+{
+    return new Map ([
+        ['clean-up-delete-files' , cleanDeletedFiles().execute]
+    ]);
 }
 
 
@@ -2245,6 +2275,8 @@ let context:any;
 
     context.queue = sqsHandler(context);
 
+    context.queue.bind = queueBind();
+
     (async () => {
 
         context.redisClient = await context.redis.connect();
@@ -2260,6 +2292,10 @@ let context:any;
     context.refreshToken = RefreshToken(context, User(context));
 
     context.auth = Auth(context);
+
+    context.worker = workers(context);
+
+
 }
 
 function ecomRoutes(app: any)

@@ -1,4 +1,5 @@
 import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk/client-sqs';
+import { Consumer } from 'sqs-consumer';
 
 export function sqsHandler(context:any)
 {
@@ -23,19 +24,10 @@ export function sqsHandler(context:any)
 
     async function publish(queueName: any, message: any)
     {
-        let queueUrl = 'http://localhost.localstack.cloud:4566/000000000000/clean-up-delete-files.fifo';//context.queue.url[queueName];
-        // queueUrl = 'http://localhost:4566/000000000000/clean-up-delete-files.fifo';
-        // console.log(`Queue Url: `, !queueUrl, queueName, queueUrl, context.queue.url);
-        if (!queueUrl) {
-            // throw new Error(`Queue "${queueName}" not configured`);
-            return {
-                status : 'failed',
-                message : 'queue not found'
-            };
-        }
-
 
         try {
+
+            let queueUrl = "http://localhost.localstack.cloud:4566/000000000000/" + queueName + ".fifo";
 
             const command = new SendMessageCommand({
                 QueueUrl: queueUrl,
@@ -336,3 +328,62 @@ export function sqsTest(context:any)
     }
 }
 
+export function createQueueWorker({ queueUrl, sqsClient, handler }:any)
+{
+    const consumer = Consumer.create({
+        queueUrl,
+        sqs: sqsClient,
+        handleMessage: async (message) => {
+            if (!message.Body) return;
+            // const parsedBody = JSON.parse(message);
+
+            // Execute the injected business logic
+            return await handler(message);
+        },
+        shouldDeleteMessages: true,  // Auto-delete on success
+
+        // heart beat should always be less than visibility timeout
+        visibilityTimeout: 30,
+        heartbeatInterval: 10,
+
+        waitTimeSeconds: 20,
+        batchSize: 1,
+        // alwaysAcknowledge : true,
+        messageAttributeNames: ['All']
+    });
+
+    consumer.on('error', (err) => console.error(`[SQS System Error - ${queueUrl}]:`, err.message));
+    consumer.on('processing_error', (err) => console.error(`[SQS Processing Error - ${queueUrl}]:`, err.message));
+
+    return consumer;
+}
+
+export function workers(context:any)
+{
+
+    function receive()
+    {
+        let handle;
+        handle = context.queue.bind.get('clean-up-delete-files');
+        // Worker 1: File Cleanup Queue
+        const fileCleanupWorker = createQueueWorker({
+            queueUrl: `${process.env.SQS_PREFIX}/clean-up-delete-files.fifo`,
+            sqsClient: context.queue.connect,
+            handler: handle // Dedicated business logic file
+        });
+        fileCleanupWorker.start();
+
+        handle = context.queue.bind.get('send-emails');
+        // Worker 2: Notifications Queue (Easy to add later)
+        const emailWorker = createQueueWorker({
+            queueUrl: `${process.env.SQS_PREFIX}/send-emails.fifo`,
+            sqsClient: context.queue.connect,
+            handler: handle
+        });
+        emailWorker.start();
+
+        return true;
+    }
+
+    return {receive: receive()}
+}
