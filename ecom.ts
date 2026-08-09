@@ -7,6 +7,8 @@ import {createClient} from "redis";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import {sqsHandler, sqsTest, createQueueWorker, workers} from "./sqs";
+
 
 // 1. build a common context
 function ContextObject(env:any, db?:any, pool?:any, hash?:any) : any
@@ -36,6 +38,7 @@ function Env()
         JWT_REFRESH_SECRET : process.env.JWT_REFRESH_SECRET,
         JWT_REFRESH_TTL : process.env.JWT_REFRESH_TTL,
         AUTH_TOKEN_BLOCKLIST_REDIS_KEY : process.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY,
+        CLEANUP_DELETE_FILES : process.env.CLEANUP_DELETE_FILES,
     }
 }
 
@@ -577,7 +580,7 @@ function Token(context:any)
     function expired(exp:any)
     {
         const currentTimestamp = Math.floor(Date.now() / 1000);
-        console.log("current date :", currentTimestamp);
+        // console.log("current date :", currentTimestamp);
         return currentTimestamp > exp;
     }
 
@@ -856,7 +859,7 @@ function Auth(context:any)
     {
         try {
             const authorization = req.headers.authorization;
-            console.log(authorization);
+            // console.log(authorization);
             if (!authorization) {
                 return res.status(401).json({
                     status: "failed",
@@ -875,7 +878,7 @@ function Auth(context:any)
 
             const payload = context.token.accessToken().validate(token);
 
-            console.log('token validate:',payload);
+            // console.log('token validate:',payload);
 
             const expired = context.token.expired(payload.exp);
 
@@ -2185,31 +2188,142 @@ function fileUploader(context:any, records:any)
     return {uploadFile, uploadFiles, uploadProfile, uploadProfiles, serveFile, downloadFile, streamFile}
 }
 
+function SQSService(context:any)
+{
+    async function sendMessage(req:any, res:any)
+    {
+        try {
 
+            const message = req.body;
+            const groupId = 'user_' + req.user.id + '_file_delete';
+            const response = await context.queue.publish('clean-up-delete-files', message, groupId);
+
+            return res.status(200).send({
+                status: 'success',
+                message : response
+            });
+
+        } catch (error:any) {
+            console.error(error);
+            return res.status(400).send({
+                status: 'failed',
+                message : error.message
+            });
+        }
+
+    }
+    return {test : sendMessage}
+}
+
+
+function cleanDeletedFiles()
+{
+    let attemptCount = 0;
+    const attemptTracker = new Map<string, number>();
+
+    async function execute(message: any)
+    {
+
+        // 1. Extract the unique SQS metadata if needed
+        const messageId = message.MessageId;
+        const receiptHandle = message.ReceiptHandle;
+
+        // Track attempts for this message
+        const currentAttempt = (attemptTracker.get(messageId) || 0) + 1;
+        attemptTracker.set(messageId, currentAttempt);
+
+
+        const receiveCount = parseInt(message.Attributes?.ApproximateReceiveCount || '0');
+
+        console.log(`[Attempt ${currentAttempt}] Processing: ${messageId}`);
+        console.log(`   SQS Receive Count: ${receiveCount}`);
+
+        // 2. Parse the body safely
+        if (!message.Body) {
+            throw new Error("Received an empty SQS message body");
+        }
+
+        const payload = JSON.parse(message.Body);
+        console.log("Core business payload data:", payload);
+
+        if (currentAttempt < 3) {
+            console.log(`[Attempt ${currentAttempt}] Simulating failure...`);
+            throw new Error(`Simulated failure on attempt ${currentAttempt}`);
+        }
+            console.log(payload?.name === "dead-letter-test", currentAttempt > 1)
+        if (currentAttempt > 1) {
+            console.log(`[Attempt ${currentAttempt}] Simulating failure...`);
+            throw new Error(`Simulated failure on attempt ${currentAttempt}`);
+        }
+
+
+        // Success on attempt 3
+        console.log(`[Attempt ${currentAttempt}] Processing successful!`);
+        attemptTracker.delete(messageId);
+
+        // 3. Your actual file deletion business logic goes here
+        // e.g., await fs.promises.unlink(payload.filePath);
+        return message;
+
+    }
+
+    return {execute}
+}
+
+
+function queueBind()
+{
+    return new Map ([
+        ['clean-up-delete-files' , cleanDeletedFiles().execute]
+    ]);
+}
 
 
 let context:any;
 {
     dotenv.config();
+
     const env = Env();
+
     const hash = Pass(env);
+
     const db = Database(env);
+
     const pool = db.connect();
+
     context = ContextObject(env, db, pool, hash);
+
     context.paginate = Paginate(context);
+
     context.token = Token(context);
+
     context.redis = Redis(context);
 
     context.file = fileUploadConfig(context);
+
+    context.queue = sqsHandler(context);
+
+    context.queue.bind = queueBind();
+
     (async () => {
+
         context.redisClient = await context.redis.connect();
+
         console.log("Redis client initialized successfully.");
+
     })().catch(err => {
+
         console.error("Failed to connect to Redis inline:", err);
+
     });
 
     context.refreshToken = RefreshToken(context, User(context));
+
     context.auth = Auth(context);
+
+    context.worker = workers(context);
+
+
 }
 
 function ecomRoutes(app: any)
@@ -2252,6 +2366,7 @@ function productRoutes(app: any)
     app.delete('/products/:id', Product(context).deleteProduct);
 }
 
+
 function cartRoutes(app: any)
 {
    app.get('/cart', context.auth.validate, Cart(context).getCart);
@@ -2281,6 +2396,8 @@ function fileRoutes(app: any)
     app.post('/file/download/:id', context.auth.validate, fileUploader(context, fileUploadRecords(context)).downloadFile);
 
     app.post('/file/stream', context.auth.validate, fileUploader(context, fileUploadRecords(context)).streamFile);
+
+    app.post('/queue/test', context.auth.validate, SQSService(context).test);
 
 }
 
