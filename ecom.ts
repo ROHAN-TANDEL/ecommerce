@@ -2218,13 +2218,25 @@ function SQSService(context:any)
 
 function cleanDeletedFiles()
 {
+    let attemptCount = 0;
+    const attemptTracker = new Map<string, number>();
+
     async function execute(message: any)
     {
+
         // 1. Extract the unique SQS metadata if needed
         const messageId = message.MessageId;
         const receiptHandle = message.ReceiptHandle;
-        // console.log(`[Worker] Started processing message ID: `, message);
-        // console.log(`[Worker] Started processing message ID: ${messageId}`);
+
+        // Track attempts for this message
+        const currentAttempt = (attemptTracker.get(messageId) || 0) + 1;
+        attemptTracker.set(messageId, currentAttempt);
+
+
+        const receiveCount = parseInt(message.Attributes?.ApproximateReceiveCount || '0');
+
+        console.log(`[Attempt ${currentAttempt}] Processing: ${messageId}`);
+        console.log(`   SQS Receive Count: ${receiveCount}`);
 
         // 2. Parse the body safely
         if (!message.Body) {
@@ -2234,9 +2246,20 @@ function cleanDeletedFiles()
         const payload = JSON.parse(message.Body);
         console.log("Core business payload data:", payload);
 
+        if (currentAttempt < 3) {
+            console.log(`[Attempt ${currentAttempt}] Simulating failure...`);
+            throw new Error(`Simulated failure on attempt ${currentAttempt}`);
+        }
+
+
+        // Success on attempt 3
+        console.log(`[Attempt ${currentAttempt}] Processing successful!`);
+        attemptTracker.delete(messageId);
+
         // 3. Your actual file deletion business logic goes here
         // e.g., await fs.promises.unlink(payload.filePath);
         return message;
+
     }
 
     return {execute}
