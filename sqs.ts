@@ -1,5 +1,6 @@
-import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk/client-sqs';
-import { Consumer } from 'sqs-consumer';
+import {DeleteMessageCommand, ReceiveMessageCommand, SendMessageCommand, SQSClient} from '@aws-sdk/client-sqs';
+import {Consumer} from 'sqs-consumer';
+import {createHash} from 'crypto';
 
 export function sqsHandler(context:any)
 {
@@ -22,17 +23,23 @@ export function sqsHandler(context:any)
         });
     }
 
-    async function publish(queueName: any, message: any)
+    async function publish(queueName: any, message: any, groupId?:any)
     {
 
         try {
 
-            let queueUrl = "http://localhost.localstack.cloud:4566/000000000000/" + queueName + ".fifo";
+            let queueUrl =`${process.env.SQS_PREFIX}/${queueName}.fifo`;
+
+            // ⭐ Use the hash as the deduplication ID
+            const dedupeId = createHash('sha256')
+                .update(JSON.stringify(message))
+                .digest('hex');
 
             const command = new SendMessageCommand({
                 QueueUrl: queueUrl,
                 MessageBody: JSON.stringify(message),
-                MessageGroupId: 'default'
+                MessageGroupId: groupId ? groupId : 'default',
+                MessageDeduplicationId : dedupeId
             });
             console.log('test');
             const response = await context.queue.connect.send(command);
@@ -343,10 +350,10 @@ export function createQueueWorker({ queueUrl, sqsClient, handler }:any)
         shouldDeleteMessages: true,  // Auto-delete on success
 
         // heart beat should always be less than visibility timeout
-        visibilityTimeout: 30,
-        heartbeatInterval: 10,
+        visibilityTimeout: 10,
+        heartbeatInterval: 5,
 
-        waitTimeSeconds: 20,
+        waitTimeSeconds: 10,
         batchSize: 1,
         // alwaysAcknowledge : true,
         messageAttributeNames: ['All']

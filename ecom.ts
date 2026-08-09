@@ -2195,8 +2195,8 @@ function SQSService(context:any)
         try {
 
             const message = req.body;
-
-            const response = await context.queue.publish('clean-up-delete-files', JSON.stringify(message));
+            const groupId = 'user_' + req.user.id + '_file_delete';
+            const response = await context.queue.publish('clean-up-delete-files', message, groupId);
 
             return res.status(200).send({
                 status: 'success',
@@ -2247,6 +2247,11 @@ function cleanDeletedFiles()
         console.log("Core business payload data:", payload);
 
         if (currentAttempt < 3) {
+            console.log(`[Attempt ${currentAttempt}] Simulating failure...`);
+            throw new Error(`Simulated failure on attempt ${currentAttempt}`);
+        }
+            console.log(payload?.name === "dead-letter-test", currentAttempt > 1)
+        if (currentAttempt > 1) {
             console.log(`[Attempt ${currentAttempt}] Simulating failure...`);
             throw new Error(`Simulated failure on attempt ${currentAttempt}`);
         }
