@@ -7,6 +7,8 @@ import {createClient} from "redis";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { sqsHandler, sqsTest } from "./sqs";
+
 
 // 1. build a common context
 function ContextObject(env:any, db?:any, pool?:any, hash?:any) : any
@@ -36,6 +38,7 @@ function Env()
         JWT_REFRESH_SECRET : process.env.JWT_REFRESH_SECRET,
         JWT_REFRESH_TTL : process.env.JWT_REFRESH_TTL,
         AUTH_TOKEN_BLOCKLIST_REDIS_KEY : process.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY,
+        CLEANUP_DELETE_FILES : process.env.CLEANUP_DELETE_FILES,
     }
 }
 
@@ -577,7 +580,7 @@ function Token(context:any)
     function expired(exp:any)
     {
         const currentTimestamp = Math.floor(Date.now() / 1000);
-        console.log("current date :", currentTimestamp);
+        // console.log("current date :", currentTimestamp);
         return currentTimestamp > exp;
     }
 
@@ -856,7 +859,7 @@ function Auth(context:any)
     {
         try {
             const authorization = req.headers.authorization;
-            console.log(authorization);
+            // console.log(authorization);
             if (!authorization) {
                 return res.status(401).json({
                     status: "failed",
@@ -875,7 +878,7 @@ function Auth(context:any)
 
             const payload = context.token.accessToken().validate(token);
 
-            console.log('token validate:',payload);
+            // console.log('token validate:',payload);
 
             const expired = context.token.expired(payload.exp);
 
@@ -2185,7 +2188,37 @@ function fileUploader(context:any, records:any)
     return {uploadFile, uploadFiles, uploadProfile, uploadProfiles, serveFile, downloadFile, streamFile}
 }
 
+function SQSService(context:any)
+{
+    async function test(req:any, res:any)
+    {
+        try {
 
+            const message = {
+                "name" : "Raku pre",
+                "id" : 12234,
+                "email" : "demo@example.com"
+            };
+
+            const response = await context.queue.publish('clean_up_deleted_files_queue', JSON.stringify(message));
+
+            return res.status(200).send({
+                status: 'success',
+                message : response
+            });
+
+        } catch (error:any) {
+            console.error(error);
+            return res.status(400).send({
+                status: 'failed',
+                message : error.message
+            });
+        }
+
+    }
+
+    return {test}
+}
 
 
 let context:any;
@@ -2210,6 +2243,8 @@ let context:any;
 
     context.file = fileUploadConfig(context);
 
+    context.queue = sqsHandler(context);
+
     (async () => {
 
         context.redisClient = await context.redis.connect();
@@ -2226,8 +2261,6 @@ let context:any;
 
     context.auth = Auth(context);
 }
-
-function 
 
 function ecomRoutes(app: any)
 {
@@ -2299,6 +2332,8 @@ function fileRoutes(app: any)
     app.post('/file/download/:id', context.auth.validate, fileUploader(context, fileUploadRecords(context)).downloadFile);
 
     app.post('/file/stream', context.auth.validate, fileUploader(context, fileUploadRecords(context)).streamFile);
+
+    app.post('/queue/test', context.auth.validate, SQSService(context).test);
 
 }
 
