@@ -367,11 +367,13 @@ export function createQueueWorker({ queueUrl, sqsClient, handler }:any)
 
 export function workers(context:any)
 {
+    const activeWorkers: Consumer[] = [];
 
-    function receive()
+    function start()
     {
-        let handle;
-        handle = context.queue.bind.get('clean-up-delete-files');
+        if (activeWorkers.length > 0) return;
+        const handle = context.queue.bind.get('clean-up-delete-files');
+        if (!handle) return;
         // Worker 1: File Cleanup Queue
         const fileCleanupWorker = createQueueWorker({
             queueUrl: `${process.env.SQS_PREFIX}/clean-up-delete-files.fifo`,
@@ -379,18 +381,14 @@ export function workers(context:any)
             handler: handle // Dedicated business logic file
         });
         fileCleanupWorker.start();
-
-        handle = context.queue.bind.get('send-emails');
-        // Worker 2: Notifications Queue (Easy to add later)
-        const emailWorker = createQueueWorker({
-            queueUrl: `${process.env.SQS_PREFIX}/send-emails.fifo`,
-            sqsClient: context.queue.connect,
-            handler: handle
-        });
-        emailWorker.start();
-
-        return true;
+        activeWorkers.push(fileCleanupWorker);
     }
 
-    return {receive: receive()}
+    function stop()
+    {
+        activeWorkers.forEach((worker) => worker.stop());
+        activeWorkers.length = 0;
+    }
+
+    return {start, stop}
 }

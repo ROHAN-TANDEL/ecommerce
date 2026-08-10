@@ -2,12 +2,17 @@
 import {Pool} from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import {v4 as uuidv4} from "uuid";
+import {randomUUID} from "crypto";
 import {createClient} from "redis";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import {pipeline} from 'stream/promises';
 import {sqsHandler, sqsTest, createQueueWorker, workers} from "./sqs";
+import {createRuntime, loadEnvironment} from "./runtime";
+import {s3Handler} from "./s3";
+
+const uuidv4 = (): string => randomUUID();
 
 
 // 1. build a common context
@@ -23,23 +28,7 @@ function ContextObject(env:any, db?:any, pool?:any, hash?:any) : any
 
 function Env()
 {
-
-    return {
-        NODE_ENV : process.env.NODE_ENV || "development",
-        PG_MASTER_HOST : process.env.PG_MASTER_HOST,
-        PG_MASTER_PORT : process.env.PG_MASTER_PORT || "5432",
-        PG_MASTER_DATABASE : process.env.PG_MASTER_DATABASE,
-        PG_MASTER_SCHEMA : process.env.PG_MASTER_SCHEMA,
-        PG_MASTER_USERNAME : process.env.PG_MASTER_USERNAME,
-        PG_MASTER_PASSWORD : process.env.PG_MASTER_PASSWORD,
-        SALT : process.env.SALT,
-        JWT_SECRET : process.env.JWT_SECRET,
-        JWT_TTL : process.env.JWT_TTL,
-        JWT_REFRESH_SECRET : process.env.JWT_REFRESH_SECRET,
-        JWT_REFRESH_TTL : process.env.JWT_REFRESH_TTL,
-        AUTH_TOKEN_BLOCKLIST_REDIS_KEY : process.env.AUTH_TOKEN_BLOCKLIST_REDIS_KEY,
-        CLEANUP_DELETE_FILES : process.env.CLEANUP_DELETE_FILES,
-    }
+    return loadEnvironment();
 }
 
 // 3. database setup
@@ -966,12 +955,16 @@ function Redis(context:any)
     async function connect()
     {
         const connection = {
-            url: "redis://admin:adminpass@localhost:6379"
+            url: context.env.REDIS_URL,
+            socket: {
+                reconnectStrategy: false as const
+            }
         };
 
         const redisClient = createClient(connection);
 
-        redisClient.on('error', (err) => console.error('Redis Client Error', err));
+        // Startup/readiness report connection errors through the shared logger.
+        redisClient.on('error', () => undefined);
 
         return await redisClient.connect();
 
@@ -1245,7 +1238,7 @@ function Product(context:any)
 
             const cacheKey = `get-product:${id}`;
 
-            const cachedProduct = await context.redisClient.get(cacheKey);
+            const cachedProduct = context.redisClient ? await context.redisClient.get(cacheKey) : null;
             if (cachedProduct) {
                 return res.json({ status: "success", data: JSON.parse(cachedProduct) });
             }
@@ -1258,7 +1251,7 @@ function Product(context:any)
 
             if(result.rowCount > 0) {
                 console.log("from db");
-                await context.redisClient.setEx(cacheKey, 30, JSON.stringify(result.rows));
+                await context.redisClient?.setEx(cacheKey, 30, JSON.stringify(result.rows));
 
                 return res.status(200).json({
                     status: "success",
@@ -1267,7 +1260,7 @@ function Product(context:any)
 
             }
 
-            await context.redisClient.setEx(cacheKey, 30, JSON.stringify(product));
+            await context.redisClient?.setEx(cacheKey, 30, JSON.stringify(product));
 
             return res.status(200).json({
                 status: "success",
@@ -1320,7 +1313,7 @@ function Product(context:any)
 
             if(result.rowCount > 0) {
                 const cacheKey = `get-product:${id}`;
-                await context.redisClient.del(cacheKey);
+                await context.redisClient?.del(cacheKey);
                 return res.status(200).json({
                     status: "success",
                     data: result.rowCount
@@ -1373,7 +1366,7 @@ function Product(context:any)
 
             if (result.rowCount > 0) {
                 const cacheKey = `get-product:${id}`;
-                await context.redisClient.del(cacheKey);
+                await context.redisClient?.del(cacheKey);
                 return res.status(200).json({
                     status: "success",
                     data: {id: id}
@@ -1777,19 +1770,23 @@ function fileUploadConfig(context:any)
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        const storage = multer.diskStorage({
-            destination: uploadDir,
-            filename: (req, file, cb) => {
-                const uniqueName = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
-                cb(null, uniqueName);
-            }
-        });
+        // // local file storage
+        // const storage = multer.diskStorage({
+        //     destination: uploadDir,
+        //     filename: (req, file, cb) => {
+        //         const uniqueName = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
+        //         cb(null, uniqueName);
+        //     }
+        // });
 
+
+        // s3 local file storage
+        const storage = multer.memoryStorage();
 
         const upload = multer({
             storage: storage,
             limits : {
-                fileSize : context.env.MAX_FILE_UPLOAD || 5 * 1024 * 102
+                fileSize : context.env.MAX_FILE_UPLOAD || 200 * 1024 * 1024
             }
         });
 
@@ -2078,8 +2075,7 @@ function fileUploader(context:any, records:any)
             res.setHeader('Content-Type', file.mime_type);
 
             // Stream the file (memory efficient)
-            const stream = fs.createReadStream(file.storage_path);
-            stream.pipe(res);
+            await pipeline(fs.createReadStream(file.storage_path), res);
         } catch (error:any) {
             return res.status(404).json({
                 status: 'error',
@@ -2087,7 +2083,6 @@ function fileUploader(context:any, records:any)
             });
         }
     }
-
 
     async function downloadFile(req:any, res:any)
     {
@@ -2113,12 +2108,12 @@ function fileUploader(context:any, records:any)
         res.setHeader('Content-Length', file.size);
 
         // Stream the file
-        const stream = fs.createReadStream(file.storage_path);
-        stream.pipe(res);
+        await pipeline(fs.createReadStream(file.storage_path), res);
 
     }
 
-    async function streamFile(req:any, res:any) {
+    async function streamFile(req:any, res:any)
+    {
         const fileId = req.params.id;
 
         const result = await context.pool.query(
@@ -2149,8 +2144,7 @@ function fileUploader(context:any, records:any)
                 'Content-Type': file.mime_type,
             });
 
-            const stream = fs.createReadStream(file.storage_path, {start, end});
-            stream.pipe(res);
+            await pipeline(fs.createReadStream(file.storage_path, {start, end}), res);
 
         } else {
             // Full file
@@ -2158,13 +2152,13 @@ function fileUploader(context:any, records:any)
                 'Content-Length': fileSize,
                 'Content-Type': file.mime_type,
             });
-            const stream = fs.createReadStream(file.storage_path);
-            stream.pipe(res);
+            await pipeline(fs.createReadStream(file.storage_path), res);
         }
 
     }
 
-    function shouldViewInBrowser(mimeType: string): boolean {
+    function shouldViewInBrowser(mimeType: string): boolean
+    {
         const viewable = [
             'image/jpeg', 'image/png', 'image/gif',
             'text/plain', 'text/html',
@@ -2173,7 +2167,8 @@ function fileUploader(context:any, records:any)
         return viewable.includes(mimeType);
     }
 
-    function shouldDownload(mimeType: string): boolean {
+    function shouldDownload(mimeType: string): boolean
+    {
         const downloadable = [
             'application/zip',
             'application/msword',
@@ -2184,8 +2179,142 @@ function fileUploader(context:any, records:any)
         return downloadable.includes(mimeType);
     }
 
+    async function uploadS3(req: any, res: any)
+    {
+        try {
 
-    return {uploadFile, uploadFiles, uploadProfile, uploadProfiles, serveFile, downloadFile, streamFile}
+            const file = await context.file.uploadFile(req, res, 5);
+            if (!file) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'No file uploaded'
+                });
+            }
+
+            const userId = req.user?.id || 'anonymous';
+            const key = context.s3.generateKey(file.originalname, userId);
+
+            const result = await context.s3.uploadFile(file, key);
+
+
+            // Log file info to see what we got
+            console.log('File uploaded:', {
+                originalName: req.file.originalname,
+                storedName: req.file.filename,
+                size: req.file.size,
+                mimeType: req.file.mimetype,
+                path: req.file.path
+            });
+
+            file.filename = key;
+            file.path = key;
+
+            const dbStore = await records.saveFileRecord(context.pool, req.user.id, file);
+
+            if (dbStore.status === 'success') {
+                // Return success with file info
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'File uploaded successfully',
+                    data: dbStore
+                });
+            }
+
+            return res.status(401).json({
+                status: 'success',
+                message: 'File not uploaded successfully',
+                data: {
+                    originalName: req.file.originalname,
+                    storedName: req.file.filename,
+                    size: req.file.size,
+                    mimeType: req.file.mimetype
+                }
+            });
+        } catch (error:any) {
+            console.log(error);
+            return res.status(400).json({
+                status: 'failed',
+                message: 'File not uploaded successfully'
+            });
+        }
+    }
+
+    async function getProfileUrlS3(req:any, res:any) {
+        try {
+
+            const pool = context.pool;
+
+            const userId = req.user?.id;
+
+            // Get user
+            const userResult = await pool.query(
+                `SELECT id, first_name, last_name, email, role_id, status 
+             FROM master.users WHERE id = $1`,
+                [userId]
+            );
+            const user = userResult.rows[0];
+
+            if (!user) {
+                return res.status(404).json({
+                    status: 'error',
+                    message: 'User not found'
+                });
+            }
+
+            // Get profile picture
+            const fileResult = await pool.query(
+                `SELECT * FROM master.files 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC 
+             LIMIT 1`,
+                [userId]
+            );
+            const file = fileResult.rows[0];
+
+            let profilePicture = null;
+            if (file) {
+                // ⭐ Generate presigned URL
+                const presigned = await context.s3.getPresignedDownloadUrl(
+                    file.storage_path,
+                    3600 * 24 // 24 hours expiry (or adjust as needed)
+                );
+
+                profilePicture = {
+                    url: presigned.url,
+                    expiresAt: presigned.expiresAt,
+                    fileId: file.id,
+                    fileName: file.original_name
+                };
+            }
+
+            res.json({
+                status: 'success',
+                data: {
+                    id: user.id,
+                    firstName: user.first_name,
+                    lastName: user.last_name,
+                    email: user.email,
+                    roleId: user.role_id,
+                    status: user.status,
+                    profilePicture: profilePicture
+                }
+            });
+
+        } catch (error:any) {
+            console.error('Profile error:', error);
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
+    function getProfileCDNUrl(req:any, res:any)
+    {
+
+    }
+
+    return {uploadFile, uploadS3, uploadFiles, uploadProfile, uploadProfiles, serveFile, downloadFile, streamFile, getProfileUrlS3, getProfileCDNUrl}
 }
 
 function SQSService(context:any)
@@ -2305,29 +2434,26 @@ let context:any;
 
     context.queue.bind = queueBind();
 
-    (async () => {
-
-        context.redisClient = await context.redis.connect();
-
-        console.log("Redis client initialized successfully.");
-
-    })().catch(err => {
-
-        console.error("Failed to connect to Redis inline:", err);
-
-    });
-
     context.refreshToken = RefreshToken(context, User(context));
 
     context.auth = Auth(context);
 
     context.worker = workers(context);
 
+    context.s3 = s3Handler(context);
+
+    context.runtime = createRuntime(context, env);
 
 }
 
 function ecomRoutes(app: any)
 {
+    app.get('/live', context.runtime.liveness);
+
+    app.get('/ready', context.runtime.asyncHandler(context.runtime.readiness));
+
+    app.get('/metrics', context.runtime.asyncHandler(context.runtime.metrics));
+
     app.get('/health', dbHealth(context).health);
 
     app.post('/user', User(context).createUser);
@@ -2389,6 +2515,12 @@ function fileRoutes(app: any)
 
     app.post('/file/upload', context.auth.validate, fileUploader(context, fileUploadRecords(context)).uploadProfile);
 
+    app.post('/file/uploadProfile', context.auth.validate, fileUploader(context, fileUploadRecords(context)).uploadS3);
+
+    app.get('/gi', context.auth.validate, fileUploader(context, fileUploadRecords(context)).getProfileUrlS3);
+
+    app.post('/file/getProfileCDNUrl', context.auth.validate, fileUploader(context, fileUploadRecords(context)).getProfileCDNUrl);
+
     app.post('/files/upload', context.auth.validate, fileUploader(context, fileUploadRecords(context)).uploadProfiles);
 
     app.post('/file/serve/:id', context.auth.validate, fileUploader(context, fileUploadRecords(context)).serveFile);
@@ -2397,17 +2529,17 @@ function fileRoutes(app: any)
 
     app.post('/file/stream', context.auth.validate, fileUploader(context, fileUploadRecords(context)).streamFile);
 
-    app.post('/queue/test', context.auth.validate, SQSService(context).test);
+}
 
+function bgJobs(app:any)
+{
+    app.post('/queue/test', context.auth.validate, SQSService(context).test);
 }
 
 module.exports = {
     ecomRoutes,
     productRoutes,
     cartRoutes,
-    fileRoutes
+    fileRoutes,
+    runtime: context.runtime
 };
-
-
-
-
