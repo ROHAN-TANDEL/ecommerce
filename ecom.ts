@@ -11,6 +11,7 @@ import {pipeline} from 'stream/promises';
 import {sqsHandler, sqsTest, createQueueWorker, workers} from "./sqs";
 import {createRuntime, loadEnvironment} from "./runtime";
 import {s3Handler} from "./s3";
+import {cdnHandler} from "./cdn";
 
 const uuidv4 = (): string => randomUUID();
 
@@ -134,7 +135,6 @@ function User(context:any)
 
     async function getRole(role: string)
     {
-
         try {
             const roles = await getRoles();
 
@@ -2182,7 +2182,6 @@ function fileUploader(context:any, records:any)
     async function uploadS3(req: any, res: any)
     {
         try {
-
             const file = await context.file.uploadFile(req, res, 5);
             if (!file) {
                 return res.status(400).json({
@@ -2273,7 +2272,7 @@ function fileUploader(context:any, records:any)
 
             let profilePicture = null;
             if (file) {
-                // ⭐ Generate presigned URL
+                // Generate presigned URL
                 const presigned = await context.s3.getPresignedDownloadUrl(
                     file.storage_path,
                     3600 * 24 // 24 hours expiry (or adjust as needed)
@@ -2287,6 +2286,7 @@ function fileUploader(context:any, records:any)
                 };
             }
 
+            const cdnUrl = context.cdn.getCDNUrl(file.storage_path);
             res.json({
                 status: 'success',
                 data: {
@@ -2296,7 +2296,8 @@ function fileUploader(context:any, records:any)
                     email: user.email,
                     roleId: user.role_id,
                     status: user.status,
-                    profilePicture: profilePicture
+                    profilePicture: profilePicture,
+                    cdn : cdnUrl
                 }
             });
 
@@ -2400,6 +2401,291 @@ function cleanDeletedFiles()
 }
 
 
+// context/audit.js
+
+function auditHandler(context :any)
+{
+    const { pool } = context;
+
+    // ============ CREATE AUDIT LOG ============
+    async function create(data:any) {
+        const eventId = data.eventId || uuidv4();
+        const correlationId = data.correlationId || uuidv4();
+
+        const query = `
+            INSERT INTO master.audit_logs (
+                event_id,
+                correlation_id,
+                user_id,
+                action,
+                entity,
+                entity_id,
+                metadata,
+                ip_address,
+                user_agent
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        `;
+
+        const values = [
+            eventId,
+            correlationId,
+            data.userId || null,
+            data.action,
+            data.entity,
+            data.entityId || null,
+            data.metadata || null,
+            data.ipAddress || null,
+            data.userAgent || null
+        ];
+
+        try {
+            const result = await pool.query(query, values);
+            return {
+                status: 'success',
+                data: result.rows[0]
+            };
+        } catch (error:any) {
+            console.error('Audit log create error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ GET BY ID ============
+    async function getById(id:any) {
+        const query = `SELECT * FROM master.audit_logs WHERE id = $1`;
+        try {
+            const result = await pool.query(query, [id]);
+            return {
+                status: 'success',
+                data: result.rows[0] || null
+            };
+        } catch (error:any) {
+            console.error('Audit log get error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ GET BY EVENT ID ============
+    async function getByEventId(eventId:any) {
+        const query = `SELECT * FROM master.audit_logs WHERE event_id = $1`;
+        try {
+            const result = await pool.query(query, [eventId]);
+            return {
+                status: 'success',
+                data: result.rows[0] || null
+            };
+        } catch (error:any) {
+            console.error('Audit log get by event error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ LIST AUDIT LOGS ============
+    async function list(options = {}) {
+        const {
+            userId,
+            entity,
+            entityId,
+            action,
+            fromDate,
+            toDate,
+            limit = 50,
+            offset = 0,
+            orderBy = 'created_at',
+            orderDir = 'DESC'
+        }:any = options;
+
+        let query = 'SELECT * FROM master.audit_logs WHERE 1=1';
+        const values = [];
+        let paramCount = 1;
+
+        if (userId) {
+            query += ` AND user_id = $${paramCount}`;
+            values.push(userId);
+            paramCount++;
+        }
+
+        if (entity) {
+            query += ` AND entity = $${paramCount}`;
+            values.push(entity);
+            paramCount++;
+        }
+
+        if (entityId) {
+            query += ` AND entity_id = $${paramCount}`;
+            values.push(entityId);
+            paramCount++;
+        }
+
+        if (action) {
+            query += ` AND action = $${paramCount}`;
+            values.push(action);
+            paramCount++;
+        }
+
+        if (fromDate) {
+            query += ` AND created_at >= $${paramCount}`;
+            values.push(fromDate);
+            paramCount++;
+        }
+
+        if (toDate) {
+            query += ` AND created_at <= $${paramCount}`;
+            values.push(toDate);
+            paramCount++;
+        }
+
+        // Get total count
+        const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+        const countResult = await pool.query(countQuery, values);
+        const total = parseInt(countResult.rows[0].total);
+
+        // Order and paginate
+        query += ` ORDER BY ${orderBy} ${orderDir} LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        values.push(limit, offset);
+
+        try {
+            const result = await pool.query(query, values);
+            return {
+                status: 'success',
+                data: result.rows,
+                pagination: {
+                    total,
+                    limit: parseInt(limit),
+                    offset: parseInt(offset),
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        } catch (error:any) {
+            console.error('Audit log list error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ GET BY USER ID ============
+    async function getByUser(userId:any, options = {}) {
+        return await list({ ...options, userId });
+    }
+
+    // ============ GET BY ENTITY ============
+    async function getByEntity(entity:any, entityId:any, options = {}) {
+        return await list({ ...options, entity, entityId });
+    }
+
+    // ============ GET BY ACTION ============
+    async function getByAction(action:any, options = {}) {
+        return await list({ ...options, action });
+    }
+
+    // ============ GET RECENT ============
+    async function getRecent(limit = 20) {
+        return await list({ limit, orderBy: 'created_at', orderDir: 'DESC' });
+    }
+
+    // ============ DELETE (Admin only) ============
+    async function deleteById(id:any) {
+        const query = `DELETE FROM master.audit_logs WHERE id = $1 RETURNING *`;
+        try {
+            const result = await pool.query(query, [id]);
+            return {
+                status: 'success',
+                data: result.rows[0] || null,
+                deleted: result.rowCount > 0
+            };
+        } catch (error:any) {
+            console.error('Audit log delete error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ BULK DELETE (Older than X days) ============
+    async function deleteOlderThan(days:any) {
+        const query = `
+            DELETE FROM master.audit_logs 
+            WHERE created_at < NOW() - INTERVAL '${days} days'
+            RETURNING *
+        `;
+        try {
+            const result = await pool.query(query);
+            return {
+                status: 'success',
+                deleted: result.rowCount,
+                data: result.rows
+            };
+        } catch (error:any) {
+            console.error('Audit log bulk delete error:', error);
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+
+    // ============ CREATE FROM REQUEST ============
+    async function createFromRequest(req:any, data:any) {
+        return await create({
+            ...data,
+            userId: req.user?.id || data.userId,
+            ipAddress: req.ip || req.connection?.remoteAddress,
+            userAgent: req.headers?.['user-agent'] || data.userAgent
+        });
+    }
+
+    // ============ HELPERS ============
+
+    // Generate correlation ID
+    function generateCorrelationId() {
+        return uuidv4();
+    }
+
+    // Generate event ID
+    function generateEventId() {
+        return uuidv4();
+    }
+
+    // ============ PUBLIC API ============
+    return {
+        // CRUD
+        create,
+        createFromRequest,
+        getById,
+        getByEventId,
+        list,
+
+        // Filters
+        getByUser,
+        getByEntity,
+        getByAction,
+        getRecent,
+
+        // Delete
+        deleteById,
+        deleteOlderThan,
+
+        // Helpers
+        generateCorrelationId,
+        generateEventId
+    };
+}
+
+
 function queueBind()
 {
     return new Map ([
@@ -2441,6 +2727,8 @@ let context:any;
     context.worker = workers(context);
 
     context.s3 = s3Handler(context);
+
+    context.cdn =  cdnHandler(context);
 
     context.runtime = createRuntime(context, env);
 
@@ -2517,7 +2805,7 @@ function fileRoutes(app: any)
 
     app.post('/file/uploadProfile', context.auth.validate, fileUploader(context, fileUploadRecords(context)).uploadS3);
 
-    app.get('/gi', context.auth.validate, fileUploader(context, fileUploadRecords(context)).getProfileUrlS3);
+    app.get('/file/getProfileUrl', context.auth.validate, fileUploader(context, fileUploadRecords(context)).getProfileUrlS3);
 
     app.post('/file/getProfileCDNUrl', context.auth.validate, fileUploader(context, fileUploadRecords(context)).getProfileCDNUrl);
 
