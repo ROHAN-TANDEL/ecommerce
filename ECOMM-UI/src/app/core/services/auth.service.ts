@@ -55,6 +55,17 @@ export class AuthService {
   }
 
   logout() {
+    if (this.isAuthenticated()) {
+      this.http.post(`${this.API_URL}/logout`, {}, { withCredentials: true }).subscribe({
+        next: () => this.clearSession(),
+        error: () => this.clearSession()
+      });
+    } else {
+      this.clearSession();
+    }
+  }
+
+  private clearSession() {
     this.inMemoryAccessToken = null;
     this.user.set(null);
     this.isAuthenticated.set(false);

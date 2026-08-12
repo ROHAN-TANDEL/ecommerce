@@ -7,7 +7,12 @@
     <div class="navbar-links">
       <a href="/products" class="nav-link">Products</a>
       <a href="/cart" class="nav-link">Cart</a>
-      <a href="/auth/login" class="btn btn-outline btn-sm">Sign In</a>
+      
+      @if (authService.isAuthenticated()) {
+        <button (click)="logout()" class="btn btn-outline btn-sm">Logout</button>
+      } @else {
+        <a href="/auth/login" class="btn btn-outline btn-sm">Sign In</a>
+      }
     </div>
   </div>
 </nav>
