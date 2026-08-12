@@ -6,7 +6,7 @@ export class StopServer {
     }
 
     // Stores all future dependencies dynamically
-    tasks = [];
+    tasks:any = [];
     isShuttingDown = false;
 
     /**

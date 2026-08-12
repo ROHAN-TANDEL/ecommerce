@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - APP_PORT=3000
+      - PORT=3000
+      # PostgreSQL (connected to the postgres container)
+      - PG_MASTER_HOST=postgres
+      - PG_MASTER_PORT=5432
+      - PG_MASTER_DATABASE=ecommerce
+      - PG_MASTER_USERNAME=root
+      - PG_MASTER_PASSWORD=root123
+      # Redis (connected to the redis container)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=admin
+      - REDIS_PASSWORD=adminpass
+      # AWS/Localstack
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-1
+      - AWS_REGION=eu-west-1
+      - SQS_ENDPOINT=http://localstack:4566
+      - _SQS_ENDPOINT=http://localstack:4566
+    depends_on:
+      - postgres
+      - redis
+      - localstack
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: ecommerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    command: redis-server --requirepass adminpass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ecommerce-localstack
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - SERVICES=s3,sqs
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./.localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
