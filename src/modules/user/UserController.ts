@@ -136,8 +136,7 @@ export default class AuthController {
         }
     }
 
-    public logout = async(req:any, res:any) : Promise<void> =>
-    {
+    public logout = async(req:any, res:any) :  => {
         try {
             const {jti, exp, id} = req.user;
 
