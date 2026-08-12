@@ -1,33 +1,38 @@
 import express from "express";
-import AuthController from "./AuthController.js";
-import AuthMiddleware from "./AuthMiddleware.js";
+import UserController from "./UserController.js";
+import AuthMiddleware from "../auth/AuthMiddleware.js";
+export default class UserRoute {
 
-export default class AuthRoute {
-    constructor(private readonly context:any) {
+
+    context;
+
+    constructor(context) {
+        this.context = context;
     }
 
-    public route(context:any)
-    {
+    route(context) {
 
-        const auth = express.Router();
-        const authRouter = express.Router();
-        const authController = new AuthController(context);
+        const userRoute = express.Router();
+
+        const userRouter = express.Router();
+
+        const userController = new UserController(context);
+
         const authMid = new AuthMiddleware(context).auth;
 
-        auth.route('/auth');
+        userRoute.use(authMid);
 
-        auth.get('/ping', authController.ping);
+        userRoute.get('/:id', authMid, userController.getUser);
 
-        auth.post('/register', authController.register);
+        userRoute.get('/', userController.getUsers);
 
-        auth.post('/login', authController.login);
+        userRoute.delete('/:id', userController.deleteUser);
 
-        auth.post('/refresh-token', authController.refreshToken);
+        userRoute.post('/:id', userController.updateUser);
 
-        auth.post('/logout', authMid, authController.logout);
+        userRouter.use('/users', userRoute);
 
-        authRouter.use('/auth', auth);
-
-        return authRouter;
+        return userRouter;
     }
 }
+//# sourceMappingURL=UserRoute.js.map

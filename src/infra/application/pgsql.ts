@@ -2,6 +2,7 @@ import { Pool } from "pg";
 
 export class Database {
 
+
     context;
 
     constructor(context: any) {
@@ -29,8 +30,8 @@ export class Database {
         await this.disconnect(pool);
     }
 
-    public print(query:any, inputs:any)
-    {
+    print(text:any, params:any) {
+
         try {
             const formatValueForLog = (val) => {
                 if (val === null || val === undefined) return 'NULL';
@@ -50,12 +51,15 @@ export class Database {
                 }
                 console.log(`\x1b[35m[TX SQL EXEC]\x1b[0m ${exactSql}`); // Magenta colored prefix
             };
-            execute(query, inputs);
+
+            execute(text, params);
+
             return true;
-        } catch (error:any) {
-            console.log(error);
+        } catch (error) {
+            console.error("query printing failed");
+            console.error(error);
             return false;
         }
     }
 }
-//# sourceMappingURL=pgsql.js.map
+//# sourceMappingURL=database_connect.js.map

@@ -1,33 +1,40 @@
 import express from "express";
-import AuthController from "./AuthController.js";
-import AuthMiddleware from "./AuthMiddleware.js";
+import ProductController from "./ProductController.js";
+import ProductMiddleware from "./ProductMiddleware.js";
 
-export default class AuthRoute {
-    constructor(private readonly context:any) {
+export default class ProductRoute {
+
+    context;
+
+    constructor(context) {
+        this.context = context;
     }
 
-    public route(context:any)
-    {
+    route(context) {
 
-        const auth = express.Router();
-        const authRouter = express.Router();
-        const authController = new AuthController(context);
-        const authMid = new AuthMiddleware(context).auth;
+        const route = express.Router();
 
-        auth.route('/auth');
+        const register = express.Router();
 
-        auth.get('/ping', authController.ping);
+        const productController = new ProductController(context);
 
-        auth.post('/register', authController.register);
+        const authMid = new ProductMiddleware(context).auth;
 
-        auth.post('/login', authController.login);
+        route.use(authMid);
 
-        auth.post('/refresh-token', authController.refreshToken);
+        route.get('', productController.getProducts);
 
-        auth.post('/logout', authMid, authController.logout);
+        route.get('/:id', productController.getProduct);
 
-        authRouter.use('/auth', auth);
+        route.post('/', productController.createProduct);
 
-        return authRouter;
+        route.post('/:id', productController.updateProduct);
+
+        route.delete('/:id', productController.deleteProduct);
+
+        register.use('/products', route);
+
+        return register;
     }
 }
+//# sourceMappingURL=ProductRoute.js.map
