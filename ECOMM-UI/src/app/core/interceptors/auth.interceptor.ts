@@ -11,9 +11,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.accessToken;
 
-  // Don't add bearer token to login/register routes
   if (req.url.includes('/auth/login') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh-token')) {
-    // Ensure withCredentials is true for these requests so cookies are sent/received
     req = req.clone({
       withCredentials: true
     });
@@ -53,7 +51,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             })
           );
         } else {
-          // Wait for the token to be refreshed
           return refreshTokenSubject.pipe(
             filter(t => t != null),
             take(1),

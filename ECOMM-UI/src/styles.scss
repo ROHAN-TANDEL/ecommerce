@@ -194,52 +194,116 @@ p { margin-bottom: var(--space-md); color: var(--text-muted); }
 }
 
 /* Standard Card */
-.card {
+.auth-card {
   background-color: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-lg);
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
-
-  &:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-  }
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xl);
+  width: 100%;
+  width: 440px; /* Fixed width to prevent jittering */
+  max-width: 100%;
+  margin: 0 auto;
+  border: 1px solid var(--border-light);
 }
 
-/* Forms & Inputs */
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+.auth-header h2 {
+  font-size: 1.75rem;
+  margin-bottom: var(--space-xs);
+  letter-spacing: -0.5px;
+}
+.auth-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Forms */
 .form-group {
-  margin-bottom: var(--space-md);
-
-  label {
-    display: block;
-    margin-bottom: var(--space-xs);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-main);
-  }
+  margin-bottom: var(--space-lg);
+  position: relative; /* Prevent error messages from shifting layout drastically */
 }
-
+.form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
 .input-field {
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   font-family: inherit;
   color: var(--text-main);
-  background-color: var(--bg-surface);
+  background-color: var(--bg-body);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
+}
+.input-field:focus {
+  outline: none;
+  background-color: var(--bg-surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.input-field.error {
+  border-color: var(--error);
+}
 
-  &:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-  }
+/* Buttons */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  background-color: var(--primary); /* Beautiful Indigo Blue */
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  margin-top: var(--space-md);
+  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.23);
+}
 
-  &::placeholder {
-    color: var(--text-light);
-  }
+/* Alerts */
+.alert {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.alert-error {
+  background-color: var(--error-bg);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.alert-success {
+  background-color: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.error-text {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  color: var(--error);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 
 /* Micro-animations */
