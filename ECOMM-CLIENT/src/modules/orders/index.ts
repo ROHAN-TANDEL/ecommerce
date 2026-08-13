@@ -1,5 +1,7 @@
-export * from './pages';
-export * from './components';
-export * from './services';
-export * from './store';
-export * from './types';
+// src/modules/orders/index.ts
+export * from './pages/OrderList';
+export * from './components/OrderTable';
+export * from './components/OrderDetail';
+export * from './services/orderService';
+export * from './store/orderStore';
+export * from './types/orderTypes';

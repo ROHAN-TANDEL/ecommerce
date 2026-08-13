@@ -8,7 +8,7 @@ import { Register } from '../modules/auth/pages/Register';
 import { Dashboard } from '../modules/dashboard/pages/Dashboard';
 import { UserList } from '../modules/users/pages/UserList';
 import { ProductList } from '../modules/products/pages/ProductList';
-import { Cart } from '../modules/cart/pages/Cart';
+import { CartPage } from '../modules/cart/pages/CartPage.tsx';
 
 // Lazy load modules
 // const Login :any = React.lazy(() : any => import('../modules/auth/pages/Login'));
@@ -31,7 +31,7 @@ export const App: React.FC = () => {
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="users" element={<UserList />} />
                             <Route path="products" element={<ProductList />} />
-                            <Route path="cart" element={<Cart />} />
+                            <Route path="cart" element={<CartPage />} />
                         </Route>
                     </Route>
                 </Routes>

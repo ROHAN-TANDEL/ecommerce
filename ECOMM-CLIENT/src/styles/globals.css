@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
+
 @tailwind utilities;
 
 @layer base {
@@ -29,4 +28,20 @@
     .card {
         @apply bg-white rounded-lg shadow-md p-6;
     }
+}
+
+/* src/styles/globals.css - Add this */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
 }
