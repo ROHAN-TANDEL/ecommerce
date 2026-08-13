@@ -1,6 +1,7 @@
 import express from "express";
 import OrderController from "./OrderController.js";
 import AuthMiddleware from "../auth/AuthMiddleware.js";
+import OrderMiddleware from "./OrderMiddleware.js";
 
 export default class CheckoutRoute {
 
@@ -21,9 +22,13 @@ export default class CheckoutRoute {
 
         route.get('/orders',  orderControl.getOrders);
 
+        route.get('/orders/user',  (new OrderMiddleware(this.context)).currentUser, orderControl.getUserOrders);
+
         route.get('/orders/:id',  orderControl.getOrder);
 
         route.get('/orders/user/:userId',  orderControl.getUserOrders);
+
+        route.patch('/orders/:id/status', orderControl.updateOrderStatus);
 
         register.use('/api',route);
 

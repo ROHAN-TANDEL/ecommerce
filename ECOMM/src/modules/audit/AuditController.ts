@@ -40,7 +40,7 @@ export default class AuditController {
                 status: "success",
                 data: result.rows
             });
-        } catch (error) {
+        } catch (error:any) {
             console.error("Audit error:", error);
             return res.status(500).json({ status: "failed", message: error.message });
         }
@@ -56,7 +56,7 @@ export default class AuditController {
                 return res.status(404).json({ status: "failed", message: "audit log not found" });
             }
             return res.status(200).json({ status: "success", data: result.rows[0] });
-        } catch (error) {
+        } catch (error:any) {
             console.error("Audit error:", error);
             return res.status(500).json({ status: "failed", message: error.message });
         }

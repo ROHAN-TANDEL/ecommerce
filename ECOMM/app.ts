@@ -4,6 +4,9 @@ import AuthRoute from "./src/modules/auth/AuthRoute.js";
 import UserRoute from "./src/modules/user/UserRoute.js";
 import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
+import OrderRoute from "./src/modules/order/OrderRoute.js";
+import AuditRoute from "./src/modules/audit/AuditRoute.js";
+
 class Application {
 
     context: any;
@@ -83,6 +86,10 @@ app.use((new UserRoute(context)).route(context));
 app.use((new ProductRoute(context)).route(context));
 
 app.use((new CheckoutRoute(context)).route());
+
+app.use((new AuditRoute(context)).route());
+
+app.use((new OrderRoute(context)).route());
 
 application.appAfterMiddleware(app);
 
