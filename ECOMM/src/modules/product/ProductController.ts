@@ -1,12 +1,16 @@
+import AuditController from "../audit/AuditController.js";
+
 export default class ProductController {
 
     context;
+    audit: AuditController;
 
-    constructor(context) {
+    constructor(context: any) {
         this.context = context;
+        this.audit = new AuditController(context);
     }
 
-    getProducts = async (req, res) => {
+    getProducts = async (req:any, res:any) => {
         try {
             const query = `SELECT * FROM master.products WHERE deleted_at IS NULL ORDER BY id ASC  OFFSET $1 LIMIT $2`;
             const result = await this.context.client.query(query, [req.query.offset, req.query.limit]);
@@ -21,7 +25,7 @@ export default class ProductController {
                 data: []
             });
         }
-        catch (error) {
+        catch (error:any) {
             console.error("Product error:", error);
             return res.status(400).json({
                 status: "error",
@@ -30,7 +34,7 @@ export default class ProductController {
         }
     }
 
-    getProduct = async (req, res) => {
+    getProduct = async (req:any, res:any) => {
         try {
             const id = req.params.id;
             const cacheKey = `get-product:${id}`;
@@ -54,7 +58,7 @@ export default class ProductController {
                 data: []
             });
         }
-        catch (error) {
+        catch (error:any) {
             console.error("Product error:", error);
             return res.status(400).json({
                 status: "error",
@@ -63,24 +67,67 @@ export default class ProductController {
         }
     }
 
-    createProduct = async () => {
+    createProduct = async (req: any, res: any) => {
+        try {
+            const data = req.body;
+            const query = `
+                INSERT INTO master.products (sku, category_id, name, description, price, stock_quantity, status)
+                VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'ACTIVE'))
+                RETURNING *
+            `;
+            const result = await this.context.client.query(query, [
+                data.sku,
+                data.category_id,
+                data.name,
+                data.description ?? null,
+                data.price,
+                data.stock_quantity ?? 0,
+                data.status ?? null
+            ]);
+
+            if (result.rowCount > 0) {
+                await this.audit.insertAuditLog({
+                    action: "PRODUCT_CREATED",
+                    entity: "products",
+                    entity_id: String(result.rows[0].id),
+                    user_id: req.user?.id,
+                    ip_address: req.ip,
+                    user_agent: req.headers["user-agent"],
+                    correlation_id: req.id
+                });
+            }
+
+            return res.status(201).json({ status: "success", data: result.rows[0] });
+        } catch (error: any) {
+            console.error("Product error:", error);
+            return res.status(400).json({ status: "error", message: error.message });
+        }
     }
 
-    deleteProduct = async (req, res) => {
+    deleteProduct = async (req: any, res: any) => {
         try {
             const id = req.params.id;
-            const query = `UPDATE master.products SET deleted_at=NOW() WHERE id=$$1`;
+            const query = `UPDATE master.products SET deleted_at=NOW() WHERE id=$1`;
             const result = await this.context.client.query(query, [id]);
             if (result.rowCount > 0) {
                 const cacheKey = `get-product:${id}`;
                 await this.context.redis.del(cacheKey);
+                await this.audit.insertAuditLog({
+                    action: "PRODUCT_DELETED",
+                    entity: "products",
+                    entity_id: String(id),
+                    user_id: req.user?.id,
+                    ip_address: req.ip,
+                    user_agent: req.headers["user-agent"],
+                    correlation_id: req.id
+                });
                 return res.status(200).json({
                     status: "success",
                     data: { id: id }
                 });
             }
         }
-        catch (error) {
+        catch (error: any) {
             console.error("Product error:", error);
             return res.status(400).json({
                 status: "error",
@@ -89,7 +136,7 @@ export default class ProductController {
         }
     }
 
-    updateProduct = async (req, res) => {
+    updateProduct = async (req:any, res:any) => {
         try {
             const id = req.params.id;
             const data = req.body;
@@ -122,6 +169,15 @@ export default class ProductController {
             if (result.rowCount > 0) {
                 const cacheKey = `get-product:${id}`;
                 await this.context.redis.del(cacheKey);
+                await this.audit.insertAuditLog({
+                    action: "PRODUCT_UPDATED",
+                    entity: "products",
+                    entity_id: String(id),
+                    user_id: req.user?.id,
+                    ip_address: req.ip,
+                    user_agent: req.headers["user-agent"],
+                    correlation_id: req.id
+                });
                 return res.status(200).json({
                     status: "success",
                     data: result.rowCount
@@ -133,7 +189,7 @@ export default class ProductController {
                 message: "Product update failed"
             });
         }
-        catch (error) {
+        catch (error:any) {
             console.error("Product error:", error);
             return res.status(400).json({
                 status: "error",

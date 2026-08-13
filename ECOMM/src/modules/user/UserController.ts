@@ -1,9 +1,13 @@
+import AuditController from "../audit/AuditController.js";
+
 export default class UserController {
 
     context;
+    audit: AuditController;
 
     constructor(context) {
         this.context = context;
+        this.audit = new AuditController(context);
     }
 
     getUser = async (req, res) => {
@@ -87,6 +91,19 @@ export default class UserController {
                                 AND deleted_at IS NULL
                                 RETURNING id, email, deleted_at`;
             const result = await this.context.client.query(query, [userId]);
+
+            if (result.rowCount > 0) {
+                await this.audit.insertAuditLog({
+                    action: "USER_DELETED",
+                    entity: "users",
+                    entity_id: String(userId),
+                    user_id: req.user?.id,
+                    ip_address: req.ip,
+                    user_agent: req.headers["user-agent"],
+                    correlation_id: req.id
+                });
+            }
+
             return res.status(200).json({
                 status: "success",
                 data: result.rows.at(0)
@@ -131,6 +148,15 @@ export default class UserController {
                 userId
             ]);
             if (result && result.rowCount && result.rowCount > 0) {
+                await this.audit.insertAuditLog({
+                    action: "USER_UPDATED",
+                    entity: "users",
+                    entity_id: String(userId),
+                    user_id: req.user?.id,
+                    ip_address: req.ip,
+                    user_agent: req.headers["user-agent"],
+                    correlation_id: req.id
+                });
                 return res.status(200).json({
                     status: "success",
                     data: result.rows.at(0)
