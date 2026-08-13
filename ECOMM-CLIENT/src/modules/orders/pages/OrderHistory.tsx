@@ -3,15 +3,45 @@ import React, { useEffect, useState } from 'react';
 import { useOrderStore } from '../store/orderStore';
 import { OrderDetail } from '../components/OrderDetail';
 import type { Order } from '../types/orderTypes';
+import { useToast } from '../../../context/ToastContext';
 
 export const OrderHistory: React.FC = () => {
-    const { orders, isLoading, error, fetchMyOrders } = useOrderStore();
+    const { orders, isLoading, error,
+        fetchMyOrder, fetchMyOrders } = useOrderStore();
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [showDetail, setShowDetail] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
         fetchMyOrders();
     }, []);
+
+    const handleViewOrder = async (order: Order) => {
+        console.log('Viewing My Order:', order.id);
+        setIsLoadingDetail(true);
+        setShowDetail(true);
+        
+        try {
+            // ⭐ THIS IS THE FIX - Call fetchMyOrder (customer version)
+            await fetchMyOrder(order.id);
+            
+            const state = useOrderStore.getState();
+            console.log('Fetched My Order:', state.selectedOrder);
+            
+            if (state.selectedOrder) {
+                setSelectedOrder(state.selectedOrder);
+            } else {
+                setSelectedOrder(order);
+            }
+        } catch (error) {
+            console.error('Failed to fetch order:', error);
+            showToast('Failed to load order details', 'error');
+            setSelectedOrder(order);
+        } finally {
+            setIsLoadingDetail(false);
+        }
+    };
 
     const statusColors: Record<string, string> = {
         PENDING: 'bg-yellow-100 text-yellow-800',
@@ -89,6 +119,7 @@ export const OrderHistory: React.FC = () => {
                                 onClick={() => {
                                     setSelectedOrder(order);
                                     setShowDetail(true);
+                                    handleViewOrder(order);
                                 }}
                                 className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
                             >
@@ -102,6 +133,7 @@ export const OrderHistory: React.FC = () => {
             {showDetail && (
                 <OrderDetail
                     order={selectedOrder}
+                    isLoading={isLoadingDetail}
                     onClose={() => {
                         setShowDetail(false);
                         setSelectedOrder(null);

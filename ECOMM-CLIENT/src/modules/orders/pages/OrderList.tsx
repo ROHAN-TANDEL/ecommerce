@@ -7,18 +7,40 @@ import type { Order } from '../types/orderTypes';
 import { useToast } from '../../../context/ToastContext';
 
 export const OrderList: React.FC = () => {
-    const { orders, isLoading, error, fetchAllOrders, updateOrderStatus } = useOrderStore();
+    const { orders, isLoading, error, fetchAllOrders, fetchOrder, updateOrderStatus } = useOrderStore();
     const { showToast } = useToast();
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [showDetail, setShowDetail] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
     useEffect(() => {
         fetchAllOrders();
     }, []);
 
-    const handleViewOrder = (order: Order) => {
-        setSelectedOrder(order);
+    const handleViewOrder = async (order: Order) => {
+        setIsLoadingDetail(true);
         setShowDetail(true);
+        
+        try {
+            // Fetch full order details with items
+            await fetchOrder(order.id);
+            const fullOrder = useOrderStore.getState().selectedOrder;
+            
+            if (fullOrder) {
+                setSelectedOrder(fullOrder);
+            } else {
+                // Fallback: use the order from list if full fetch fails
+                setSelectedOrder(order);
+                showToast('Order details loaded partially', 'warning');
+            }
+        } catch (error:any) {
+            console.error('Failed to fetch order details:', error);
+            showToast('Failed to load order details', 'error');
+            // Fallback: show what we have from the list
+            setSelectedOrder(order);
+        } finally {
+            setIsLoadingDetail(false);
+        }
     };
 
     const handleStatusChange = async (id: string, status: Order['status']) => {
@@ -59,6 +81,7 @@ export const OrderList: React.FC = () => {
             {showDetail && (
                 <OrderDetail
                     order={selectedOrder}
+                    isLoading={isLoadingDetail}
                     onClose={() => {
                         setShowDetail(false);
                         setSelectedOrder(null);

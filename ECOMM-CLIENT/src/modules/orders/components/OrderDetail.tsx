@@ -5,9 +5,10 @@ import type { Order } from '../types/orderTypes';
 interface OrderDetailProps {
     order: Order | null;
     onClose: () => void;
+    isLoading?: boolean;
 }
 
-export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onClose }) => {
+export const OrderDetail: React.FC<OrderDetailProps> = ({ order, isLoading, onClose }) => {
     if (!order) return null;
 
     const statusColors: Record<string, string> = {

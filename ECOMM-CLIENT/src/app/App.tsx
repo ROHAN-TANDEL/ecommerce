@@ -12,6 +12,7 @@ import { CartPage } from '../modules/cart/pages/CartPage.tsx';
 
 import { OrderList } from '../modules/orders/pages/OrderList';
 import { OrderHistory } from '../modules/orders/pages/OrderHistory';
+import { AuditLogs } from '../modules/audit/pages/AuditLogs';
 
 // Lazy load modules
 // const Login :any = React.lazy(() : any => import('../modules/auth/pages/Login'));
@@ -35,8 +36,9 @@ export const App: React.FC = () => {
                             <Route path="users" element={<UserList />} />
                             <Route path="products" element={<ProductList />} />
                             <Route path="cart" element={<CartPage />} />
-                            <Route path="orders" element={<OrderList />} />           {/* Admin */}
-                            <Route path="my-orders" element={<OrderHistory />} />     {/* Customer */}
+                            <Route path="orders" element={<OrderList />} />
+                            <Route path="my-orders" element={<OrderHistory />} />
+                            <Route path="audit" element={<AuditLogs />} />
                         </Route>
                     </Route>
                 </Routes>

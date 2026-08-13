@@ -11,7 +11,7 @@ export const MainLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-            <div className="flex">
+            <div className="flex pt-16">
                 <Sidebar isOpen={sidebarOpen} />
                 <main className={`flex-1 p-6 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
                     <Outlet />

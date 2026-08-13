@@ -45,12 +45,19 @@ export const useOrderStore = create<OrderState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await orderService.getById(id);
-            set({ selectedOrder: response.data.data, isLoading: false });
+            const order = response.data.data;
+            
+            // ✅ Log what we got
+            console.log('📦 Full order fetched:', order);
+            console.log('📦 Items count:', order.items?.length || 0);
+            
+            set({ selectedOrder: order, isLoading: false });
         } catch (error: any) {
             set({
                 error: error.response?.data?.message || 'Failed to fetch order',
                 isLoading: false
             });
+            throw error;
         }
     },
 
