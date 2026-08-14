@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-gray-50 text-gray-900 antialiased;
+    }
+    * {
+        @apply box-border;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors;
+    }
+    .btn-secondary {
+        @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors;
+    }
+    .btn-danger {
+        @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors;
+    }
+    .input-field {
+        @apply w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500;
+    }
+    .card {
+        @apply bg-white rounded-lg shadow-md p-6;
+    }
+}
+
+/* src/styles/globals.css - Add this */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+}
