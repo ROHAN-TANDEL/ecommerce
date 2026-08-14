@@ -41,11 +41,13 @@ class Application {
 
         app.use((new context.appMiddleware.before.expressStaticMiddleware(context)).startMiddleware());
     }
+
     appAfterMiddleware(app:any) {
         const context = this.context;
         app.use((new context.appMiddleware.after.routeNotFoundCheckMiddleware(context)).startMiddleware());
         app.use((new context.appMiddleware.after.globalErrorHandlerMiddleware(context)).startMiddleware());
     }
+
     async runtime() {
 
         const runtime = this.boot.runtimeContext();
@@ -79,6 +81,8 @@ await application.runtime();
 const context = application.buildContext();
 
 //routes go here
+app.use('/health', context.scripts.health.check);
+
 app.use((new AuthRoute(context)).route(context));
 
 app.use((new UserRoute(context)).route(context));

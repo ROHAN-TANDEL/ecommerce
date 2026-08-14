@@ -32,7 +32,7 @@ export class Database {
     public print(query:any, inputs:any)
     {
         try {
-            const formatValueForLog = (val) => {
+            const formatValueForLog = (val: any) => {
                 if (val === null || val === undefined) return 'NULL';
                 if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`; // Escape single quotes
                 if (val instanceof Date) return `'${val.toISOString()}'`;
@@ -40,7 +40,7 @@ export class Database {
                 return val;
             };
 
-            const execute = async (text, params) => {
+            const execute = async (text: any, params: any) => {
                 let exactSql = text;
                 if (params && params.length > 0) {
                     for (let i = params.length - 1; i >= 0; i--) {

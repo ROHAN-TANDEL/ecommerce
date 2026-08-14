@@ -1,9 +1,9 @@
 export default class ProductMiddleware {
     context;
-    constructor(context) {
+    constructor(context: any) {
         this.context = context;
     }
-    auth = async (req, res, next) => {
+    auth = async (req: any, res: any, next: any) => {
         try {
             const authorization = req.headers.authorization;
             if (!authorization) {

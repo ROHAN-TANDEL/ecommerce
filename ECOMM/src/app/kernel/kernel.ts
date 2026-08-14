@@ -12,6 +12,7 @@ import { UrlEncodedMiddleware } from "../middlewares/url-encoded-middleware.js";
 import { CookieMiddleware } from "../middlewares/cookie-parser-middleware.js";
 import { ExpressStaticMiddleware } from "../middlewares/express-static-middleware.js";
 import { GlobalErrorHandlerMiddleware } from "../middlewares/global-error-handler-middleware.js";
+import HealthCheckScript from "../scripts/health-check-script.js";
 export default class Kernel {
 
     start() {
@@ -38,6 +39,13 @@ export default class Kernel {
             after: {
                 globalErrorHandlerMiddleware: GlobalErrorHandlerMiddleware
             }
+        };
+    }
+
+    scripts()
+    {
+        return {
+            health : new HealthCheckScript()
         };
     }
 }

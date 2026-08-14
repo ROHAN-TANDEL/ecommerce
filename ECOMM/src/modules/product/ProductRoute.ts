@@ -6,11 +6,11 @@ export default class ProductRoute {
 
     context;
 
-    constructor(context) {
+    constructor(context: any) {
         this.context = context;
     }
 
-    route(context) {
+    route(context: any) {
 
         const route = express.Router();
 

@@ -1,12 +1,14 @@
 import { createClient } from "redis";
 export default class RedisRedis {
     context;
-    constructor(context) {
+    constructor(context: any) {
         this.context = context;
     }
     async connect() {
+        const redisUrl = 'redis://' + this.context.env.REDIS_USERNAME + ':'+ this.context.env.REDIS_PASSWORD +'@'+ this.context.env.REDIS_HOST +':' + this.context.env.REDIS_PORT;
+        console.log(redisUrl);
         const connection:any = {
-            url: this.context.env.REDIS_URL,
+            url: redisUrl,
             socket: {
                 reconnectStrategy: false
             }

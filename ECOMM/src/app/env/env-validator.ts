@@ -41,7 +41,11 @@ export class EnvValidator {
             ENABLE_QUEUE_WORKERS: environmentBoolean.default(false),
             LOG_LEVEL_INFO: z.string(),
             LOG_LEVEL_ERROR: z.string(),
-            LOG_LEVEL_DEBUG: z.string()
+            LOG_LEVEL_DEBUG: z.string(),
+            REDIS_HOST : z.string(),
+            REDIS_PORT : z.string(),
+            REDIS_PASSWORD : z.string(),
+            REDIS_USERNAME: z.string(),
         };
     }
 }

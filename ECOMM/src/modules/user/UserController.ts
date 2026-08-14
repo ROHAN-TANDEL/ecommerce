@@ -5,12 +5,12 @@ export default class UserController {
     context;
     audit: AuditController;
 
-    constructor(context) {
+    constructor(context: any) {
         this.context = context;
         this.audit = new AuditController(context);
     }
 
-    getUser = async (req, res) => {
+    getUser = async (req : any , res: any) => {
         const user = await this.userExistsById(req.params.id);
         if (!user || user.status === 'failed' || user?.length === 0) {
             return res.status(404).json({
@@ -26,7 +26,7 @@ export default class UserController {
         });
     };
 
-    getUsers = async (req, res) => {
+    getUsers = async (req:any, res:any) => {
         try {
             const filter = req.query;
             let query = `SELECT id, first_name, last_name, email, status, role_id, created_at, updated_at, deleted_at, last_login_at FROM master.users where 1=1 `;
@@ -73,7 +73,7 @@ export default class UserController {
                 data: result.rows
             });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return res.status(500).json({
                 status: "failed",
@@ -82,7 +82,7 @@ export default class UserController {
         }
     };
 
-    deleteUser = async (req, res) => {
+    deleteUser = async (req:any, res:any) => {
         try {
             const userId = req.params.id;
             const query = `UPDATE master.users
@@ -109,7 +109,7 @@ export default class UserController {
                 data: result.rows.at(0)
             });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return res.status(400).json({
                 status: "failed",
@@ -118,7 +118,7 @@ export default class UserController {
         }
     };
 
-    updateUser = async (req, res) => {
+    updateUser = async (req:any, res:any) => {
         try {
             const user = req.body;
             const userId = parseInt(req.params.id);
@@ -167,7 +167,7 @@ export default class UserController {
                 message: "update is invalid for the user"
             });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return res.status(500).json({
                 status: "failed",
@@ -176,7 +176,7 @@ export default class UserController {
         }
     };
 
-    async getRole(role) {
+    async getRole(role:any) {
         try {
             const roles = await this.getRoles();
             if (!roles) {
@@ -185,7 +185,7 @@ export default class UserController {
                     message: "user not created, can not get roles"
                 };
             }
-            let roleDetail = roles.find((roleObj) => roleObj.name.toLowerCase() === role.toLowerCase());
+            let roleDetail = roles.find((roleObj:any) => roleObj.name.toLowerCase() === role.toLowerCase());
             if (roleDetail) {
                 return {
                     status: "success",
@@ -199,7 +199,7 @@ export default class UserController {
                 };
             }
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return {
                 status: "failed",
@@ -214,19 +214,19 @@ export default class UserController {
             const result = await this.context.client.query(query);
             return result.rows;
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return [];
         }
     }
 
-    async userExistsById(id) {
+    async userExistsById(id:any) {
         try {
             const query = `SELECT * FROM master.users WHERE id=$1 AND status='ACTIVE' AND deleted_at IS NULL `;
             const result = await this.context.client.query(query, [id]);
             return result.rows;
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error);
             return {
                 "status": "failed",
