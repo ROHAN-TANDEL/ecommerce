@@ -6,7 +6,6 @@ export default class RedisRedis {
     }
     async connect() {
         const redisUrl = 'redis://' + this.context.env.REDIS_USERNAME + ':'+ this.context.env.REDIS_PASSWORD +'@'+ this.context.env.REDIS_HOST +':' + this.context.env.REDIS_PORT;
-        console.log(redisUrl);
         const connection:any = {
             url: redisUrl,
             socket: {
