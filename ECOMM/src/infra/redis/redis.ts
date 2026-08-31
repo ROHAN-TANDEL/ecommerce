@@ -10,10 +10,17 @@ export default class RedisRedis {
             REDIS_PORT,
             REDIS_USERNAME,
             REDIS_PASSWORD,
-            REDIS_TLS
+            REDIS_TLS,
+            NODE_ENV
         } = this.context.env;
 
-        const protocol = REDIS_TLS === "true" ? "rediss" : "redis";
+        let protocol = REDIS_TLS === "true" ? "rediss" : "redis";
+
+        if (NODE_ENV === 'production') {
+            protocol = 'rediss';
+        } else {
+            protocol = 'redis';
+        }
 
         let redisUrl = `${protocol}://${REDIS_HOST}:${REDIS_PORT}`;
 
