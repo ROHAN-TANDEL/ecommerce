@@ -16,8 +16,13 @@
     "start-cold": "npm run build && node ./dist/server.js",
     "watch": "tsc --watch",
     "clean": "rm -rf dist",
-    "db:migrate": "tsx src/database/migration-cli.ts",
-    "db:seed": "tsx src/database/seeder-cli.ts"
+    "db:setup": "tsx src/database/migrations/identity_access_mangement/setup-cli-master.ts && tsx src/database/migrations/identity_access_mangement/setup-cli-client.ts",
+    "db:setup:master": "tsx src/database/migrations/identity_access_mangement/setup-cli-master.ts",
+    "db:setup:client": "tsx src/database/migrations/identity_access_mangement/setup-cli-client.ts",
+    "db:migrate": "tsx src/database/migrations/identity_access_mangement/migration-cli.ts",
+    "db:migrate:master": "tsx src/database/migrations/identity_access_mangement/migration-cli-master.ts",
+    "db:migrate:client": "tsx src/database/migrations/identity_access_mangement/migration-cli-client.ts",
+    "db:seed": "tsx src/database/seeders/seeder-cli.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.1106.0",
@@ -37,6 +42,7 @@
     "md5": "^2.3.0",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
+    "path-to-regexp": "^8.4.2",
     "pg": "^8.22.0",
     "prom-client": "^15.1.3",
     "redis": "^6.2.0",
