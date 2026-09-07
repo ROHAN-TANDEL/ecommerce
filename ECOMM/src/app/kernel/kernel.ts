@@ -13,6 +13,7 @@ import { CookieMiddleware } from "../middlewares/cookie-parser-middleware.js";
 import { ExpressStaticMiddleware } from "../middlewares/express-static-middleware.js";
 import { GlobalErrorHandlerMiddleware } from "../middlewares/global-error-handler-middleware.js";
 import HealthCheckScript from "../scripts/health-check-script.js";
+import {TenantContextMiddleware} from "../middlewares/tenant-context-middleware.js";
 export default class Kernel {
 
     start() {
@@ -34,7 +35,8 @@ export default class Kernel {
                 expressJsonMiddleware: ExpressJsonMiddleware,
                 urlEncodedMiddleware: UrlEncodedMiddleware,
                 cookieMiddleware: CookieMiddleware,
-                expressStaticMiddleware: ExpressStaticMiddleware
+                expressStaticMiddleware: ExpressStaticMiddleware,
+                tenantContextMiddleware: TenantContextMiddleware,
             },
             after: {
                 globalErrorHandlerMiddleware: GlobalErrorHandlerMiddleware

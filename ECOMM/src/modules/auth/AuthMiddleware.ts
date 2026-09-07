@@ -48,7 +48,7 @@ export default class AuthMiddleware {
             console.error("Database store error:", error);
             return res.status(401).json({
                 status: "failed",
-                message: "Token validation failed"
+                message: "Auth token validation failed"
             });
         }
     };

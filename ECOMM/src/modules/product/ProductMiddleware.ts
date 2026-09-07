@@ -48,7 +48,7 @@ export default class ProductMiddleware {
             console.error("Database store error:", error);
             return res.status(401).json({
                 status: "failed",
-                message: "Token validation failed"
+                message: "Product Token validation failed"
             });
         }
     };
