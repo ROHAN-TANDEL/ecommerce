@@ -159,6 +159,53 @@ export function createPlatformContext(
 
         close: async () => {
             await connectionManager.closeAll();
+        },
+
+        health: {
+            check: async () => {
+                return connectionManager.healthCheck();
+            },
+            ready: async () => {
+                const result = await connectionManager.healthCheck();
+                return result.healthy;
+            },
+            live: () => {
+                return !connectionManager['isShuttingDown'];
+            }
+        },
+
+        // Query logging
+        queries: {
+            getLogs: (limit?: number, filter?: any) => {
+                return connectionManager.getQueryLogs(limit, filter);
+            },
+            clearLogs: () => {
+                connectionManager.clearQueryLogs();
+            },
+            getStats: (productId?: string, role?: string) => {
+                return connectionManager.getQueryStats(productId, role);
+            }
+        },
+
+        // Leak detection
+        leaks: {
+            getInfo: () => {
+                return connectionManager.getLeakInfo();
+            },
+            hasLeaks: () => {
+                const leaks = connectionManager.getLeakInfo();
+                return Object.keys(leaks).length > 0;
+            }
+        },
+
+        // Events
+        on: (event: string, callback: Function) => {
+            connectionManager.on(event, callback);
+        },
+
+        // Log pool status
+        logPoolStatus: () => {
+            connectionManager.logPoolStatus();
         }
     };
 }

@@ -40,7 +40,9 @@ export interface ProductDefinition {
     name: string;
     enabled: boolean;
     routes: string[];
-    roles: Record<string, RoleConfig>;
+    roles: Record<string, RoleConfig>;  // Dynamic roles - additive!
+    metadata?: Record<string, any>;     // Optional metadata
+    tags?: string[];                    // Optional tags for grouping
 }
 
 // Default pool configuration
@@ -57,9 +59,11 @@ export const defaultPoolConfig: PoolConfig = {
 
 export class ProductConfig {
     private products: Map<string, ProductDefinition> = new Map();
+    private routeToProductMap: Map<string, string> = new Map();
 
     constructor() {
         this.loadProducts(productsData.products);
+        this.buildRouteMapping();
     }
 
     getPoolConfig(productId: string, role: string): PoolConfig | null {
@@ -69,23 +73,161 @@ export class ProductConfig {
     }
 
     private loadProducts(products: ProductDefinition[]): void {
-        console.log('\n📦 Loading products...');
+        console.log('\n📦 Loading products with additive databases...');
+
         for (const product of products) {
             if (product.enabled) {
                 this.products.set(product.id, product);
                 console.log(`✅ Product registered: ${product.id}`);
                 console.log(`   Routes: ${product.routes.join(', ')}`);
-                console.log(`   Roles: ${Object.keys(product.roles).join(', ')}`);
+
+                const enabledRoles = Object.keys(product.roles).filter(
+                    role => product.roles[role].enabled
+                );
+                console.log(`   Roles: ${enabledRoles.join(', ')}`);
             }
         }
     }
 
+    private buildRouteMapping(): void {
+        for (const [productId, product] of this.products) {
+            for (const routeName of product.routes) {
+                this.routeToProductMap.set(routeName, productId);
+            }
+        }
+    }
+
+    /**
+     * Get all products
+     */
     getProduct(id: string): ProductDefinition | undefined {
         return this.products.get(id);
     }
 
+    /**
+     * Get all enabled products
+     */
     getEnabledProducts(): ProductDefinition[] {
         return Array.from(this.products.values()).filter(p => p.enabled);
+    }
+
+    /**
+     * Add a new product dynamically (runtime addition)
+     */
+    addProduct(product: ProductDefinition): void {
+        if (this.products.has(product.id)) {
+            console.warn(`Product ${product.id} already exists, updating...`);
+        }
+
+        this.products.set(product.id, product);
+
+        // Update route mapping
+        for (const routeName of product.routes) {
+            this.routeToProductMap.set(routeName, product.id);
+        }
+
+        console.log(`✅ Product added dynamically: ${product.id}`);
+    }
+
+    /**
+     * Add a new role to an existing product dynamically
+     */
+    addRole(productId: string, roleName: string, roleConfig: RoleConfig): void {
+        const product = this.products.get(productId);
+        if (!product) {
+            throw new Error(`Product "${productId}" not found`);
+        }
+
+        product.roles[roleName] = roleConfig;
+        console.log(`✅ Role "${roleName}" added to product "${productId}"`);
+    }
+
+    /**
+     * Enable/disable a role dynamically
+     */
+    setRoleEnabled(productId: string, roleName: string, enabled: boolean): void {
+        const product = this.products.get(productId);
+        if (!product) {
+            throw new Error(`Product "${productId}" not found`);
+        }
+
+        if (!product.roles[roleName]) {
+            throw new Error(`Role "${roleName}" not found in product "${productId}"`);
+        }
+
+        product.roles[roleName].enabled = enabled;
+        console.log(`✅ Role "${roleName}" ${enabled ? 'enabled' : 'disabled'} for product "${productId}"`);
+    }
+
+    /**
+     * Get all roles for a product
+     */
+    getRoles(productId: string): string[] {
+        const product = this.getProduct(productId);
+        if (!product) return [];
+        return Object.keys(product.roles);
+    }
+
+    /**
+     * Get enabled roles for a product
+     */
+    getEnabledRoles(productId: string): string[] {
+        const product = this.getProduct(productId);
+        if (!product) return [];
+        return Object.keys(product.roles).filter(role => product.roles[role].enabled);
+    }
+
+    /**
+     * Check if a role is enabled
+     */
+    isRoleEnabled(productId: string, role: string): boolean {
+        const product = this.getProduct(productId);
+        return product?.roles[role]?.enabled || false;
+    }
+
+    /**
+     * Get role configuration
+     */
+    getRoleConfig(productId: string, role: string): DatabaseConfig | null {
+        const product = this.getProduct(productId);
+        return product?.roles[role]?.database || null;
+    }
+
+    /**
+     * Get product by route name
+     */
+    getProductByRoute(routeName: string): string | undefined {
+        return this.routeToProductMap.get(routeName);
+    }
+
+    /**
+     * Get all products with metadata
+     */
+    getProductsWithMetadata(): ProductDefinition[] {
+        return Array.from(this.products.values());
+    }
+
+    /**
+     * Get products by tag
+     */
+    getProductsByTag(tag: string): ProductDefinition[] {
+        return Array.from(this.products.values()).filter(
+            product => product.tags?.includes(tag)
+        );
+    }
+
+    /**
+     * Validate product exists
+     */
+    hasProduct(id: string): boolean {
+        return this.products.has(id);
+    }
+
+    /**
+     * Get all route mappings
+     */
+    getRouteMappings(): Map<string, string> {
+        return new Map(this.routeToProductMap);
     }
 
     hasProduct(id: string): boolean {
@@ -112,5 +254,32 @@ export class ProductConfig {
         const product = this.getProduct(productId);
         if (!product) return [];
         return Object.keys(product.roles).filter(role => product.roles[role].enabled);
+    }
+
+    /**
+     * Log current configuration
+     */
+    logConfig(): void {
+        console.log('\n📋 Current Product Configuration:');
+        console.log('─'.repeat(60));
+
+        for (const [id, product] of this.products) {
+            console.log(`\n${id}:`);
+            console.log(`  Name: ${product.name}`);
+            console.log(`  Enabled: ${product.enabled}`);
+            console.log(`  Routes: ${product.routes.join(', ')}`);
+            console.log(`  Roles:`);
+
+            for (const [role, config] of Object.entries(product.roles)) {
+                const status = config.enabled ? '✅' : '❌';
+                const db = config.database ? config.database.database : 'none';
+                console.log(`    ${status} ${role}: ${db}`);
+            }
+
+            if (product.tags) {
+                console.log(`  Tags: ${product.tags.join(', ')}`);
+            }
+        }
+        console.log('─'.repeat(60));
     }
 }
