@@ -1,13 +1,18 @@
 import express from "express";
 import UserController from "./UserController.js";
 import AuthMiddleware from "../auth/AuthMiddleware.js";
-export default class UserRoute {
+import AuthMiddleware from "../auth/AuthMiddleware.js";
+import APIRegister from "../../platform/routebind/APIRegister.js";
+
+export default class UserRoute extends APIRegister {
 
 
     context;
 
     constructor(context) {
         this.context = context;
+        this.setDomain('identity_access_management');
+        this.setTenant(true); // Tenant routes are NOT tenant-specific
     }
 
     route(context) {
