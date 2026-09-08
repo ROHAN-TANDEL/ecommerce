@@ -1,4 +1,3 @@
-// src/platform/config/products.json
 {
   "products": [
     {
@@ -14,7 +13,17 @@
             "port": 5432,
             "database": "iam_master",
             "user": "postgres",
-            "password": "postgres"
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 30,
+              "idleTimeout": 45000,
+              "connectionTimeout": 10000,
+              "maxUses": 10000,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 15000,
+              "statementTimeout": 60000,
+              "queryTimeout": 60000
+            }
           }
         },
         "client": {
@@ -24,14 +33,20 @@
             "port": 5432,
             "database": "iam_client",
             "user": "postgres",
-            "password": "postgres"
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 50,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
           }
         },
         "analytics": {
-          "enabled": false,
-          "database": null
-        },
-        "reporting": {
           "enabled": false,
           "database": null
         }
@@ -50,7 +65,17 @@
             "port": 5432,
             "database": "subscription_master",
             "user": "postgres",
-            "password": "postgres"
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 20,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
           }
         },
         "client": {
@@ -60,12 +85,18 @@
             "port": 5432,
             "database": "subscription_client",
             "user": "postgres",
-            "password": "postgres"
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 40,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
           }
-        },
-        "archive": {
-          "enabled": false,
-          "database": null
         }
       }
     }

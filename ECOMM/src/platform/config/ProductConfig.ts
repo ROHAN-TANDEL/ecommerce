@@ -1,14 +1,33 @@
 // src/platform/config/ProductConfig.ts
 import productsData from './products.json' assert { type: 'json' };
 
+export interface PoolConfig {
+    maxConnections: number;        // Maximum connections in pool
+    idleTimeout: number;           // Close idle connections after (ms)
+    connectionTimeout: number;     // Connection timeout (ms)
+    maxUses: number;               // Close connections after N uses
+    keepAlive: boolean;            // Send keepalive pings
+    keepAliveInitialDelay: number; // Initial delay for keepalive
+    statementTimeout: number;      // Statement timeout (ms)
+    queryTimeout: number;          // Query timeout (ms)
+}
+
+// export interface DatabaseConfig {
+//     host: string;
+//     port: number;
+//     database: string;
+//     user: string;
+//     password: string;
+//     maxConnections?: number;
+//     idleTimeout?: number;
+// }
 export interface DatabaseConfig {
     host: string;
     port: number;
     database: string;
     user: string;
     password: string;
-    maxConnections?: number;
-    idleTimeout?: number;
+    pool: PoolConfig;              // Pool configuration
 }
 
 export interface RoleConfig {
@@ -24,11 +43,29 @@ export interface ProductDefinition {
     roles: Record<string, RoleConfig>;
 }
 
+// Default pool configuration
+export const defaultPoolConfig: PoolConfig = {
+    maxConnections: 20,
+    idleTimeout: 30000,
+    connectionTimeout: 5000,
+    maxUses: 7500,
+    keepAlive: true,
+    keepAliveInitialDelay: 10000,
+    statementTimeout: 30000,
+    queryTimeout: 30000
+};
+
 export class ProductConfig {
     private products: Map<string, ProductDefinition> = new Map();
 
     constructor() {
         this.loadProducts(productsData.products);
+    }
+
+    getPoolConfig(productId: string, role: string): PoolConfig | null {
+        const config = this.getRoleConfig(productId, role);
+        if (!config) return null;
+        return config.pool || defaultPoolConfig;
     }
 
     private loadProducts(products: ProductDefinition[]): void {

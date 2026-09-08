@@ -10,10 +10,15 @@ export interface DatabaseAccess {
     // Dynamic role access via proxy
     [role: string]: any;
 
-    // Explicit methods
     get(role: string): {
         query: (text: string, params?: any[]) => Promise<any>;
         getPool: () => any;
+        getConnection: () => Promise<PoolClient>;
+        withTransaction: <T>(callback: (client: PoolClient) => Promise<T>) => Promise<T>;
+        transaction: (queries: Array<{ text: string; params?: any[] }>) => Promise<any[]>;
+        getPoolInfo: () => any;      // Get pool info
+        getPoolConfig: () => any;    // Get pool config
+        updatePoolConfig: (config: Partial<PoolConfig>) => Promise<void>; // Update config
     };
 }
 
@@ -58,6 +63,7 @@ export function createPlatformContext(
                 }
 
                 return {
+                    // Simple query - auto manages connection
                     query: async (text: string, params?: any[]) => {
                         return connectionManager.query(
                             productId,
@@ -67,11 +73,44 @@ export function createPlatformContext(
                             params
                         );
                     },
+
+                    // Get raw pool for advanced use
                     getPool: () => {
+                        return connectionManager.getPool(
+                            productId,
+                            role,
+                            config
+                        );
+                    },
+
+                    // Get a connection for transactions
+                    getConnection: () => {
                         return connectionManager.getConnection(
                             productId,
                             role,
                             config
+                        );
+                    },
+
+                    // Transaction helper
+                    withTransaction: async <T>(
+                        callback: (client: PoolClient) => Promise<T>
+                    ): Promise<T> => {
+                        return connectionManager.withTransaction(
+                            productId,
+                            role,
+                            config,
+                            callback
+                        );
+                    },
+
+                    // Multiple queries in transaction
+                    transaction: async (queries: Array<{ text: string; params?: any[] }>) => {
+                        return connectionManager.transaction(
+                            productId,
+                            role,
+                            config,
+                            queries
                         );
                     }
                 };
@@ -81,17 +120,12 @@ export function createPlatformContext(
         // Create proxy that intercepts property access
         return new Proxy(roleAccessor, {
             get: (target, prop: string | symbol) => {
-                // If 'get' is called directly
                 if (prop === 'get') {
                     return target.get;
                 }
-
-                // If property is a role name (like 'master', 'client', 'analytics')
                 if (typeof prop === 'string' && prop !== 'get') {
                     return target.get(prop);
                 }
-
-                // Fallback
                 return undefined;
             }
         }) as DatabaseAccess;

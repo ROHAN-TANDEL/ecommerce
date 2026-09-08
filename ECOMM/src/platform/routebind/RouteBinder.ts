@@ -170,4 +170,34 @@ export class RouteBinder {
 
         return `${cleanPath}.${method.toLowerCase()}`;
     }
+
+    /**
+     * Get pool status for a product
+     */
+    getPoolStatus(productId: string): any {
+        const product = this.deps.products.getProduct(productId);
+        if (!product) return null;
+
+        const roles = this.deps.products.getEnabledRoles(productId);
+        const status: any = {
+            productId,
+            roles: {}
+        };
+
+        for (const role of roles) {
+            const stats = this.deps.connectionManager?.getPoolStatsFor(productId, role);
+            if (stats) {
+                status.roles[role] = stats;
+            }
+        }
+
+        return status;
+    }
+
+    /**
+     * Log pool status for all products
+     */
+    logPoolStatus(): void {
+        this.deps.connectionManager?.logPoolStatus();
+    }
 }
