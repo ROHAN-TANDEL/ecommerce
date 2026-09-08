@@ -38,15 +38,32 @@ export interface RoleConfig {
     // For master: schema can be fixed (public) or configurable
 }
 
+export interface RouteConfig {
+    client: string[];
+    master: string[];
+}
+
 export interface ProductDefinition {
     id: string;
     name: string;
     enabled: boolean;
-    routes: string[];
-    roles: Record<string, RoleConfig>;  // Dynamic roles - additive!
-    metadata?: Record<string, any>;     // Optional metadata
-    tags?: string[];                    // Optional tags for grouping
+    routes: RouteConfig;
+    roles: Record<string, RoleConfig>;
+    defaultTenant?: string;
+    metadata?: Record<string, any>;
+    tags?: string[];
 }
+
+//
+// export interface ProductDefinition {
+//     id: string;
+//     name: string;
+//     enabled: boolean;
+//     routes: string[];
+//     roles: Record<string, RoleConfig>;  // Dynamic roles - additive!
+//     metadata?: Record<string, any>;     // Optional metadata
+//     tags?: string[];                    // Optional tags for grouping
+// }
 
 // Default pool configuration
 export const defaultPoolConfig: PoolConfig = {
@@ -62,11 +79,42 @@ export const defaultPoolConfig: PoolConfig = {
 
 export class ProductConfig {
     private products: Map<string, ProductDefinition> = new Map();
-    private routeToProductMap: Map<string, string> = new Map();
+    private routeToProductMap: Map<string, { productId: string; type: 'master' | 'client' }> = new Map();
 
     constructor() {
         this.loadProducts(productsData.products);
         this.buildRouteMapping();
+    }
+
+    private buildRouteMapping(): void {
+        for (const [productId, product] of this.products) {
+            // Client routes
+            for (const routeName of product.routes.client) {
+                this.routeToProductMap.set(routeName, { productId, type: 'client' });
+            }
+            // Master routes
+            for (const routeName of product.routes.master) {
+                this.routeToProductMap.set(routeName, { productId, type: 'master' });
+            }
+        }
+    }
+
+    private loadProducts(products: ProductDefinition[]): void {
+        console.log('\n📦 Loading products with route types...');
+
+        for (const product of products) {
+            if (product.enabled) {
+                this.products.set(product.id, product);
+                console.log(`✅ Product registered: ${product.id}`);
+                console.log(`   Client Routes: ${product.routes.client.join(', ')}`);
+                console.log(`   Master Routes: ${product.routes.master.join(', ')}`);
+
+                const enabledRoles = Object.keys(product.roles).filter(
+                    role => product.roles[role].enabled
+                );
+                console.log(`   Roles: ${enabledRoles.join(', ')}`);
+            }
+        }
     }
 
     getPoolConfig(productId: string, role: string): PoolConfig | null {
@@ -112,6 +160,38 @@ export class ProductConfig {
      */
     getEnabledProducts(): ProductDefinition[] {
         return Array.from(this.products.values()).filter(p => p.enabled);
+    }
+
+    getRouteInfo(routeName: string): { productId: string; type: 'master' | 'client' } | undefined {
+        return this.routeToProductMap.get(routeName);
+    }
+
+    getClientRoutes(productId: string): string[] {
+        const product = this.getProduct(productId);
+        return product?.routes.client || [];
+    }
+
+    getAllRoutes(productId: string): { client: string[]; master: string[] } {
+        const product = this.getProduct(productId);
+        return {
+            client: product?.routes.client || [],
+            master: product?.routes.master || []
+        };
+    }
+
+    isClientRoute(routeName: string): boolean {
+        const info = this.routeToProductMap.get(routeName);
+        return info?.type === 'client';
+    }
+
+    isMasterRoute(routeName: string): boolean {
+        const info = this.routeToProductMap.get(routeName);
+        return info?.type === 'master';
+    }
+
+    getMasterRoutes(productId: string): string[] {
+        const product = this.getProduct(productId);
+        return product?.routes.master || [];
     }
 
     /**

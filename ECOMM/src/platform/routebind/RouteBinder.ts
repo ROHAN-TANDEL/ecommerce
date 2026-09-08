@@ -14,11 +14,13 @@ export interface RouteBinderDependencies {
     registry: any;
     apiRegistry: any;
     getDatabase: (productId: string) => any;
+    connectionManager?: any;
 }
 
 export class RouteBinder {
-
     private tenantMiddleware: TenantMiddleware;
+    private deps: RouteBinderDependencies;
+    private routeModules: Map<string, any>;
 
     constructor(deps: RouteBinderDependencies, routeModules: Map<string, any>) {
         this.deps = deps;
@@ -28,6 +30,7 @@ export class RouteBinder {
 
     /**
      * Auto-register all routes from configuration
+     * Now handles master/client routes from config
      */
     autoRegister(): express.Router {
         const mainRouter = express.Router();
@@ -38,18 +41,28 @@ export class RouteBinder {
         for (const product of enabledProducts) {
             console.log(`\n📦 Registering product: ${product.id}`);
 
-            const routeClasses = this.getRouteClasses(product.routes);
+            // Get all routes from config (master + client)
+            const allRoutes = this.deps.products.getAllRoutes(product.id);
 
-            if (routeClasses.length === 0) {
-                console.log(`   ⚠️ No routes found for ${product.id}`);
-                continue;
+            // Register client routes (with tenant middleware)
+            if (allRoutes.client && allRoutes.client.length > 0) {
+                const clientClasses = this.getRouteClasses(allRoutes.client);
+                if (clientClasses.length > 0) {
+                    console.log(`   👤 Client Routes: ${allRoutes.client.join(', ')}`);
+                    const clientRouter = this.bindRoutes(clientClasses, product.id, 'client');
+                    mainRouter.use(clientRouter);
+                }
             }
 
-            const productRouter = this.bindRoutes(routeClasses, product.id);
-            mainRouter.use(productRouter);
-
-            console.log(`   ✅ Registered ${routeClasses.length} routes for ${product.id}`);
-            console.log(`   📊 Available roles: ${this.deps.products.getEnabledRoles(product.id).join(', ')}`);
+            // Register master routes (without tenant middleware)
+            if (allRoutes.master && allRoutes.master.length > 0) {
+                const masterClasses = this.getRouteClasses(allRoutes.master);
+                if (masterClasses.length > 0) {
+                    console.log(`   🔐 Master Routes: ${allRoutes.master.join(', ')}`);
+                    const masterRouter = this.bindRoutes(masterClasses, product.id, 'master');
+                    mainRouter.use('/admin', masterRouter);
+                }
+            }
         }
 
         return mainRouter;
@@ -64,8 +77,28 @@ export class RouteBinder {
             throw new Error(`Product "${productId}" not found`);
         }
 
-        const routeClasses = this.getRouteClasses(product.routes);
-        return this.bindRoutes(routeClasses, productId);
+        const router = express.Router();
+        const allRoutes = this.deps.products.getAllRoutes(productId);
+
+        // Client routes
+        if (allRoutes.client && allRoutes.client.length > 0) {
+            const clientClasses = this.getRouteClasses(allRoutes.client);
+            if (clientClasses.length > 0) {
+                const clientRouter = this.bindRoutes(clientClasses, productId, 'client');
+                router.use(clientRouter);
+            }
+        }
+
+        // Master routes
+        if (allRoutes.master && allRoutes.master.length > 0) {
+            const masterClasses = this.getRouteClasses(allRoutes.master);
+            if (masterClasses.length > 0) {
+                const masterRouter = this.bindRoutes(masterClasses, productId, 'master');
+                router.use('/admin', masterRouter);
+            }
+        }
+
+        return router;
     }
 
     /**
@@ -86,7 +119,10 @@ export class RouteBinder {
         return classes;
     }
 
-    private bindRoutes(routes: any[], productId: string): express.Router {
+    /**
+     * Bind routes with type (master or client)
+     */
+    private bindRoutes(routes: any[], productId: string, type: 'master' | 'client'): express.Router {
         this.deps.registry.validateProduct(productId);
         const db = this.deps.getDatabase(productId);
         const router = express.Router();
@@ -94,71 +130,64 @@ export class RouteBinder {
         // Attach product context
         router.use((req: any, res: any, next: any) => {
             req.productId = productId;
-            req.db = db;
-            req.requiresTenant = true; // Default: requires tenant
+            req.routeType = type; // 'master' or 'client'
             next();
         });
 
-        // Add tenant resolution middleware
-        router.use(this.tenantMiddleware.resolve);
-        router.use(this.tenantMiddleware.validate);
+        // Add middleware based on type
+        if (type === 'client') {
+            // Client routes: tenant required
+            router.use((req: any, res: any, next: any) => {
+                req.requiresTenant = true;
+                next();
+            });
+            router.use(this.tenantMiddleware.resolve);
+            router.use(this.tenantMiddleware.validate);
+        } else {
+            // Master routes: no tenant
+            router.use((req: any, res: any, next: any) => {
+                req.requiresTenant = false;
+                req.tenant = null;
+                req.tenantId = null;
+                next();
+            });
+        }
+
+        // Attach database access based on type
+        router.use((req: any, res: any, next: any) => {
+            if (type === 'master') {
+                // Master routes: only master DB access
+                req.db = {
+                    master: db.master,
+                    client: null
+                };
+            } else {
+                // Client routes: full access with tenant
+                req.db = db;
+            }
+            next();
+        });
 
         // Register routes
         for (const RouteClass of routes) {
             const routeInstance = new RouteClass();
             const routeRouter = routeInstance.route();
-            this.captureAndRegisterApis(routeRouter, productId);
+            this.captureAndRegisterApis(routeRouter, productId, type);
             router.use(routeRouter);
         }
 
         return router;
     }
 
-    // /**
-    //  * Bind routes to a product
-    //  */
-    // private bindRoutes(routes: any[], productId: string): express.Router {
-    //     // Validate product exists
-    //     this.deps.registry.validateProduct(productId);
-    //
-    //     // Get database access for this product
-    //     const db = this.deps.getDatabase(productId);
-    //
-    //     // Create router for this product
-    //     const router = express.Router();
-    //
-    //     // Middleware to attach db and product context to all requests
-    //     router.use((req: any, res: any, next: any) => {
-    //         req.productId = productId;
-    //         req.db = db; // This will have dynamic properties via proxy
-    //         next();
-    //     });
-    //
-    //     // Register all routes
-    //     for (const RouteClass of routes) {
-    //         const routeInstance = new RouteClass();
-    //         const routeRouter = routeInstance.route();
-    //
-    //         // Capture routes for API registration
-    //         this.captureAndRegisterApis(routeRouter, productId);
-    //
-    //         // Mount route
-    //         router.use(routeRouter);
-    //     }
-    //
-    //     return router;
-    // }
-
     /**
      * Capture routes and register APIs
      */
-    private captureAndRegisterApis(router: express.Router, productId: string): void {
-        // Get the router's stack
+    private captureAndRegisterApis(router: express.Router, productId: string, type?: 'master' | 'client'): void {
         const stack = (router as any).stack || [];
 
         for (const layer of stack) {
             if (layer.route) {
-                const { path, methods, stack: routeStack } = layer.route;
+                const { path, methods } = layer.route;
                 const method = Object.keys(methods)[0]?.toUpperCase();
 
                 if (method) {
@@ -170,10 +199,11 @@ export class RouteBinder {
                         method,
                         path,
                         product: productId,
-                        tenant: false
+                        type: type || 'client',
+                        tenant: type === 'client'
                     });
 
-                    console.log(`   📝 API: ${fullId} (${method} ${path})`);
+                    console.log(`   📝 API: ${fullId} (${method} ${path}) [${type || 'client'}]`);
                 }
             }
         }

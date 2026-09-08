@@ -5,7 +5,10 @@
       "id": "identity_access_management",
       "name": "Identity & Access Management",
       "enabled": true,
-      "routes": ["UserRoute", "AuditRoute", "RoleRoute"],
+      "routes": {
+        "client": ["UserRoute", "AuditRoute", "RoleRoute"],
+        "master": ["TenantRoute", "SystemRoute", "ConfigRoute"]
+      },
       "roles": {
         "master": {
           "enabled": true,
@@ -38,6 +41,58 @@
             "password": "postgres",
             "pool": {
               "maxConnections": 50,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "subscription_management",
+      "name": "Subscription Management",
+      "enabled": true,
+      "routes": {
+        "client": ["SubscriptionRoute", "InvoiceRoute"],
+        "master": ["PlanRoute", "PriceRoute"]
+      },
+      "roles": {
+        "master": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "subscription_db",
+            "schema": "public",
+            "user": "postgres",
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 20,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
+          }
+        },
+        "client": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "subscription_db",
+            "user": "postgres",
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 40,
               "idleTimeout": 30000,
               "connectionTimeout": 5000,
               "maxUses": 7500,
