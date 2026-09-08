@@ -3,15 +3,19 @@ import express from 'express';
 import { PoolController } from '../controllers/PoolController.js';
 import { ProductController } from '../controllers/ProductController.js';
 import { PlatformContext } from '../../../platform/context.js';
+import { TenantController } from '../controllers/TenantController.js';
 
 export class AdminRoute {
     private poolController: PoolController;
     private productController: ProductController;
+    private tenantController: TenantController;
 
     constructor(platform: PlatformContext) {
         this.poolController = new PoolController(platform);
         this.productController = new ProductController(platform);
+        this.tenantController = new TenantController(platform);
     }
+
 
     public route = (): express.Router => {
         const router = express.Router();
@@ -30,6 +34,12 @@ export class AdminRoute {
         router.post('/products/:productId/roles', this.productController.addRole);
         router.put('/products/:productId/roles/:roleName', this.productController.toggleRole);
         router.get('/products/config/log', this.productController.getConfig);
+
+        // ==================== TENANT MANAGEMENT ====================
+        router.get('/tenants/:productId', this.tenantController.listTenants);
+        router.get('/tenants/:productId/:tenantId', this.tenantController.getTenant);
+        router.post('/tenants', this.tenantController.createTenant);
+        router.put('/tenants/:productId/:tenantId', this.tenantController.updateTenant);
 
         // ==================== HEALTH CHECKS ====================
         router.get('/health', this.poolController.healthCheck);

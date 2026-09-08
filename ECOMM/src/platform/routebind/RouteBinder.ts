@@ -1,5 +1,6 @@
 // src/platform/routebind/RouteBinder.ts
 import express from 'express';
+import { TenantMiddleware } from '../middleware/TenantMiddleware.js';
 
 export interface RouteInfo {
     method: string;
@@ -16,10 +17,14 @@ export interface RouteBinderDependencies {
 }
 
 export class RouteBinder {
-    constructor(
-        private deps: RouteBinderDependencies,
-        private routeModules: Map<string, any>
-    ) {}
+
+    private tenantMiddleware: TenantMiddleware;
+
+    constructor(deps: RouteBinderDependencies, routeModules: Map<string, any>) {
+        this.deps = deps;
+        this.routeModules = routeModules;
+        this.tenantMiddleware = new TenantMiddleware(deps as any);
+    }
 
     /**
      * Auto-register all routes from configuration
@@ -81,40 +86,68 @@ export class RouteBinder {
         return classes;
     }
 
-    /**
-     * Bind routes to a product
-     */
     private bindRoutes(routes: any[], productId: string): express.Router {
-        // Validate product exists
         this.deps.registry.validateProduct(productId);
-
-        // Get database access for this product
         const db = this.deps.getDatabase(productId);
-
-        // Create router for this product
         const router = express.Router();
 
-        // Middleware to attach db and product context to all requests
+        // Attach product context
         router.use((req: any, res: any, next: any) => {
             req.productId = productId;
-            req.db = db; // This will have dynamic properties via proxy
+            req.db = db;
+            req.requiresTenant = true; // Default: requires tenant
             next();
         });
 
-        // Register all routes
+        // Add tenant resolution middleware
+        router.use(this.tenantMiddleware.resolve);
+        router.use(this.tenantMiddleware.validate);
+
+        // Register routes
         for (const RouteClass of routes) {
             const routeInstance = new RouteClass();
             const routeRouter = routeInstance.route();
-
-            // Capture routes for API registration
             this.captureAndRegisterApis(routeRouter, productId);
-
-            // Mount route
             router.use(routeRouter);
         }
 
         return router;
     }
+
+    // /**
+    //  * Bind routes to a product
+    //  */
+    // private bindRoutes(routes: any[], productId: string): express.Router {
+    //     // Validate product exists
+    //     this.deps.registry.validateProduct(productId);
+    //
+    //     // Get database access for this product
+    //     const db = this.deps.getDatabase(productId);
+    //
+    //     // Create router for this product
+    //     const router = express.Router();
+    //
+    //     // Middleware to attach db and product context to all requests
+    //     router.use((req: any, res: any, next: any) => {
+    //         req.productId = productId;
+    //         req.db = db; // This will have dynamic properties via proxy
+    //         next();
+    //     });
+    //
+    //     // Register all routes
+    //     for (const RouteClass of routes) {
+    //         const routeInstance = new RouteClass();
+    //         const routeRouter = routeInstance.route();
+    //
+    //         // Capture routes for API registration
+    //         this.captureAndRegisterApis(routeRouter, productId);
+    //
+    //         // Mount route
+    //         router.use(routeRouter);
+    //     }
+    //
+    //     return router;
+    // }
 
     /**
      * Capture routes and register APIs

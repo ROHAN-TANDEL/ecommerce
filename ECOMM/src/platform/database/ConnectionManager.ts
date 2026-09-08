@@ -1,6 +1,7 @@
 // src/platform/database/ConnectionManager.ts
 import { Pool, PoolClient } from 'pg';
 import { DatabaseConfig, PoolConfig, defaultPoolConfig } from '../config/ProductConfig.js';
+import { TenantInfo } from '../tenant/TenantContext.js';
 
 export interface ConnectionInfo {
     productId: string;
@@ -58,6 +59,119 @@ export class ConnectionManager {
         this.slowQueryThreshold = slowQueryThreshold;
         this.startLeakDetection();
         this.setupEventListeners();
+    }
+
+    /**
+     * Get a connection with tenant schema switching
+     */
+    async getTenantConnection(
+        productId: string,
+        role: 'client',
+        tenant: TenantInfo
+    ): Promise<PoolClient> {
+        const config = this.getRoleConfig(productId, role);
+        if (!config) {
+            throw new Error(`No config for ${productId}:${role}`);
+        }
+
+        const pool = await this.getPool(productId, role, config);
+        const client = await pool.connect();
+
+        try {
+            // Switch to tenant schema
+            await client.query(`SET search_path TO ${tenant.schema}`);
+            this.emit('tenant:schema:switched', productId, tenant.id, tenant.schema);
+            return client;
+        } catch (error) {
+            client.release();
+            throw new Error(`Failed to switch to tenant schema "${tenant.schema}": ${error.message}`);
+        }
+    }
+
+    /**
+     * Get a master connection with schema switching
+     */
+    async getMasterConnection(
+        productId: string,
+        role: 'master'
+    ): Promise<PoolClient> {
+        const config = this.getRoleConfig(productId, role);
+        if (!config) {
+            throw new Error(`No config for ${productId}:${role}`);
+        }
+
+        const pool = await this.getPool(productId, role, config);
+        const client = await pool.connect();
+
+        // If master has a schema configured, switch to it
+        if (config.database?.schema) {
+            try {
+                await client.query(`SET search_path TO ${config.database.schema}`);
+                this.emit('master:schema:switched', productId, config.database.schema);
+            } catch (error) {
+                client.release();
+                throw new Error(`Failed to switch to master schema "${config.database.schema}": ${error.message}`);
+            }
+        }
+
+        return client;
+    }
+
+    /**
+     * Execute a query with tenant context
+     */
+    async queryWithTenant(
+        productId: string,
+        role: 'client',
+        tenant: TenantInfo,
+        text: string,
+        params?: any[]
+    ): Promise<any> {
+        const client = await this.getTenantConnection(productId, role, tenant);
+
+        try {
+            const start = Date.now();
+            const result = await client.query(text, params);
+            const duration = Date.now() - start;
+
+            this.logQuery(productId, role, text, params, duration, false);
+            this.emit('query:executed', productId, tenant.id, text, duration);
+
+            return result;
+        } catch (error) {
+            const duration = Date.now() - start;
+            this.logQuery(productId, role, text, params, duration, true, error.message);
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Execute a transaction with tenant context
+     */
+    async withTenantTransaction<T>(
+        productId: string,
+        role: 'client',
+        tenant: TenantInfo,
+        callback: (client: PoolClient) => Promise<T>
+    ): Promise<T> {
+        const client = await this.getTenantConnection(productId, role, tenant);
+
+        try {
+            await client.query('BEGIN');
+            const result = await callback(client);
+            await client.query('COMMIT');
+
+            this.emit('transaction:committed', productId, tenant.id);
+            return result;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            this.emit('transaction:rolledback', productId, tenant.id, error);
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 
     /**

@@ -16,9 +16,15 @@ export interface DatabaseAccess {
         getConnection: () => Promise<PoolClient>;
         withTransaction: <T>(callback: (client: PoolClient) => Promise<T>) => Promise<T>;
         transaction: (queries: Array<{ text: string; params?: any[] }>) => Promise<any[]>;
-        getPoolInfo: () => any;      // Get pool info
-        getPoolConfig: () => any;    // Get pool config
-        updatePoolConfig: (config: Partial<PoolConfig>) => Promise<void>; // Update config
+        getPoolInfo: () => any;
+        getPoolConfig: () => any;
+        updatePoolConfig: (config: Partial<PoolConfig>) => Promise<void>;
+    };
+
+    // Tenant-aware methods
+    withTenant(tenantId: string): {
+        master: DatabaseAccess;
+        client: DatabaseAccess;
     };
 }
 
@@ -43,6 +49,7 @@ export function createPlatformContext(
     const connectionManager = new ConnectionManager();
 
     function getDatabaseAccess(productId: string): DatabaseAccess {
+
         productRegistry.validateProduct(productId);
         const product = productConfig.getProduct(productId);
         if (!product) throw new Error(`Product "${productId}" not found`);
@@ -117,18 +124,78 @@ export function createPlatformContext(
             }
         };
 
-        // Create proxy that intercepts property access
-        return new Proxy(roleAccessor, {
+        const baseDb = {
+            get: (role: string) => {
+                // ... existing code
+            }
+        };
+
+        // Add tenant-aware methods
+        const db = new Proxy(baseDb, {
             get: (target, prop: string | symbol) => {
-                if (prop === 'get') {
-                    return target.get;
+                if (prop === 'withTenant') {
+                    return (tenantId: string) => {
+                        return {
+                            master: target.get('master'),
+                            client: {
+                                query: async (text: string, params?: any[]) => {
+                                    const tenant = tenantContext.resolve(tenantId);
+                                    return connectionManager.queryWithTenant(
+                                        productId,
+                                        'client',
+                                        tenant,
+                                        text,
+                                        params
+                                    );
+                                },
+                                getPool: () => {
+                                    const tenant = tenantContext.resolve(tenantId);
+                                    return connectionManager.getTenantConnection(
+                                        productId,
+                                        'client',
+                                        tenant
+                                    );
+                                },
+                                withTransaction: async <T>(
+                                    callback: (client: PoolClient) => Promise<T>
+                                ) => {
+                                    const tenant = tenantContext.resolve(tenantId);
+                                    return connectionManager.withTenantTransaction(
+                                        productId,
+                                        'client',
+                                        tenant,
+                                        callback
+                                    );
+                                }
+                            }
+                        };
+                    };
                 }
-                if (typeof prop === 'string' && prop !== 'get') {
+
+                // Handle role access normally
+                if (typeof prop === 'string' && prop !== 'get' && prop !== 'withTenant') {
                     return target.get(prop);
                 }
-                return undefined;
+
+                return target[prop];
             }
-        }) as DatabaseAccess;
+        });
+
+        return db as DatabaseAccess;
+
+
+        // Create proxy that intercepts property access
+        // return new Proxy(roleAccessor, {
+        //     get: (target, prop: string | symbol) => {
+        //         if (prop === 'get') {
+        //             return target.get;
+        //         }
+        //         if (typeof prop === 'string' && prop !== 'get') {
+        //             return target.get(prop);
+        //         }
+        //         return undefined;
+        //     }
+        // }) as DatabaseAccess;
     }
 
     // Create RouteBinder

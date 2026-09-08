@@ -25,14 +25,17 @@ export interface DatabaseConfig {
     host: string;
     port: number;
     database: string;
+    schema?: string;        // For master schema (e.g., 'public')
     user: string;
     password: string;
-    pool: PoolConfig;              // Pool configuration
+    pool: PoolConfig;
 }
 
 export interface RoleConfig {
     enabled: boolean;
     database: DatabaseConfig | null;
+    // For client: schema is resolved from tenant
+    // For master: schema can be fixed (public) or configurable
 }
 
 export interface ProductDefinition {
