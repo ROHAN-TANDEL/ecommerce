@@ -5,62 +5,68 @@
       "id": "identity_access_management",
       "name": "Identity & Access Management",
       "enabled": true,
-      "routes": [
-        "UserRoute",
-        "AuditRoute",
-        "RoleRoute"
-      ],
-      "master": {
-        "enabled": true,
-        "database": {
-          "host": "localhost",
-          "port": 5432,
-          "database": "iam_master",
-          "user": "postgres",
-          "password": "postgres"
+      "routes": ["UserRoute", "AuditRoute", "RoleRoute"],
+      "roles": {
+        "master": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "iam_master",
+            "user": "postgres",
+            "password": "postgres"
+          }
+        },
+        "client": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "iam_client",
+            "user": "postgres",
+            "password": "postgres"
+          }
+        },
+        "analytics": {
+          "enabled": false,
+          "database": null
+        },
+        "reporting": {
+          "enabled": false,
+          "database": null
         }
-      },
-      "client": {
-        "enabled": false,
-        "database": null
       }
     },
     {
       "id": "subscription_management",
       "name": "Subscription Management",
       "enabled": true,
-      "routes": [
-        "SubscriptionRoute",
-        "InvoiceRoute",
-        "PaymentRoute"
-      ],
-      "master": {
-        "enabled": true,
-        "database": {
-          "host": "localhost",
-          "port": 5432,
-          "database": "subscription_master",
-          "user": "postgres",
-          "password": "postgres"
+      "routes": ["SubscriptionRoute", "InvoiceRoute"],
+      "roles": {
+        "master": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "subscription_master",
+            "user": "postgres",
+            "password": "postgres"
+          }
+        },
+        "client": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "subscription_client",
+            "user": "postgres",
+            "password": "postgres"
+          }
+        },
+        "archive": {
+          "enabled": false,
+          "database": null
         }
-      },
-      "client": {
-        "enabled": false,
-        "database": null
-      }
-    },
-    {
-      "id": "audit_management",
-      "name": "Audit Management",
-      "enabled": false,
-      "routes": [],
-      "master": {
-        "enabled": false,
-        "database": null
-      },
-      "client": {
-        "enabled": false,
-        "database": null
       }
     }
   ]
