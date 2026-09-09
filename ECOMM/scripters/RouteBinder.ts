@@ -1,6 +1,6 @@
 // src/platform/routebind/RouteBinder.ts
 import express from 'express';
-import { TenantMiddleware, type TenantMiddlewareDeps } from '../middleware/TenantMiddleware.js';
+import { TenantMiddleware } from '../middleware/TenantMiddleware.js';
 
 export interface RouteInfo {
     method: string;
@@ -9,7 +9,7 @@ export interface RouteInfo {
     middlewares?: Function[];
 }
 
-export interface RouteBinderDependencies extends TenantMiddlewareDeps {
+export interface RouteBinderDependencies {
     products: any;
     registry: any;
     apiRegistry: any;
@@ -25,7 +25,7 @@ export class RouteBinder {
     constructor(deps: RouteBinderDependencies, routeModules: Map<string, any>) {
         this.deps = deps;
         this.routeModules = routeModules;
-        this.tenantMiddleware = new TenantMiddleware(deps);
+        this.tenantMiddleware = new TenantMiddleware(deps as any);
     }
 
     /**
@@ -39,8 +39,7 @@ export class RouteBinder {
         console.log('\n🚀 Auto-registering routes...');
 
         for (const product of enabledProducts) {
-
-            console.log(`\n📦 The Registering product: ${product.id}`);
+            console.log(`\n📦 Registering product: ${product.id}`);
 
             // Get all routes from config (master + client)
             const allRoutes = this.deps.products.getAllRoutes(product.id);
@@ -157,17 +156,13 @@ export class RouteBinder {
         // Attach database access based on type
         router.use((req: any, res: any, next: any) => {
             if (type === 'master') {
-                // Master routes: expose only master role, lazily through the proxy
-                req.db = new Proxy({}, {
-                    get: (_t, prop: string | symbol) => {
-                        if (prop === 'master') return db.get('master');
-                        if (prop === 'client') return null;
-                        return undefined;
-                    }
-                });
+                // Master routes: only master DB access
+                req.db = {
+                    master: db.master,
+                    client: null
+                };
             } else {
-                // Client routes: full access — tenant middleware will replace this
-                // with a tenant-scoped db once the tenant is resolved
+                // Client routes: full access with tenant
                 req.db = db;
             }
             next();

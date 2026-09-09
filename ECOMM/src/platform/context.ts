@@ -1,31 +1,39 @@
-// src/platform/context.ts
 import express from 'express';
-import { ProductConfig, ProductDefinition } from './config/ProductConfig.js';
+import type { PoolClient } from 'pg';
+import { ProductConfig, type PoolConfig } from './config/ProductConfig.js';
 import { ProductRegistry } from './registry/ProductRegistry.js';
 import { ConnectionManager } from './database/ConnectionManager.js';
 import { RouteBinder } from './routebind/RouteBinder.js';
 import { ApiRegistry } from './registry/ApiRegistry.js';
 
+export interface RoleAccess {
+    query: (text: string, params?: any[]) => Promise<any>;
+    getPool: () => Promise<any>;
+    getConnection: () => Promise<PoolClient>;
+    withTransaction: <T>(callback: (client: PoolClient) => Promise<T>) => Promise<T>;
+    transaction: (queries: Array<{ text: string; params?: any[] }>) => Promise<any[]>;
+    getPoolInfo: () => any;
+    getPoolConfig: () => PoolConfig | null;
+    updatePoolConfig: (config: Partial<PoolConfig>) => Promise<void>;
+}
+
+export interface TenantAccess {
+    master: RoleAccess | null;
+    client: RoleAccess | null;
+}
+
 export interface DatabaseAccess {
-    // Dynamic role access via proxy
+    /** Explicit role accessor: db.get('master'), db.get('client') */
+    get(role: string): RoleAccess;
+    /** Shorthand role access: db.master, db.client, db.analytics */
     [role: string]: any;
-
-    get(role: string): {
-        query: (text: string, params?: any[]) => Promise<any>;
-        getPool: () => any;
-        getConnection: () => Promise<PoolClient>;
-        withTransaction: <T>(callback: (client: PoolClient) => Promise<T>) => Promise<T>;
-        transaction: (queries: Array<{ text: string; params?: any[] }>) => Promise<any[]>;
-        getPoolInfo: () => any;
-        getPoolConfig: () => any;
-        updatePoolConfig: (config: Partial<PoolConfig>) => Promise<void>;
-    };
-
-    // Tenant-aware methods
-    withTenant(tenantId: string): {
-        master: DatabaseAccess;
-        client: DatabaseAccess;
-    };
+    /**
+     * Tenant-scoped access.
+     * @param tenantId - tenant identifier
+     * @param schema   - optional explicit schema; defaults to `tenant_<tenantId>` if omitted.
+     *                   TenantMiddleware always passes the DB-resolved schema here.
+     */
+    withTenant(tenantId: string, schema?: string): TenantAccess;
 }
 
 export interface PlatformContext {
@@ -37,272 +45,206 @@ export interface PlatformContext {
     autoRegister(): express.Router;
     registerProduct(productId: string): express.Router;
     close(): Promise<void>;
+    health: {
+        check: () => Promise<{ healthy: boolean; pools: any[] }>;
+        ready: () => Promise<boolean>;
+        live: () => boolean;
+    };
+    queries: {
+        getLogs: (limit?: number, filter?: any) => any[];
+        clearLogs: () => void;
+        getStats: (productId?: string, role?: string) => any;
+    };
+    leaks: {
+        getInfo: () => Record<string, number>;
+        hasLeaks: () => boolean;
+    };
+    on: (event: string, callback: Function) => void;
+    logPoolStatus: () => void;
 }
 
-export function createPlatformContext(
-    routeModules: Map<string, any>
-): PlatformContext {
-    // Initialize components
+export function createPlatformContext(routeModules: Map<string, any>): PlatformContext {
     const productConfig = new ProductConfig();
     const productRegistry = new ProductRegistry(productConfig);
     const apiRegistry = new ApiRegistry();
     const connectionManager = new ConnectionManager();
 
+    /**
+     * Build a RoleAccess object for a specific product + role.
+     * All calls are lazy — no pool is created until the first query.
+     */
+    function buildRoleAccess(productId: string, role: string): RoleAccess {
+        const config = productConfig.getRoleConfig(productId, role);
+        if (!config) throw new Error(`No database config for role "${role}" in product "${productId}"`);
+
+        return {
+            query: (text, params) =>
+                connectionManager.query(productId, role, config, text, params),
+
+            getPool: () =>
+                connectionManager.getPool(productId, role, config),
+
+            getConnection: () =>
+                connectionManager.getConnection(productId, role, config),
+
+            withTransaction: <T>(cb: (c: PoolClient) => Promise<T>) =>
+                connectionManager.withTransaction(productId, role, config, cb),
+
+            transaction: (queries) =>
+                connectionManager.transaction(productId, role, config, queries),
+
+            getPoolInfo: () =>
+                connectionManager.getPoolInfo(productId, role),
+
+            getPoolConfig: () =>
+                connectionManager.getPoolConfig(productId, role),
+
+            updatePoolConfig: (partial) =>
+                connectionManager.updatePoolConfig(productId, role, partial),
+        };
+    }
+
+    /**
+     * Build a tenant-scoped RoleAccess for the 'client' role.
+     * Every query switches search_path to the given schema before executing.
+     */
+    function buildTenantClientAccess(productId: string, tenantId: string, schema: string): RoleAccess {
+        const config = productConfig.getRoleConfig(productId, 'client');
+        if (!config) throw new Error(`No database config for role "client" in product "${productId}"`);
+
+        const tenant = { id: tenantId, schema };
+
+        return {
+            query: (text, params) =>
+                connectionManager.queryWithTenant(productId, 'client', tenant, text, params),
+
+            getPool: () =>
+                connectionManager.getTenantConnection(productId, 'client', tenant),
+
+            getConnection: () =>
+                connectionManager.getTenantConnection(productId, 'client', tenant),
+
+            withTransaction: <T>(cb: (c: PoolClient) => Promise<T>) =>
+                connectionManager.withTenantTransaction(productId, 'client', tenant, cb),
+
+            transaction: (queries) =>
+                connectionManager.transaction(productId, 'client', config, queries),
+
+            getPoolInfo: () =>
+                connectionManager.getPoolInfo(productId, 'client'),
+
+            getPoolConfig: () =>
+                connectionManager.getPoolConfig(productId, 'client'),
+
+            updatePoolConfig: (partial) =>
+                connectionManager.updatePoolConfig(productId, 'client', partial),
+        };
+    }
+
+    /**
+     * Returns a DatabaseAccess proxy for a given product.
+     * Supports:
+     *   db.get('master')          — explicit role accessor
+     *   db.master / db.client     — shorthand (goes through Proxy)
+     *   db.withTenant(id)         — tenant-scoped access
+     */
     function getDatabaseAccess(productId: string): DatabaseAccess {
-
         productRegistry.validateProduct(productId);
-        const product = productConfig.getProduct(productId);
-        if (!product) throw new Error(`Product "${productId}" not found`);
 
-        // Get all enabled roles
         const enabledRoles = productConfig.getEnabledRoles(productId);
 
-        // Create role accessor
         const roleAccessor = {
-            get: (role: string) => {
+            get: (role: string): RoleAccess => {
                 if (!enabledRoles.includes(role)) {
                     throw new Error(`Role "${role}" is not enabled for product "${productId}"`);
                 }
-
-                const config = productConfig.getRoleConfig(productId, role);
-                if (!config) {
-                    throw new Error(`No database config for role "${role}" in product "${productId}"`);
-                }
-
-                return {
-                    // Simple query - auto manages connection
-                    query: async (text: string, params?: any[]) => {
-                        return connectionManager.query(
-                            productId,
-                            role,
-                            config,
-                            text,
-                            params
-                        );
-                    },
-
-                    // Get raw pool for advanced use
-                    getPool: () => {
-                        return connectionManager.getPool(
-                            productId,
-                            role,
-                            config
-                        );
-                    },
-
-                    // Get a connection for transactions
-                    getConnection: () => {
-                        return connectionManager.getConnection(
-                            productId,
-                            role,
-                            config
-                        );
-                    },
-
-                    // Transaction helper
-                    withTransaction: async <T>(
-                        callback: (client: PoolClient) => Promise<T>
-                    ): Promise<T> => {
-                        return connectionManager.withTransaction(
-                            productId,
-                            role,
-                            config,
-                            callback
-                        );
-                    },
-
-                    // Multiple queries in transaction
-                    transaction: async (queries: Array<{ text: string; params?: any[] }>) => {
-                        return connectionManager.transaction(
-                            productId,
-                            role,
-                            config,
-                            queries
-                        );
-                    }
-                };
+                return buildRoleAccess(productId, role);
             }
         };
 
-        const baseDb = {
-            get: (role: string) => {
-                // ... existing code
-            }
-        };
-
-        // Add tenant-aware methods
-        const db = new Proxy(baseDb, {
+        const db = new Proxy(roleAccessor, {
             get: (target, prop: string | symbol) => {
+                if (prop === 'get') return target.get;
+
                 if (prop === 'withTenant') {
-                    return (tenantId: string) => {
+                    return (tenantId: string, schema?: string): TenantAccess => {
+                        // Use the explicit schema when provided (from TenantMiddleware after DB lookup).
+                        // Fall back to convention only for inline/manual usage.
+                        const resolvedSchema = schema ?? `tenant_${tenantId}`;
+
+                        const masterConfig = productConfig.getRoleConfig(productId, 'master');
+                        const clientEnabled = enabledRoles.includes('client');
+
                         return {
-                            master: target.get('master'),
-                            client: {
-                                query: async (text: string, params?: any[]) => {
-                                    const tenant = tenantContext.resolve(tenantId);
-                                    return connectionManager.queryWithTenant(
-                                        productId,
-                                        'client',
-                                        tenant,
-                                        text,
-                                        params
-                                    );
-                                },
-                                getPool: () => {
-                                    const tenant = tenantContext.resolve(tenantId);
-                                    return connectionManager.getTenantConnection(
-                                        productId,
-                                        'client',
-                                        tenant
-                                    );
-                                },
-                                withTransaction: async <T>(
-                                    callback: (client: PoolClient) => Promise<T>
-                                ) => {
-                                    const tenant = tenantContext.resolve(tenantId);
-                                    return connectionManager.withTenantTransaction(
-                                        productId,
-                                        'client',
-                                        tenant,
-                                        callback
-                                    );
-                                }
-                            }
+                            master: masterConfig ? buildRoleAccess(productId, 'master') : null,
+                            client: clientEnabled ? buildTenantClientAccess(productId, tenantId, resolvedSchema) : null,
                         };
                     };
                 }
 
-                // Handle role access normally
-                if (typeof prop === 'string' && prop !== 'get' && prop !== 'withTenant') {
+                // Shorthand: db.master, db.client, db.analytics
+                if (typeof prop === 'string') {
                     return target.get(prop);
                 }
 
-                return target[prop];
+                return undefined;
             }
         });
 
         return db as DatabaseAccess;
-
-
-        // Create proxy that intercepts property access
-        // return new Proxy(roleAccessor, {
-        //     get: (target, prop: string | symbol) => {
-        //         if (prop === 'get') {
-        //             return target.get;
-        //         }
-        //         if (typeof prop === 'string' && prop !== 'get') {
-        //             return target.get(prop);
-        //         }
-        //         return undefined;
-        //     }
-        // }) as DatabaseAccess;
     }
 
-    // Create RouteBinder
+    // RouteBinder only needs products, registry, apiRegistry, getDatabase — pass a minimal
+    // typed object rather than the full PlatformContext to avoid the circular dependency.
     const routeBinder = new RouteBinder(
         {
             products: productConfig,
             registry: productRegistry,
-            apiRegistry: apiRegistry,
-            getDatabase: getDatabaseAccess
+            apiRegistry,
+            getDatabase: getDatabaseAccess,
+            connectionManager,
         },
         routeModules
     );
 
-    return {
+    const platform: PlatformContext = {
         products: productConfig,
         registry: productRegistry,
-        apiRegistry: apiRegistry,
+        apiRegistry,
         database: connectionManager,
         getDatabase: getDatabaseAccess,
 
-        autoRegister: () => {
-            return routeBinder.autoRegister();
-        },
+        autoRegister: () => routeBinder.autoRegister(),
+        registerProduct: (productId) => routeBinder.registerProduct(productId),
 
-        registerProduct: (productId: string) => {
-            return routeBinder.registerProduct(productId);
-        },
-
-        close: async () => {
-            await connectionManager.closeAll();
-        },
+        close: () => connectionManager.closeAll(),
 
         health: {
-            check: async () => {
-                return connectionManager.healthCheck();
-            },
+            check: () => connectionManager.healthCheck(),
             ready: async () => {
                 const result = await connectionManager.healthCheck();
                 return result.healthy;
             },
-            live: () => {
-                return !connectionManager['isShuttingDown'];
-            }
+            live: () => !connectionManager.isShuttingDown,
         },
 
-        // Query logging
         queries: {
-            getLogs: (limit?: number, filter?: any) => {
-                return connectionManager.getQueryLogs(limit, filter);
-            },
-            clearLogs: () => {
-                connectionManager.clearQueryLogs();
-            },
-            getStats: (productId?: string, role?: string) => {
-                return connectionManager.getQueryStats(productId, role);
-            }
+            getLogs: (limit?, filter?) => connectionManager.getQueryLogs(limit, filter),
+            clearLogs: () => connectionManager.clearQueryLogs(),
+            getStats: (productId?, role?) => connectionManager.getQueryStats(productId, role),
         },
 
-        // Leak detection
         leaks: {
-            getInfo: () => {
-                return connectionManager.getLeakInfo();
-            },
-            hasLeaks: () => {
-                const leaks = connectionManager.getLeakInfo();
-                return Object.keys(leaks).length > 0;
-            }
+            getInfo: () => connectionManager.getLeakInfo(),
+            hasLeaks: () => Object.keys(connectionManager.getLeakInfo()).length > 0,
         },
 
-        // Events
-        on: (event: string, callback: Function) => {
-            connectionManager.on(event, callback);
-        },
-
-        // Log pool status
-        logPoolStatus: () => {
-            connectionManager.logPoolStatus();
-        }
+        on: (event, callback) => connectionManager.on(event, callback),
+        logPoolStatus: () => connectionManager.logPoolStatus(),
     };
-}
 
-/**
- * // Just add to config
- * {
- *   "products": [{
- *     "id": "identity_access_management",
- *     "roles": {
- *       "master": { ... },
- *       "client": { ... },
- *       "analytics": {
- *         "enabled": true,
- *         "database": { ... }
- *       }
- *     }
- *   }]
- * }
- * // All of these work dynamically based on config
- * req.db.master         // If master role is enabled
- * req.db.client         // If client role is enabled
- * req.db.analytics      // If analytics role is enabled
- * req.db.archive        // If archive role is enabled
- * req.db.reporting      // If reporting role is enabled
- * req.db.get('master')  // Explicit get method
- * req.db.get('analytics') // Explicit get method
- *
- * usage - const data = await req.db.analytics.query('SELECT * FROM reports');
- */
+    return platform;
+}
 
 export * from './config/ProductConfig.js';
 export * from './registry/ProductRegistry.js';

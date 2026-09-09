@@ -31,7 +31,7 @@ export default class CheckoutRoute {
 
         route.post('/checkout', coController.checkout, coController.deleteCart);
 
-        register.use(route);
+        register.use('/ck', route);
 
         return register;
     }

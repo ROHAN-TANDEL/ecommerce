@@ -1,4 +1,3 @@
-// src/modules/index.ts
 import { UserRoute } from './identity/routes/UserRoute.js';
 import { AuditRoute } from './identity/routes/AuditRoute.js';
 import { RoleRoute } from './identity/routes/RoleRoute.js';

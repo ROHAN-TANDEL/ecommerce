@@ -32,7 +32,7 @@ export default class ProductRoute {
 
         route.delete('/:id', productController.deleteProduct);
 
-        register.use('/products', route);
+        register.use('/productscode', route);
 
         return register;
     }

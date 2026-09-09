@@ -18,17 +18,15 @@ export class ProductRegistry {
         const enabledProducts = this.productConfig.getEnabledProducts();
 
         for (const product of enabledProducts) {
-            const hasMaster = product.roles['master']?.enabled ?? false;
-            const hasClient = product.roles['client']?.enabled ?? false;
-
+            console.log(product, 'product details');
             this.products.set(product.id, {
                 id: product.id,
                 name: product.name,
-                hasMaster,
-                hasClient,
+                hasMaster: product.roles.master.enabled,
+                hasClient: product.roles.client.enabled
             });
 
-            console.log(`📦 Product registered: ${product.id} (Master: ${hasMaster}, Client: ${hasClient})`);
+            console.log(`📦 Product registered: ${product.id} (Master: ${product.roles.master.enabled}, Client: ${product.roles.client.enabled})`);
         }
     }
 

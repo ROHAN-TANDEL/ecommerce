@@ -1,11 +1,20 @@
 import express from "express";
 import { KernelContext } from "./src/bootstrap/app/app-context.js";
+
+import { routeModules } from './src/modules/index.js';
+import { AdminRoute } from './src/modules/admin/routes/AdminRoute.js';
+import { createPlatformContext } from './src/platform/context.js';
+
 import AuthRoute from "./src/modules/auth/AuthRoute.js";
 import UserRoute from "./src/modules/user/UserRoute.js";
 import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
+
+
+
+
 
 class Application {
 
@@ -64,6 +73,37 @@ class Application {
     buildContext() {
         return this.context;
     }
+
+    platform()
+    {
+        const platform = createPlatformContext(routeModules);
+        return platform;
+    }
+
+    logPlatformInit(platform:any)
+    {
+        platform.products.logConfig();
+    }
+
+    autoRegisterApis(platform:any, app:any)
+    {
+        app.use('/api', platform.autoRegister());
+    }
+
+    // registerAdminRoutes(platform:any, app:any)
+    // {
+    //     const adminRoute = new AdminRoute(platform);
+    //     app.use('/admin', adminRoute.route());
+    // }
+
+    platformBuild(app:any)
+    {
+        const platform = this.platform();
+        this.logPlatformInit(platform);
+        this.autoRegisterApis(platform, app);
+        // this.registerAdminRoutes(platform, app);
+        return platform;
+    }
 }
 // todo FREEZ the object
 const app = express();
@@ -77,6 +117,8 @@ application.appBeforeMiddleware(app);
 await application.runtime();
 
 const context = application.buildContext();
+
+context.platform = application.platformBuild(app);
 
 //routes go here
 app.use((new AuthRoute(context)).route(context));

@@ -9,7 +9,7 @@ export default class ProductMiddleware {
             if (!authorization) {
                 return res.status(401).json({
                     status: "failed",
-                    message: "incorrect authorization"
+                    message: "product incorrect authorization"
                 });
             }
             const [type, token] = authorization.split(" ");

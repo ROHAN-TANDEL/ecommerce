@@ -1,7 +1,6 @@
-// src/modules/identity/controllers/UserController.ts
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
-export class UserController {
+export default class UserController {
     // Master access - no tenant needed
     listTenants = async (req: any, res: Response): Promise<void> => {
         try {

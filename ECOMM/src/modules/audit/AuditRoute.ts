@@ -23,7 +23,7 @@ export default class CheckoutRoute {
 
         route.get('/audit/:id',  auditControl.getAuditLog);
 
-        register.use('/api',route);
+        register.use('/api', route);
 
         return register;
     }

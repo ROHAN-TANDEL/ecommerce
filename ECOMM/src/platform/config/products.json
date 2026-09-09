@@ -1,4 +1,3 @@
-// src/platform/config/products.json
 {
   "products": [
     {
@@ -6,8 +5,8 @@
       "name": "Identity & Access Management",
       "enabled": true,
       "routes": {
-        "client": ["UserRoute", "AuditRoute", "RoleRoute"],
-        "master": ["TenantRoute", "SystemRoute", "ConfigRoute"]
+        "client": ["UserRoute", "RoleRoute"],
+        "master": ["AuditRoute"]
       },
       "roles": {
         "master": {
@@ -15,7 +14,7 @@
           "database": {
             "host": "localhost",
             "port": 5432,
-            "database": "iam_db",
+            "database": "authorization_management_master",
             "schema": "public",
             "user": "postgres",
             "password": "postgres",
@@ -36,7 +35,7 @@
           "database": {
             "host": "localhost",
             "port": 5432,
-            "database": "iam_db",
+            "database": "authorization_management_client",
             "user": "postgres",
             "password": "postgres",
             "pool": {
@@ -54,12 +53,12 @@
       }
     },
     {
-      "id": "subscription_management",
-      "name": "Subscription Management",
+      "id": "billing",
+      "name": "Billing & Subscriptions",
       "enabled": true,
       "routes": {
-        "client": ["SubscriptionRoute", "InvoiceRoute"],
-        "master": ["PlanRoute", "PriceRoute"]
+        "client": [],
+        "master": []
       },
       "roles": {
         "master": {
@@ -67,7 +66,7 @@
           "database": {
             "host": "localhost",
             "port": 5432,
-            "database": "subscription_db",
+            "database": "billing_db",
             "schema": "public",
             "user": "postgres",
             "password": "postgres",
@@ -88,11 +87,11 @@
           "database": {
             "host": "localhost",
             "port": 5432,
-            "database": "subscription_db",
+            "database": "billing_db",
             "user": "postgres",
             "password": "postgres",
             "pool": {
-              "maxConnections": 40,
+              "maxConnections": 30,
               "idleTimeout": 30000,
               "connectionTimeout": 5000,
               "maxUses": 7500,

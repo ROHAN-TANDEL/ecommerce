@@ -1,0 +1,56 @@
+{
+  "products": [
+    {
+      "id": "identity_access_management",
+      "name": "Identity & Access Management",
+      "enabled": true,
+      "routes": {
+        "client": ["UserRoute"],
+        "master": ["TenantRoute"]
+      },
+      "roles": {
+        "master": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "iam_db",
+            "schema": "public",
+            "user": "postgres",
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 30,
+              "idleTimeout": 45000,
+              "connectionTimeout": 10000,
+              "maxUses": 10000,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 15000,
+              "statementTimeout": 60000,
+              "queryTimeout": 60000
+            }
+          }
+        },
+        "client": {
+          "enabled": true,
+          "database": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "iam_db",
+            "user": "postgres",
+            "password": "postgres",
+            "pool": {
+              "maxConnections": 50,
+              "idleTimeout": 30000,
+              "connectionTimeout": 5000,
+              "maxUses": 7500,
+              "keepAlive": true,
+              "keepAliveInitialDelay": 10000,
+              "statementTimeout": 30000,
+              "queryTimeout": 30000
+            }
+          }
+        }
+      }
+    }
+  ]
+}
