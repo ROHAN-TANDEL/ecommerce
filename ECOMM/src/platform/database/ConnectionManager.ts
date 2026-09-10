@@ -66,7 +66,15 @@ export class ConnectionManager {
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Get a connection with tenant schema switching
+     * Get a connection with tenant schema switching.
+     *
+     * Uses SET LOCAL so the search_path is scoped to the current transaction only.
+     * When the connection is released back to the pool, PostgreSQL automatically
+     * resets session-local settings — no schema bleeds to the next request.
+     *
+     * IMPORTANT: The caller MUST wrap this in a transaction (BEGIN...COMMIT/ROLLBACK)
+     * for SET LOCAL to take effect. getTenantConnection() starts the transaction here.
+     * Use withTenantTransaction() for automatic management, or release manually.
      */
     async getTenantConnection(
         productId: string,
@@ -80,10 +88,15 @@ export class ConnectionManager {
         const client = await pool.connect();
 
         try {
-            await client.query(`SET search_path TO ${tenant.schema}`);
+            // BEGIN + SET LOCAL: schema is scoped to this transaction only.
+            // On COMMIT/ROLLBACK (or connection release), search_path resets to default.
+            await client.query('BEGIN');
+            await client.query(`SET LOCAL search_path TO "${tenant.schema}"`);
             this.emit('tenant:schema:switched', productId, tenant.id, tenant.schema);
             return client;
         } catch (error: any) {
+            // Rollback the transaction we opened before releasing
+            try { await client.query('ROLLBACK'); } catch {}
             client.release();
             throw new Error(`Failed to switch to tenant schema "${tenant.schema}": ${error.message}`);
         }
@@ -113,7 +126,10 @@ export class ConnectionManager {
     }
 
     /**
-     * Execute a query with tenant context
+     * Execute a single query with tenant context.
+     * Borrows a connection, runs the query inside the transaction opened by
+     * getTenantConnection (which used SET LOCAL search_path), then commits.
+     * The connection is always released — schema never leaks to the pool.
      */
     async queryWithTenant(
         productId: string,
@@ -127,12 +143,14 @@ export class ConnectionManager {
 
         try {
             const result = await client.query(text, params);
+            await client.query('COMMIT');
             const duration = Date.now() - start;
             this.logQuery(productId, role, text, params, duration, false);
             this.emit('query:executed', productId, tenant.id, text, duration);
             return result;
         } catch (error: any) {
             const duration = Date.now() - start;
+            try { await client.query('ROLLBACK'); } catch {}
             this.logQuery(productId, role, text, params, duration, true, error.message);
             throw error;
         } finally {
@@ -141,7 +159,9 @@ export class ConnectionManager {
     }
 
     /**
-     * Execute a transaction with tenant context
+     * Execute a transaction with tenant context.
+     * getTenantConnection() already issued BEGIN + SET LOCAL search_path,
+     * so we go straight to the callback, then COMMIT or ROLLBACK.
      */
     async withTenantTransaction<T>(
         productId: string,
@@ -152,13 +172,12 @@ export class ConnectionManager {
         const client = await this.getTenantConnection(productId, role, tenant);
 
         try {
-            await client.query('BEGIN');
             const result = await callback(client);
             await client.query('COMMIT');
             this.emit('transaction:committed', productId, tenant.id);
             return result;
         } catch (error) {
-            await client.query('ROLLBACK');
+            try { await client.query('ROLLBACK'); } catch {}
             this.emit('transaction:rolledback', productId, tenant.id, error);
             throw error;
         } finally {

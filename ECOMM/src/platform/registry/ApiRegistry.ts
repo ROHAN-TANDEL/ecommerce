@@ -7,6 +7,12 @@ export interface ApiRegistration {
     product: string;
     type?: 'master' | 'client';
     tenant?: boolean;
+    /** Express-compiled regexp for matching incoming request paths at runtime. */
+    regexp?: RegExp;
+}
+
+export interface MatchedApi {
+    registration: ApiRegistration;
 }
 
 export class ApiRegistry {
@@ -17,7 +23,6 @@ export class ApiRegistry {
             console.warn(`⚠️ API ${api.id} already registered, skipping...`);
             return;
         }
-
         this.apis.set(api.id, api);
     }
 
@@ -43,5 +48,31 @@ export class ApiRegistry {
 
     getNonTenantApis(): ApiRegistration[] {
         return this.getAll().filter(api => api.tenant === false);
+    }
+
+    /**
+     * Match an incoming request (method + path) against all registered APIs.
+     *
+     * Uses the Express-compiled regexp stored at registration time, so
+     * /users/123 correctly matches /users/:id without any custom parsing.
+     *
+     * Returns the first matching registration, or undefined.
+     */
+    match(method: string, requestPath: string): ApiRegistration | undefined {
+        const upperMethod = method.toUpperCase();
+
+        for (const api of this.apis.values()) {
+            if (api.method !== upperMethod) continue;
+
+            if (api.regexp) {
+                // Fast path — use pre-compiled regexp from Express layer
+                if (api.regexp.test(requestPath)) return api;
+            } else {
+                // Fallback — exact string match (no params in path)
+                if (api.path === requestPath) return api;
+            }
+        }
+
+        return undefined;
     }
 }

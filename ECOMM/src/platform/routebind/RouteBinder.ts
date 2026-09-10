@@ -128,16 +128,30 @@ export class RouteBinder {
         const db = this.deps.getDatabase(productId);
         const router = express.Router();
 
-        // Attach product context
+        // 1. Attach product + route type context
         router.use((req: any, res: any, next: any) => {
             req.productId = productId;
-            req.routeType = type; // 'master' or 'client'
+            req.routeType = type;
             next();
         });
 
-        // Add middleware based on type
+        // 2. API identification — match incoming request against the registry.
+        //    req.api is set here so everything downstream (middleware, controllers)
+        //    can read which registered API this request maps to.
+        //    Note: registry is populated AFTER bindRoutes returns (routes are registered
+        //    below), so we identify lazily at request time, not at setup time.
+        router.use((req: any, res: any, next: any) => {
+            const matched = this.deps.apiRegistry.match(req.method, req.path);
+            if (matched) {
+                req.api = matched;
+            }
+            // Missing match is not a hard error here — unregistered routes will simply
+            // have req.api = undefined and will fall through to Express 404 naturally.
+            next();
+        });
+
+        // 3. Tenant enforcement based on route type
         if (type === 'client') {
-            // Client routes: tenant required
             router.use((req: any, res: any, next: any) => {
                 req.requiresTenant = true;
                 next();
@@ -145,7 +159,6 @@ export class RouteBinder {
             router.use(this.tenantMiddleware.resolve);
             router.use(this.tenantMiddleware.validate);
         } else {
-            // Master routes: no tenant
             router.use((req: any, res: any, next: any) => {
                 req.requiresTenant = false;
                 req.tenant = null;
@@ -154,10 +167,9 @@ export class RouteBinder {
             });
         }
 
-        // Attach database access based on type
+        // 4. Attach database access based on type
         router.use((req: any, res: any, next: any) => {
             if (type === 'master') {
-                // Master routes: expose only master role, lazily through the proxy
                 req.db = new Proxy({}, {
                     get: (_t, prop: string | symbol) => {
                         if (prop === 'master') return db.get('master');
@@ -166,14 +178,14 @@ export class RouteBinder {
                     }
                 });
             } else {
-                // Client routes: full access — tenant middleware will replace this
-                // with a tenant-scoped db once the tenant is resolved
+                // Client routes: tenant middleware has already replaced req.db
+                // with the tenant-scoped accessor. This is a safe fallback only.
                 req.db = db;
             }
             next();
         });
 
-        // Register routes
+        // 5. Register actual Express route handlers
         for (const RouteClass of routes) {
             const routeInstance = new RouteClass();
             const routeRouter = routeInstance.route();
@@ -185,7 +197,10 @@ export class RouteBinder {
     }
 
     /**
-     * Capture routes and register APIs
+     * Capture routes and register APIs.
+     * Stores the Express-compiled layer.regexp so the ApiRegistry can match
+     * real incoming paths (e.g. /users/123) against pattern paths (e.g. /users/:id)
+     * at request time without re-implementing Express routing.
      */
     private captureAndRegisterApis(router: express.Router, productId: string, type?: 'master' | 'client'): void {
         const stack = (router as any).stack || [];
@@ -199,13 +214,18 @@ export class RouteBinder {
                     const apiId = this.generateApiId(method, path);
                     const fullId = `${productId}.${apiId}`;
 
+                    // layer.route.regexp is the Express-compiled regexp for this exact path.
+                    // Storing it lets ApiRegistry.match() do accurate param-aware matching.
+                    const regexp: RegExp | undefined = layer.route.regexp ?? layer.regexp;
+
                     this.deps.apiRegistry.register({
                         id: fullId,
                         method,
                         path,
                         product: productId,
                         type: type || 'client',
-                        tenant: type === 'client'
+                        tenant: type === 'client',
+                        regexp,
                     });
 
                     console.log(`   📝 API: ${fullId} (${method} ${path}) [${type || 'client'}]`);

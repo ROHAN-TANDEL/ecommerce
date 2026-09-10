@@ -5,8 +5,8 @@
       "name": "Identity & Access Management",
       "enabled": true,
       "routes": {
-        "client": ["UserRoute", "RoleRoute"],
-        "master": ["AuditRoute"]
+        "client": [],
+        "master": ["AdminRoute"]
       },
       "roles": {
         "master": {

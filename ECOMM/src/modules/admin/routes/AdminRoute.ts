@@ -1,4 +1,3 @@
-// src/modules/admin/routes/AdminRoute.ts
 import express from 'express';
 import { PoolController } from '../controllers/PoolController.js';
 import { ProductController } from '../controllers/ProductController.js';
@@ -54,7 +53,7 @@ export class AdminRoute {
 
         // ==================== QUERY LOGS ====================
         router.get('/queries', this.poolController.getQueryLogs);
-        router.get('/queries/stats/:productId?/:role?', this.poolController.getQueryStats);
+        router.get('/queries/stats{/:productId}{/:role}', this.poolController.getQueryStats);
         router.delete('/queries', this.poolController.clearQueryLogs);
 
         // ==================== LEAK DETECTION ====================
