@@ -5,6 +5,8 @@ node_modules/
 dist/
 build/
 
+.ideal/
+
 # Environment Variables & Secrets
 .env
 .env.local
