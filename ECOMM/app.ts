@@ -6,6 +6,23 @@ import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
+import Platform, {preparePools, client} from "./src/platformdb/platform.js";
+
+const [platformDetail, pools] = preparePools();
+
+const poolClient = await client(platformDetail, pools, 'authorization_management', 'master');
+
+try {
+
+    const result = await poolClient.query(
+        "SELECT NOW()"
+    );
+
+    console.log(result.rows);
+} finally {
+//    poolClient.release();
+}
+
 
 class Application {
 
