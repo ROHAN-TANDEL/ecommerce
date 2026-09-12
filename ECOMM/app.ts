@@ -6,23 +6,7 @@ import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
-import Platform, {preparePools, client, poolClient} from "./src/platformdb/platform.js";
-
-const [platformDetail, pools, routers] = preparePools();
-
-const pl = await poolClient(platformDetail, pools, 'authorization_management');
-
-try {
-
-    const result = await pl.master.query(
-        "SELECT NOW()"
-    );
-
-    console.log(result.rows);
-} finally {
-//    poolClient.release();
-}
-
+import Context from "./src/platformdb/context.js";
 
 class Application {
 
@@ -85,7 +69,7 @@ class Application {
     }
 }
 // todo FREEZ the object
-const app = express();
+let app = express();
 
 const application = new Application();
 
@@ -97,13 +81,9 @@ await application.runtime();
 
 const context = application.buildContext();
 
+app = (new Context(app)).build();
 //routes go here
 app.use('/health', context.scripts.health.check);
-
-console.log(routers);
-for(const router of routers) {
-    app.use(router);
-}
 
 app.use((new AuthRoute(context)).route(context));
 

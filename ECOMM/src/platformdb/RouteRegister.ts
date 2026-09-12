@@ -2,16 +2,14 @@ import { Pool, type PoolConfig } from "pg";
 import { api } from "../routes/api.js";
 import express from "express";
 
-export default class Platform {
+export default class RouteRegister {
 
-    private poolsMap : any = new Map();
+    private routers:any = [];
 
-    constructor() {
+    constructor(private readonly pools:any) {
         const config = this.config();
-        this.setPools(config);
+        this.register(config);
     }
-
-    private pools:any = new Map();
 
     private config() : any
     {
@@ -29,7 +27,7 @@ export default class Platform {
                             database : "authorization_management_master",
                             schema : "master",
                             user : "root",
-                            password : "root123"
+                            password : "root123",
                         }
                     },
 
@@ -80,63 +78,59 @@ export default class Platform {
         };
     }
 
-    private setPools(config:any) : any
+    private register(config:any) : any
     {
+
         for (const [productName, productDetail] of Object.entries(config))
         {
             const databases = Object.keys(productDetail['database']);
+            const dbs = {};
 
             for (const databaseRole of databases) {
+
+                let poolKey;
+
                 const databaseConfig : any = productDetail['database'][databaseRole];
 
                 if (databaseConfig.status) {
 
-                    const databaseCred : any = productDetail['database'][databaseRole]['credentials'];
-
-                    const { schema, ...credentials } = databaseCred;
-
-
-                    const pool: any = new Pool({
-                        ...credentials,
-                        options: schema ? `-c search_path=${schema}` : undefined
-                    });
-
-                    let poolKey : any = `${productName}:${databaseRole}`;
-
-                    this.poolsMap.set(poolKey, pool);
+                    if (databaseConfig.roles?.master !== true && databaseConfig.roles?.client !== true) {
+                        poolKey = `${productName}:${databaseRole}`;
+                        dbs[databaseRole] = this.pools.get(poolKey);
+                    }
 
                     if (databaseConfig.roles?.master === true) {
                         poolKey = `${productName}:master`;
-                        this.poolsMap.set(poolKey, pool);
+                        dbs['master'] = this.pools.get(poolKey);
                     }
 
                     if (databaseConfig.roles?.client === true) {
                         poolKey = `${productName}:client`;
-                        this.poolsMap.set(poolKey, pool);
+                        dbs['client'] = this.pools.get(poolKey);
                     }
                 }
             }
+
+            const routes:any = productDetail.routes;
+
+            for (const routeName of routes)
+            {
+                const router = express.Router();
+
+                const routerName = api[routeName];
+
+                const registerRoute = (new routerName()).route(dbs);
+
+                router.use(productDetail.identification, registerRoute);
+
+                this.routers.push(router);
+            }
         }
-
-        return this.poolsMap;
+        return this.routers;
     }
 
-    getPools()
+    public routes()
     {
-        return this.poolsMap;
-    }
-
-    async closePools()
-    {
-        const pools = Array.from(this.poolsMap.values());
-
-        await Promise.all(
-            pools.map(pool => pool.end())
-        );
-
-        pools.clear();
-
-        return true;
+        return this.routers;
     }
 }
-
