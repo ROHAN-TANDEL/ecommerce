@@ -10,24 +10,58 @@ export class TenantRoute {
     {
         const childRouter = express.Router();
 
-
         childRouter.post(
             "/create/entries",
             async (req, res, next) => {
 
+                const clientResult = await context.client.query(`SELECT * from users`);
+
+                /** client testing code */
+                // const clt = await context.client.connect();
+                //
+                // await clt.query("SET search_path TO tenant_002");
+                //
+                // const clientResult = await clt.query(`SELECT * from users`);
+                //
+                // clt.release();
+
+                /** master testing code */
                 const database = context.master;
 
+                // await clt.query(
+                //     "SET search_path TO tenant_002"
+                // );
+
                 const result = await context.master.query(`
-                                SELECT
-                                    current_database(),
-                                    current_schema()
-                            `);
+                            SELECT
+                                current_database(),
+                                current_schema(),
+                                current_schemas(true)
+                        `);
+
+                console.log(result.rows);
+
+                const searchPath = await context.master.query("SHOW search_path");
+
+                console.log(searchPath.rows);
+
+                const resultmastedetail = await context.master.query(`
+                        SELECT
+                            schema_name
+                        FROM information_schema.schemata
+                        WHERE schema_name = 'master'
+                    `);
 
                 res.json({
                     status: "success",
-                    data: result.rows
+                    masterdetail: result.rows,
+                    masterdetailtw: searchPath.rows,
+                    master_schema_detail:resultmastedetail.rows,
+                    clientread : clientResult.rows,
+
                 });
                 return;
+
                 try {
 
                     const {
