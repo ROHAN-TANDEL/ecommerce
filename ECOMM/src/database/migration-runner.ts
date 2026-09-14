@@ -9,12 +9,15 @@ export class MigrationRunner {
     constructor(
         private readonly pool: Pool,
         private readonly migrationsPath: string
-    ) {}
+    ) {
+        console.log('started')
+    }
 
     async run(): Promise<void> {
         const client = await this.pool.connect();
 
         try {
+            console.log("worked")
             await this.createMigrationsTable(client);
 
             const migrations = await this.loadMigrations();
@@ -52,7 +55,7 @@ export class MigrationRunner {
         { name: string; sql: string }[]
     > {
         const files = await fs.readdir(this.migrationsPath);
-
+console.log("files")
         const migrationFiles = files
             .filter((file) => file.endsWith(".sql"))
             .sort();
@@ -62,7 +65,7 @@ export class MigrationRunner {
         for (const file of migrationFiles) {
             const filePath = path.join(this.migrationsPath, file);
             const sql = await fs.readFile(filePath, "utf8");
-
+console.log("migration paths");
             migrations.push({
                 name: file,
                 sql,

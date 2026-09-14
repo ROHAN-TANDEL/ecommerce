@@ -1,6 +1,8 @@
 import { Pool, type PoolConfig } from "pg";
 import { api } from "../routes/api.js";
 import express from "express";
+import Wrapper from "./wrapper.js";
+import Config from "./config.js";
 
 export default class Platform {
 
@@ -15,69 +17,7 @@ export default class Platform {
 
     private config() : any
     {
-        return {
-            authorization_management: {
-                routes : ["TenantRoute"],
-                identification : '/identity/management',
-                database : {
-                    master: {
-                        status : true,
-                        roles : { master : true },
-                        credentials : {
-                            host : "localhost",
-                            port : 5432,
-                            database : "authorization_management_master",
-                            schema : "master",
-                            user : "root",
-                            password : "root123"
-                        }
-                    },
-
-                    client: {
-                        status : true,
-                        roles : { client : true },
-                        credentials : {
-                            host: "localhost",
-                            port: 5432,
-                            database: "authorization_management_client",
-                            user: "root",
-                            password: "root123",
-                        }
-                    }
-                }
-            },
-
-            identity_access_management: {
-                routes : ["TenantRoute"],
-                identification : '/identity/management',
-                database : {
-                    master: {
-                        status : true,
-                        roles : { master : true },
-                        credentials : {
-                            host: "localhost",
-                            port: 5432,
-                            database: "identity_access_management_master",
-                            schema: "master",
-                            user: "root",
-                            password: "root123",
-                        }
-                    },
-
-                    client: {
-                        status: true,
-                        roles : { client : true },
-                        credentials: {
-                            host: "localhost",
-                            port: 5432,
-                            database: "identity_access_management_client",
-                            user: "root",
-                            password: "root123",
-                        }
-                    }
-                }
-            }
-        };
+        return new Config().config();
     }
 
     private setPools(config:any) : any
@@ -95,11 +35,25 @@ export default class Platform {
 
                     const { schema, ...credentials } = databaseCred;
 
-
                     const pool: any = new Pool({
-                        ...credentials,
-                        options: schema ? `-c search_path=${schema}` : undefined
+                        ...credentials
+                        // options: schema ? `-c search_path=${schema}` : undefined
                     });
+
+                    if (schema) {
+
+                        pool.on(
+                            'connect',
+                            async (client:any) => {
+
+                                await client.query(
+                                    `SET search_path TO ${schema}`
+                                );
+
+                            }
+                        );
+                    }
+
 
                     let poolKey : any = `${productName}:${databaseRole}`;
 
@@ -112,7 +66,10 @@ export default class Platform {
 
                     if (databaseConfig.roles?.client === true) {
                         poolKey = `${productName}:client`;
-                        this.poolsMap.set(poolKey, pool);
+
+                        const poolWrapper = new Wrapper(pool);
+
+                        this.poolsMap.set(poolKey, poolWrapper);
                     }
                 }
             }

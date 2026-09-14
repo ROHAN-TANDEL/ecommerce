@@ -1,6 +1,8 @@
 import { Pool, type PoolConfig } from "pg";
 import { api } from "../routes/api.js";
 import express from "express";
+import clientContext from "./request-context-middleware.js";
+import Config from "./config.js";
 
 export default class RouteRegister {
 
@@ -13,69 +15,7 @@ export default class RouteRegister {
 
     private config() : any
     {
-        return {
-            authorization_management: {
-                routes : ["TenantRoute"],
-                identification : '/identity/management',
-                database : {
-                    master: {
-                        status : true,
-                        roles : { master : true },
-                        credentials : {
-                            host : "localhost",
-                            port : 5432,
-                            database : "authorization_management_master",
-                            schema : "master",
-                            user : "root",
-                            password : "root123",
-                        }
-                    },
-
-                    client: {
-                        status : true,
-                        roles : { client : true },
-                        credentials : {
-                            host: "localhost",
-                            port: 5432,
-                            database: "authorization_management_client",
-                            user: "root",
-                            password: "root123",
-                        }
-                    }
-                }
-            },
-
-            identity_access_management: {
-                routes : ["TenantRoute"],
-                identification : '/identity/management',
-                database : {
-                    master: {
-                        status : true,
-                        roles : { master : true },
-                        credentials : {
-                            host: "localhost",
-                            port: 5432,
-                            database: "identity_access_management_master",
-                            schema: "master",
-                            user: "root",
-                            password: "root123",
-                        }
-                    },
-
-                    client: {
-                        status: true,
-                        roles : { client : true },
-                        credentials: {
-                            host: "localhost",
-                            port: 5432,
-                            database: "identity_access_management_client",
-                            user: "root",
-                            password: "root123",
-                        }
-                    }
-                }
-            }
-        };
+        return new Config().config();
     }
 
     private register(config:any) : any
@@ -121,7 +61,7 @@ export default class RouteRegister {
 
                 const registerRoute = (new routerName()).route(dbs);
 
-                router.use(productDetail.identification, registerRoute);
+                router.use(productDetail.identification, clientContext, registerRoute);
 
                 this.routers.push(router);
             }

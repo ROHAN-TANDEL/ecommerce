@@ -17,18 +17,3 @@ const migrationsPath = path.join(
     "database",
     "migrations"
 );
-
-const runner = new MigrationRunner(
-    pool,
-    migrationsPath
-);
-
-runner
-    .run()
-    .catch((error) => {
-        console.error(error);
-        process.exitCode = 1;
-    })
-    .finally(async () => {
-        await pool.end();
-    });

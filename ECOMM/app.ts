@@ -7,6 +7,9 @@ import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
 import Context from "./src/platformdb/context.js";
+import {MasterMigrate} from "./src/platformdb/migrator.js";
+
+new MasterMigrate().execute('authorization_management', 'master');
 
 class Application {
 
