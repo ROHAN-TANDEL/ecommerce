@@ -4,8 +4,7 @@ import AuthMiddleware from "../auth/AuthMiddleware.js";
 
 export default class CheckoutRoute {
 
-    constructor(private readonly context:any) {
-    }
+    constructor(private readonly context:any) {}
 
     public route= () => {
 

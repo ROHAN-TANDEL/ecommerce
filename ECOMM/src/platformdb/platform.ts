@@ -36,23 +36,11 @@ export default class Platform {
                     const { schema, ...credentials } = databaseCred;
 
                     const pool: any = new Pool({
-                        ...credentials
-                        // options: schema ? `-c search_path=${schema}` : undefined
+                        ...credentials,
+                        options: schema
+                            ? `-c search_path=${schema}`
+                            : undefined
                     });
-
-                    if (schema) {
-
-                        pool.on(
-                            'connect',
-                            async (client:any) => {
-
-                                await client.query(
-                                    `SET search_path TO ${schema}`
-                                );
-
-                            }
-                        );
-                    }
 
 
                     let poolKey : any = `${productName}:${databaseRole}`;

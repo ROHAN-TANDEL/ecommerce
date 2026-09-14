@@ -3,6 +3,7 @@ import { api } from "../routes/api.js";
 import express from "express";
 import clientContext from "./request-context-middleware.js";
 import Config from "./config.js";
+import { facadeMiddleware } from "./facade-middleware.js";
 
 export default class RouteRegister {
 
@@ -57,13 +58,19 @@ export default class RouteRegister {
             {
                 const router = express.Router();
 
-                const routerName = api[routeName];
+                const routerData = api[routeName];
+                console.log("router name");
+                console.log(api, routeName, routerData);
 
-                const registerRoute = (new routerName()).route(dbs);
+                if (routerData !== undefined) {
+                    const registerRoute = (new routerData()).route(dbs);
 
-                router.use(productDetail.identification, clientContext, registerRoute);
+                    router.use(productDetail.identification, clientContext, facadeMiddleware(dbs), registerRoute);
 
-                this.routers.push(router);
+                    this.routers.push(router);
+                } else {
+                    console.log("route not defined " . routerData);
+                }
             }
         }
         return this.routers;
