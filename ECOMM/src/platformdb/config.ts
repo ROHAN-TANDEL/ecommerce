@@ -33,23 +33,19 @@ export default class Config {
                 }
             },
             client_management: {
-                routes: ["ClientRoute"],
-                identification: '/identity/management',
+                routes: ["ProductRoute", "BusinessRoute", "BusinessProductRoute", "ClientRoute"],
+                identification: '/client/management',
                 database: {
                     master: {
                         status: true,
                         roles: {master: true},
                         migration : {
                             enabled: true,
-                            path : [
-                                "./src/migrations/client_management/master"
-                            ]
+                            path : ["./src/migrations/client_management/master"]
                         },
                         seeder : {
                             enabled: true,
-                            path : [
-                                "./src/seeders/client_management/master"
-                            ]
+                            path : ["./src/seeders/client_management/master"]
                         },
                         credentials: {
                             host: "localhost",
@@ -59,72 +55,28 @@ export default class Config {
                             user: "root",
                             password: "root123"
                         }
-                    }
-                }
-            },
-            authorization_management: {
-                routes: [],
-                identification: '/identity/management',
-                database: {
-                    master: {
-                        status: true,
-                        roles: {master: true},
-                        migration : {
-                            enabled: true,
-                            path : [
-                                "./src/migrations/authorization_management/master"
-                            ]
-                        },
-                        credentials: {
-                            host: "localhost",
-                            port: 5432,
-                            database: "authorization_management_master",
-                            schema: "master",
-                            user: "root",
-                            password: "root123"
-                        }
                     },
-
                     client: {
                         status: true,
                         roles: {client: true},
-                        schema_seperation : true,
+                        schema_separation : true,
+                        migration : {
+                            enabled: true,
+                            path : [
+                                "./src/migrations/client_management/client"
+                            ]
+                        },
+                        seeder : {
+                            enabled: true,
+                            path : [
+                                "./src/seeders/client_management/client"
+                            ]
+                        },
                         master_bound : {
                             self: false,
                             product_name: 'authorization_management',
                             database_role: 'master',
                         },
-                        credentials: {
-                            host: "localhost",
-                            port: 5432,
-                            database: "authorization_management_client",
-                            user: "root",
-                            password: "root123",
-                        }
-                    }
-                }
-            },
-
-            identity_access_management: {
-                routes: [],
-                identification: '/identity/management',
-                database: {
-                    master: {
-                        status: true,
-                        roles: {master: true},
-                        credentials: {
-                            host: "localhost",
-                            port: 5432,
-                            database: "identity_access_management_master",
-                            schema: "master",
-                            user: "root",
-                            password: "root123",
-                        }
-                    },
-
-                    client: {
-                        status: true,
-                        roles: {client: true},
                         credentials: {
                             host: "localhost",
                             port: 5432,

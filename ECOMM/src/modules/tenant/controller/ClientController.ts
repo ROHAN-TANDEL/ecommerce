@@ -1,21 +1,20 @@
-import {ClientService} from "../service/ClientService.js";
-import {ClientResponse} from "../response/ClientResponse.js";
-
 export class ClientController {
 
-    constructor() {
-        this.clientService = app(ClientService);
-        this.clientResponse = app(ClientResponse);
+    private readonly clientService:any;
+
+    constructor({ clientService }:any)
+    {
+        this.clientService = clientService;
     }
 
-    async createClient(request:any, response:any)
+    async create(request:any, response:any)
     {
-        const input:any = request.body;
+        const result:any =
+            await this.clientService.createClient(request.body);
 
-        const client : any = await this.clientService.createClient(input);
-
-        const data : any = this.clientResponse.response(client);
-
-        response.json(data);
+        return response.json({
+            status: true,
+            data: result.rows[0]
+        });
     }
 }

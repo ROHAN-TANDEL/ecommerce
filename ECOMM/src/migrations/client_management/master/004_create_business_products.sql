@@ -3,17 +3,14 @@ CREATE TABLE IF NOT EXISTS business_products
     id BIGSERIAL PRIMARY KEY,
 
     business_id BIGINT NOT NULL,
-
     product_id BIGINT NOT NULL,
 
     status VARCHAR(50) NOT NULL DEFAULT 'registered',
 
     enabled_at TIMESTAMP,
-
     disabled_at TIMESTAMP,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_business_products_business
