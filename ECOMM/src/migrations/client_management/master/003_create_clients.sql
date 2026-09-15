@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS clients
 
     business_id BIGINT NOT NULL,
 
+    product_id BIGINT NOT NULL,
+
     client_code VARCHAR(100) NOT NULL UNIQUE,
 
     status VARCHAR(50) NOT NULL DEFAULT 'registered',
@@ -15,5 +17,10 @@ CREATE TABLE IF NOT EXISTS clients
     CONSTRAINT fk_clients_business
     FOREIGN KEY (business_id)
     REFERENCES businesses(id)
+    ON DELETE CASCADE,
+
+    CONSTRAINT fk_clients_product
+    FOREIGN KEY (product_id)
+    REFERENCES products(id)
     ON DELETE CASCADE
     );

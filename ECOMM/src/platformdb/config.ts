@@ -33,7 +33,7 @@ export default class Config {
                 }
             },
             client_management: {
-                routes: ["MembersRoute"],
+                routes: ["ClientRoute"],
                 identification: '/identity/management',
                 database: {
                     master: {
@@ -63,7 +63,7 @@ export default class Config {
                 }
             },
             authorization_management: {
-                routes: ["TenantRoute"],
+                routes: [],
                 identification: '/identity/management',
                 database: {
                     master: {
@@ -106,7 +106,7 @@ export default class Config {
             },
 
             identity_access_management: {
-                routes: ["TenantRoute"],
+                routes: [],
                 identification: '/identity/management',
                 database: {
                     master: {
