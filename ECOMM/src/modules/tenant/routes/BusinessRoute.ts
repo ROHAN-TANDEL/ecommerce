@@ -1,17 +1,17 @@
 import express from "express";
-import { ClientController } from "../controller/ClientController.js";
+import { BusinessController } from "../controller/BusinessController.js";
 
 const router:any = express.Router();
 
-export class ClientRoute {
+export class BusinessRoute {
 
     route()
     {
         router.post(
-            "/clients",
+            "/businesses",
             async (request:any, response:any) => {
 
-                const controller:any = app(ClientController);
+                const controller:any = app(BusinessController);
 
                 return controller.create(request, response);
             }

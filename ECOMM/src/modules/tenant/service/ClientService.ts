@@ -1,12 +1,13 @@
-import {ClientRepository} from "../repository/ClientRepository.js";
-
 export class ClientService {
 
-    constructor() {
-        this.clientRepository = app(ClientRepository);
+    private readonly clientRepository:any;
+
+    constructor({ clientRepository }:any)
+    {
+        this.clientRepository = clientRepository;
     }
 
-    async createClient(input)
+    async createClient(input:any)
     {
         return await this.clientRepository.createClient(input);
     }

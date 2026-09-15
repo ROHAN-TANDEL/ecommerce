@@ -1,31 +1,30 @@
 import db from "../../../platformdb/facade.js";
 
-export class ClientRepository {
+export class BusinessProductRepository {
 
-    async createClient(input:any)
+    async registerProduct(input:any)
     {
         return await db.master.query(
             `
-                INSERT INTO clients
+                INSERT INTO business_products
                 (
                     business_id,
                     product_id,
-                    client_code,
-                    status
+                    status,
+                    enabled_at
                 )
                 VALUES
                 (
                     $1,
                     $2,
-                    $3,
-                    'registered'
+                    'active',
+                    CURRENT_TIMESTAMP
                 )
                 RETURNING *
             `,
             [
                 input.businessId,
-                input.productId,
-                input.clientCode
+                input.productId
             ]
         );
     }
