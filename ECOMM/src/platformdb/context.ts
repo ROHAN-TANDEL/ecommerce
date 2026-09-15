@@ -1,6 +1,9 @@
 import Platform from "./platform.js";
 import RouteRegister from "./RouteRegister.js";
 
+/** order matters */
+import "./register.js";
+
 export default class Context {
 
     private routes : any = [];

@@ -16,11 +16,11 @@ export default class AuthRoute {
 
         const authRouter = express.Router();
 
-        const authController = new AuthController(context);
+        const authController = new AuthController();
 
-        const authMid = new AuthMiddleware(context).auth;
+        // const authMid = new AuthMiddleware(context).auth;
 
-        auth.route('/auth');
+        // auth.route('/auth');
 
         auth.get('/ping', authController.ping);
 
@@ -30,7 +30,7 @@ export default class AuthRoute {
 
         auth.post('/refresh-token', authController.refreshToken);
 
-        auth.post('/logout', authMid, authController.logout);
+        // auth.post('/logout', authMid, authController.logout);
 
         authRouter.use('/auth', auth);
 

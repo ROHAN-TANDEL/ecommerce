@@ -1,8 +1,8 @@
+import db from "../../platformdb/facade.js";
+
 export default class AuthController {
 
-    context;
-
-    constructor(context: any) {
+    constructor() {
         this.context = context;
     }
 
@@ -16,7 +16,7 @@ export default class AuthController {
     async getRoles() {
         try {
             const query = 'SELECT * FROM master.roles';
-            const result = await this.context.client.query(query);
+            const result = await db.master.query(query);
             return result.rows;
         }
         catch (error) {
@@ -42,7 +42,7 @@ export default class AuthController {
                 user.role_id,
                 user.status.toUpperCase(),
             ];
-            const result = await this.context.client.query(query, inputs);
+            const result = await db.master.query(query, inputs);
             return result.rows;
         }
         catch (error: any) {
@@ -146,7 +146,7 @@ export default class AuthController {
     async userExists(email: any) {
         try {
             const q = `SELECT * FROM master.users WHERE email=$1 AND status='ACTIVE' AND deleted_at IS NULL `;
-            const result = await this.context.client.query(q, [email]);
+            const result = await db.master.query(q, [email]);
             return result.rows;
         }
         catch (error: any) {
@@ -174,7 +174,7 @@ export default class AuthController {
                              WHERE user_id = $1
                                AND revoked_at IS NULL 
                              ORDER BY created_at DESC`;
-            const result = await this.context.client.query(query, [userId]);
+            const result = await db.master.query(query, [userId]);
             /**valid token but it is not in records */
             if (!result || result?.rows?.at(0)?.token === undefined) {
                 return res.status(401).json({
@@ -186,7 +186,7 @@ export default class AuthController {
             if (token.token !== result.rows?.at(0)?.token) {
                 /** clean all the token */
                 const query = `DELETE FROM master.refresh_tokens WHERE user_id = $1`;
-                await this.context.client.query(query, [userId]);
+                await db.master.query(query, [userId]);
                 return res.status(401).json({
                     status: "failed",
                     message: "incorrect token"
@@ -227,7 +227,7 @@ export default class AuthController {
     }
 
     async store(refreshToken: any, userId: any, exp?: any) {
-        const client = await this.context.client.connect();
+        const client = await db.master.connect();
         try {
             await client.query('BEGIN');
             const ttlSeconds = this.context.env.JWT_REFRESH_TTL;

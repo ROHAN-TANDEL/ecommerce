@@ -20,7 +20,7 @@ export default class ProductRoute {
 
         const authMid = new ProductMiddleware(context).auth;
 
-        route.use(authMid);
+        // route.use(authMid);
 
         route.get('', productController.getProducts);
 

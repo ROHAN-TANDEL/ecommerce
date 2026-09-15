@@ -16,7 +16,7 @@ export default class CheckoutRoute {
         const coController = new CheckoutController(this.context);
         const authMid = new AuthMiddleware(this.context).auth;
 
-        route.use(authMid);
+        // route.use(authMid);
 
         route.get('/cart',  coController.getCart);
 

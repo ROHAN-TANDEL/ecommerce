@@ -1,15 +1,11 @@
 import express from "express";
 import { KernelContext } from "./src/bootstrap/app/app-context.js";
 import AuthRoute from "./src/modules/auth/AuthRoute.js";
-import UserRoute from "./src/modules/user/UserRoute.js";
 import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
 import Context from "./src/platformdb/context.js";
-import {MasterMigrate} from "./src/platformdb/migrator.js";
-
-new MasterMigrate().execute('authorization_management', 'master');
 
 class Application {
 
@@ -84,13 +80,13 @@ await application.runtime();
 
 const context = application.buildContext();
 
+(globalThis as any).context = context;
+
 app = (new Context(app)).build();
 //routes go here
 app.use('/health', context.scripts.health.check);
 
 app.use((new AuthRoute(context)).route(context));
-
-app.use((new UserRoute(context)).route(context));
 
 app.use((new ProductRoute(context)).route(context));
 

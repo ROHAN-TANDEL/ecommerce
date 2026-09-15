@@ -16,7 +16,7 @@ export default class CheckoutRoute {
 
         const authMid = new AuthMiddleware(this.context).auth;
 
-        route.use(authMid);
+        // route.use(authMid);
 
         route.get('/audit',  auditControl.getAuditLogs);
 

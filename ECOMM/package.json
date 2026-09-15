@@ -18,7 +18,8 @@
     "clean": "rm -rf dist",
     "db:migrate": "tsx src/database/migration-cli.ts",
     "db:seed": "tsx src/database/seeder-cli.ts",
-    "dba:migrate": "tsx src/platformdb/run-migrator.ts"
+    "dba:migrate": "tsx src/platformdb/run-migrator.ts",
+    "dba:seed": "tsx src/platformdb/run-seeder.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.1106.0",

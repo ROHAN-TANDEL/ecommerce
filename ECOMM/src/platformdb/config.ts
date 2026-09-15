@@ -3,7 +3,7 @@ export default class Config {
     private config(): any {
         return {
             identity_management: {
-                routes: ["HealthRoute"],
+                routes: ["HealthRoute", "UserRoute",  "AuthRoute"],
                 identification: '/identity/management',
                 database: {
                     master: {
@@ -13,6 +13,12 @@ export default class Config {
                             enabled: true,
                             path : [
                                 "./src/migrations/identity_management/master"
+                            ]
+                        },
+                        seeder : {
+                            enabled: true,
+                            path : [
+                                "./src/seeders/identity_management/master"
                             ]
                         },
                         credentials: {
@@ -37,6 +43,12 @@ export default class Config {
                             enabled: true,
                             path : [
                                 "./src/migrations/client_management/master"
+                            ]
+                        },
+                        seeder : {
+                            enabled: true,
+                            path : [
+                                "./src/seeders/client_management/master"
                             ]
                         },
                         credentials: {

@@ -59,8 +59,6 @@ export default class RouteRegister {
                 const router = express.Router();
 
                 const routerData = api[routeName];
-                console.log("router name");
-                console.log(api, routeName, routerData);
 
                 if (routerData !== undefined) {
                     const registerRoute = (new routerData()).route(dbs);
@@ -69,7 +67,7 @@ export default class RouteRegister {
 
                     this.routers.push(router);
                 } else {
-                    console.log("route not defined " . routerData);
+                    console.log( {route_not_found : "route not defined " + routeName } );
                 }
             }
         }

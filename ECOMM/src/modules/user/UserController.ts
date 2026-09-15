@@ -1,4 +1,6 @@
+
 import AuditController from "../audit/AuditController.js";
+import db from "../../platformdb/facade.js";
 
 export default class UserController {
 
@@ -6,7 +8,7 @@ export default class UserController {
     audit: AuditController;
 
     constructor(context: any) {
-        this.context = context;
+        this.context = db;
         this.audit = new AuditController(context);
     }
 
