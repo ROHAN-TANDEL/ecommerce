@@ -22,6 +22,9 @@ import { BusinessController } from "../modules/tenant/controller/BusinessControl
 import { BusinessProductRepository } from "../modules/tenant/repository/BusinessProductRepository.js";
 import { BusinessProductService } from "../modules/tenant/service/BusinessProductService.js";
 import { BusinessProductController } from "../modules/tenant/controller/BusinessProductController.js";
+import {SchemaController} from "../modules/tenant/controller/SchemaController.js";
+
+register("schemaController", SchemaController);
 
 register("businessProductRepository", BusinessProductRepository);
 register("businessProductService", BusinessProductService);

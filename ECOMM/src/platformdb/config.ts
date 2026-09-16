@@ -60,6 +60,19 @@ export default class Config {
                         status: true,
                         roles: {client: true},
                         schema_separation : true,
+                        schemas : {
+                            1000001 : {
+                                schema_name : "i1000001",
+                                credentials: {
+                                    host: "localhost",
+                                    port: 5432,
+                                    database: "identity_access_management_client",
+                                    user: "root",
+                                    password: "root123",
+                                },
+                                status : true
+                            }
+                        },
                         migration : {
                             enabled: true,
                             path : [

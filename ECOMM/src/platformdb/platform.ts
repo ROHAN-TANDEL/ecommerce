@@ -35,30 +35,11 @@ export default class Platform {
 
                     const { schema, ...credentials } = databaseCred;
 
-                    const pool: any = new Pool({
-                        ...credentials,
-                        options: schema
-                            ? `-c search_path=${schema}`
-                            : undefined
-                    });
+                    if (databaseConfig?.schema_separation === true) { continue; }
 
-
-                    let poolKey : any = `${productName}:${databaseRole}`;
+                    const [poolKey, pool] = this.connectPool(productName, databaseRole, credentials, schema, databaseConfig);
 
                     this.poolsMap.set(poolKey, pool);
-
-                    if (databaseConfig.roles?.master === true) {
-                        poolKey = `${productName}:master`;
-                        this.poolsMap.set(poolKey, pool);
-                    }
-
-                    if (databaseConfig.roles?.client === true) {
-                        poolKey = `${productName}:client`;
-
-                        const poolWrapper = new Wrapper(pool);
-
-                        this.poolsMap.set(poolKey, poolWrapper);
-                    }
                 }
             }
         }
@@ -82,6 +63,32 @@ export default class Platform {
         pools.clear();
 
         return true;
+    }
+
+    private connectPool(productName, databaseRole, credentials, schema, databaseConfig)
+    {
+        const pool: any = new Pool({
+            ...credentials,
+            options: schema
+                ? `-c search_path=${schema}`
+                : undefined
+        });
+
+
+        let poolKey : any = `${productName}:${databaseRole}`;
+
+        if (databaseConfig.roles?.master === true) {
+            poolKey = `${productName}:master`;
+            return [poolKey, pool];
+        }
+
+        if (databaseConfig.roles?.client === true) {
+            poolKey = `${productName}:client`;
+            const poolWrapper = new Wrapper(pool);
+            return [poolKey, poolWrapper];
+        }
+
+        return [poolKey, pool];
     }
 }
 
