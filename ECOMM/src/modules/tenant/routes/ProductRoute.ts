@@ -18,6 +18,7 @@ export class ProductRoute {
 
         router.post("/create/schema", async (request:any, response:any) => {
 
+            console.log("testing");
                 const controller:any = app(SchemaController);
 
                 return controller.create(request, response);

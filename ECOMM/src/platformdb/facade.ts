@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
+import requestContext from "./request-context.js";
 
 const storage:any = new AsyncLocalStorage();
 
@@ -22,7 +23,8 @@ const db:any = {
 
     get client()
     {
-        return storage.getStore()?.client;
+        return requestContext.getStore()?.schema;
+        // return storage.getStore()?.client;
     }
 };
 

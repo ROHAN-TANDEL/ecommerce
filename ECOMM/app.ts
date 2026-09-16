@@ -6,6 +6,7 @@ import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
 import Context from "./src/platformdb/context.js";
+import SchemaConnect from "./src/platformdb/schema-connect.js";
 
 class Application {
 
@@ -78,11 +79,12 @@ application.appBeforeMiddleware(app);
 
 await application.runtime();
 
-const context = application.buildContext();
+let context = application.buildContext();
 
 (globalThis as any).context = context;
 
-app = (new Context(app)).build();
+[app, context] = (new Context(app, context)).build();
+
 //routes go here
 app.use('/health', context.scripts.health.check);
 
@@ -97,6 +99,24 @@ app.use((new AuditRoute(context)).route());
 app.use((new OrderRoute(context)).route());
 
 application.appAfterMiddleware(app);
+
+const connection:any = new SchemaConnect().connect(
+    "1000001",
+    {
+        host: "localhost",
+        port: 5432,
+        database: "identity_access_management_client",
+        user: "root",
+        password: "root123"
+    }
+);
+
+console.log("connectiont esting");
+const result:any = await connection.query(
+    "SELECT current_schema()"
+);
+
+console.log(result.rows[0]);
 
 export { app, context };
 //# sourceMappingURL=app.js.map
