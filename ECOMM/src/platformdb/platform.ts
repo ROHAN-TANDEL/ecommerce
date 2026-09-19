@@ -35,7 +35,8 @@ export default class Platform {
 
                     const { schema, ...credentials } = databaseCred;
 
-                    if (databaseConfig?.schema_separation === true) { continue; }
+                    // reason - we need schema level connections borrowed from pool thus we need client pool created for once at start
+                    // if (databaseConfig?.schema_separation === true) { continue; }
 
                     const [poolKey, pool] = this.connectPool(productName, databaseRole, credentials, schema, databaseConfig);
 

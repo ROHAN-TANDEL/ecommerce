@@ -1,0 +1,2 @@
+ALTER TABLE clients
+    ADD COLUMN schema_name VARCHAR(100) UNIQUE;

@@ -23,8 +23,8 @@ const db:any = {
 
     get client()
     {
-        return requestContext.getStore()?.schema;
-        // return storage.getStore()?.client;
+        // return requestContext.getStore()?.schema;
+        return storage.getStore()?.client;
     }
 };
 

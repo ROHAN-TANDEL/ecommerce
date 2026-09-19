@@ -21,4 +21,13 @@ export default class Wrapper {
             client.release();
         }
     }
+
+    async connect()
+    {
+        const context:any = requestContext.getStore();
+
+        const client:any = await this.pool.connect();
+
+        return client;
+    }
 }
