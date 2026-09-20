@@ -6,4 +6,6 @@ const databaseRole:any = process.argv[4];
 
 const migrate:any = new MasterMigrate();
 
-await migrate.execute(product, databaseRole);
+const schema:any = 'master';
+
+await migrate.execute(product, databaseRole, schema);

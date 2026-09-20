@@ -1,4 +1,3 @@
-import { Pool, type PoolConfig } from "pg";
 import { api } from "../routes/api.js";
 import express from "express";
 import clientContext from "./request-context-middleware.js";

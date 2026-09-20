@@ -1,6 +1,4 @@
 import { Pool, type PoolConfig } from "pg";
-import { api } from "../routes/api.js";
-import express from "express";
 import Wrapper from "./wrapper.js";
 import Config from "./config.js";
 
@@ -58,10 +56,10 @@ export default class Platform {
         const pools = Array.from(this.poolsMap.values());
 
         await Promise.all(
-            pools.map(pool => pool.end())
+            pools.map((pool:any) => pool.end())
         );
 
-        pools.clear();
+        this.poolsMap.clear();
 
         return true;
     }

@@ -6,4 +6,6 @@ const databaseRole:any = process.argv[4];
 
 const seed:any = new MasterSeeder();
 
-await seed.execute(product, databaseRole);
+const schema:any = '1000001';
+
+await seed.execute(product, databaseRole, schema);

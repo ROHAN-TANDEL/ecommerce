@@ -1,6 +1,7 @@
 export default class Config {
 
-    private config(): any {
+    // public so SchemaManager and migrator can call it directly
+    public config(): any {
         return {
             identity_management: {
                 routes: ["HealthRoute", "UserRoute",  "AuthRoute"],

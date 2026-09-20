@@ -35,7 +35,6 @@ register("businessRepository", BusinessRepository);
 register("businessService", BusinessService);
 register("businessController", BusinessController);
 
-
 register("productRepository", ProductRepository);
 register("productService", ProductService);
 register("productController", ProductController);

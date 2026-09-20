@@ -1,10 +1,10 @@
 import requestContext from "./request-context.js";
 import db from "./facade.js";
 
-export default function clientContext(req:any, res:any, next:any)
+export default async function clientContext(req:any, res:any, next:any)
 {
     const clientId = req.headers["x-client-id"] ?? req.headers["x-client-schema"] ;
-
+console.log("client context");
     const result:any = await db.master.query(
         `
             SELECT id, schema_name

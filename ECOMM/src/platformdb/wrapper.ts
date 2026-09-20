@@ -13,7 +13,10 @@ export default class Wrapper {
         const client:any = await this.pool.connect();
 
         try {
-            await client.query(`SET search_path TO ${context.schema}`);
+            // only set search_path when schema differs from the pool-level default
+            if (context?.schema) {
+                await client.query(`SET search_path TO ${context.schema}`);
+            }
 
             return await client.query(sql, values);
 
@@ -24,8 +27,6 @@ export default class Wrapper {
 
     async connect()
     {
-        const context:any = requestContext.getStore();
-
         const client:any = await this.pool.connect();
 
         return client;
