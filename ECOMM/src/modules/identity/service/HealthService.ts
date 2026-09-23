@@ -14,4 +14,14 @@ export class HealthService {
     {
         return await this.healthRepository.check();
     }
+
+    async getCustomers(page, limit)
+    {
+        return await this.healthRepository.getCustomers(page, limit);
+    }
+
+    async seedCustomers()
+    {
+        return await this.healthRepository.seedCustomers();
+    }
 }

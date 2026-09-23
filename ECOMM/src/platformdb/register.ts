@@ -1,6 +1,6 @@
 import { register } from "./app.js";
 import { HealthRepository } from "../modules/identity/repository/HealthRepository.js";
-import {HealthService } from "../modules/identity/service/HealthService.js";
+import { HealthService } from "../modules/identity/service/HealthService.js";
 import { HealthValidator } from "../modules/identity/validator/HealthValidator.js";
 import { HealthResponse } from "../modules/identity/response/HealthResponse.js";
 import { HealthController } from "../modules/identity/controller/HealthController.js";
@@ -29,7 +29,6 @@ register("schemaController", SchemaController);
 register("businessProductRepository", BusinessProductRepository);
 register("businessProductService", BusinessProductService);
 register("businessProductController", BusinessProductController);
-
 
 register("businessRepository", BusinessRepository);
 register("businessService", BusinessService);

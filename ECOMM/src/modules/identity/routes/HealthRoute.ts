@@ -15,6 +15,14 @@ export class HealthRoute {
 
         router.get("/health", controller.check.bind(controller));
 
+        router.get("/customers", controller.getCustomers.bind(controller));
+
+        router.get("/seed/customers", controller.seedCustomers.bind(controller));
+
+        router.get("/customers/config", controller.getCustomerConfig.bind(controller));
+
+        router.get("/customers/table-config", controller.getCustomerTableConfig.bind(controller));
+
         return router;
 
     }
