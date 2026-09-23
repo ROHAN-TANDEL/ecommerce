@@ -210,16 +210,42 @@ export type { ActionBarState };
           <tr class="border-b border-slate-200 bg-slate-50">
 
             <!-- Selection header -->
+<!--            <dt-col-selection-->
+<!--              [visible]="selectable"-->
+<!--              [selectedCount]="selectedIds.length"-->
+<!--              [totalCount]="selectableRowCount"-->
+<!--              (masterChange)="onMasterSelect($event)"-->
+<!--            />-->
+
+<!--            &lt;!&ndash; Column headers &ndash;&gt;-->
+<!--            <dt-column-header-->
+<!--              *ngFor="let col of pagedColumns"-->
+<!--              [label]="col.label"-->
+<!--              [width]="col.width"-->
+<!--              [minWidth]="col.minWidth"-->
+<!--              [maxWidth]="col.maxWidth"-->
+<!--              [sortable]="col.sortable && !tableDisabled && (tableConfig?.sorting?.enabled ?? true)"-->
+<!--              [filterable]="col.filterable"-->
+<!--              [filterActive]="isFilterActive(col.key)"-->
+<!--              [editable]="tableReadonly ? false : (col.editable ?? null)"-->
+<!--              [resizable]="col.resizable && (tableConfig?.column_resize?.enabled ?? true)"-->
+<!--              [frozen]="col.frozen"-->
+<!--              [required]="col.required"-->
+<!--              [sortDirection]="getSortDirection(col.key)"-->
+<!--              (sortChange)="onSort(col.key, $event)"-->
+<!--            />-->
+
             <dt-col-selection
+              class="contents"
               [visible]="selectable"
               [selectedCount]="selectedIds.length"
               [totalCount]="selectableRowCount"
               (masterChange)="onMasterSelect($event)"
             />
 
-            <!-- Column headers -->
             <dt-column-header
               *ngFor="let col of pagedColumns"
+              class="contents"
               [label]="col.label"
               [width]="col.width"
               [minWidth]="col.minWidth"
@@ -336,6 +362,7 @@ export type { ActionBarState };
 
                 <!-- 1. DISABLED -->
                 <dt-row-disabled *ngSwitchCase="'disabled'"
+                  class="contents"
                   [row]="row"
                   [columns]="pagedColumns">
                   <ng-container rowActions>
@@ -348,6 +375,7 @@ export type { ActionBarState };
 
                 <!-- 2. ERROR / WARNING -->
                 <dt-row-unavailable *ngSwitchCase="'unavailable'"
+                  class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
                   [rowState]="row.rowState"
@@ -365,6 +393,7 @@ export type { ActionBarState };
 
                 <!-- 3. EDITING -->
                 <dt-row-editable *ngSwitchCase="'editing'"
+                  class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
                   [selected]="isSelected(pk(row))"
@@ -383,6 +412,7 @@ export type { ActionBarState };
 
                 <!-- 4. READONLY (default) -->
                 <dt-row-readonly *ngSwitchDefault
+                  class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
                   [selected]="isSelected(pk(row))"
