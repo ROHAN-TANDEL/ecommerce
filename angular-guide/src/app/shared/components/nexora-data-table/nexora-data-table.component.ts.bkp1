@@ -1,0 +1,510 @@
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+
+export interface NexoraSelectionState {
+  mode: NexoraSelectionMode;
+  count: number;
+  editableCount: number;
+  readOnlyCount: number;
+  hasSelection: boolean;
+  canEditIndividual: boolean;
+  canBulkEdit: boolean;
+  canMasterEdit: boolean;
+}
+
+export interface NexoraTableColumn {
+  key: string;
+  label: string;
+}
+
+export interface NexoraTableRowState {
+  selectable: boolean;
+  editable: boolean;
+  deletable: boolean;
+  enableable: boolean;
+  disableable: boolean;
+}
+
+export interface NexoraTableRow {
+  id: string;
+  state?: Partial<NexoraTableRowState>;
+  [key: string]: unknown;
+}
+
+export interface NexoraTablePagination {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface NexoraTableDataResponse {
+  data: NexoraTableRow[];
+  pagination: NexoraTablePagination;
+}
+
+export type NexoraSelectionMode =
+  | 'none'
+  | 'individual'
+  | 'master';
+
+export interface NexoraSelectionState {
+  mode: NexoraSelectionMode;
+  count: number;
+  editableCount: number;
+  readOnlyCount: number;
+
+  hasSelection: boolean;
+
+  canEditIndividual: boolean;
+  canBulkEdit: boolean;
+  canMasterEdit: boolean;
+}
+@Component({
+  selector: 'nexora-data-table',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="w-full overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div
+        *ngIf="selectionState.hasSelection"
+        class="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2"
+      >
+  <span class="text-xs font-medium text-slate-700">
+    {{ selectionState.count }} selected
+  </span>
+
+        <span
+          *ngIf="selectionState.canEditIndividual"
+          class="text-xs text-slate-500"
+        >
+    Individual edit available
+  </span>
+
+        <span
+          *ngIf="selectionState.canBulkEdit"
+          class="text-xs text-slate-500"
+        >
+    Bulk edit available
+  </span>
+
+        <span
+          *ngIf="selectionState.canMasterEdit"
+          class="text-xs text-slate-500"
+        >
+    Master edit mode
+  </span>
+      </div>
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <h2 class="text-sm font-semibold text-slate-900">
+          {{ title }}
+        </h2>
+
+        <span
+          *ngIf="selectionMode !== 'none'"
+          class="text-xs text-slate-500"
+        >
+          {{ selectedRowIds.size }} selected
+        </span>
+      </div>
+
+      <!-- Loading -->
+      <div
+        *ngIf="loading"
+        class="flex h-32 items-center justify-center text-sm text-slate-500"
+      >
+        Loading...
+      </div>
+
+      <!-- Empty -->
+      <div
+        *ngIf="!loading && data.data.length === 0"
+        class="flex h-32 items-center justify-center text-sm text-slate-500"
+      >
+        No data available.
+      </div>
+
+      <!-- Table -->
+      <div
+        *ngIf="!loading && data.data.length > 0"
+        class="overflow-x-auto"
+      >
+        <table class="w-full border-collapse text-sm">
+
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50">
+
+              <!-- Master checkbox -->
+              <th class="w-12 px-4 py-3">
+
+                <input
+                  type="checkbox"
+                  [checked]="masterSelected"
+                  [indeterminate]="someRowsSelected"
+                  (change)="toggleMasterSelection()"
+                  class="h-4 w-4 rounded border-slate-300"
+                />
+
+              </th>
+
+              <!-- Columns -->
+              <th
+                *ngFor="let column of columns"
+                class="px-4 py-3 text-left font-medium text-slate-600"
+              >
+                {{ column.label }}
+              </th>
+
+            </tr>
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let row of data.data"
+              class="border-b border-slate-100"
+              [class.bg-blue-50]="isSelected(row)"
+            >
+
+              <!-- Row checkbox -->
+              <td class="w-12 px-4 py-3">
+
+                <input
+                  *ngIf="isSelectable(row)"
+                  type="checkbox"
+                  [checked]="isSelected(row)"
+                  (change)="toggleRow(row)"
+                  class="h-4 w-4 rounded border-slate-300"
+                />
+
+              </td>
+
+              <!-- Cells -->
+              <td
+                *ngFor="let column of columns"
+                class="px-4 py-3 text-slate-700"
+              >
+                {{ row[column.key] }}
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        *ngIf="!loading && data.pagination.total > 0"
+        class="flex items-center justify-between border-t border-slate-200 px-4 py-3"
+      >
+
+        <span class="text-xs text-slate-500">
+          Showing
+          {{ startItem }}
+          -
+          {{ endItem }}
+          of
+          {{ data.pagination.total }}
+        </span>
+
+        <div class="flex items-center gap-1">
+
+          <button
+            type="button"
+            class="rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            [disabled]="isFirstPage"
+            (click)="changePage(currentPage - 1)"
+          >
+            Previous
+          </button>
+
+          <button
+            *ngFor="let page of pages"
+            type="button"
+            class="min-w-7 rounded border px-2 py-1 text-xs"
+            [class.border-blue-500]="page === currentPage"
+            [class.bg-blue-50]="page === currentPage"
+            [class.text-blue-600]="page === currentPage"
+            [class.border-slate-200]="page !== currentPage"
+            [class.text-slate-600]="page !== currentPage"
+            (click)="changePage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            type="button"
+            class="rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            [disabled]="isLastPage"
+            (click)="changePage(currentPage + 1)"
+          >
+            Next
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  `
+})
+export class NexoraDataTableComponent {
+
+  @Input() title = 'Data Table';
+
+  @Input() columns: NexoraTableColumn[] = [];
+
+  @Input() data: NexoraTableDataResponse = {
+    data: [],
+    pagination: {
+      page: 1,
+      pageSize: 25,
+      total: 0
+    }
+  };
+
+  @Input() loading = false;
+
+  @Output() pageChange = new EventEmitter<number>();
+
+  @Output() selectionChange =
+    new EventEmitter<NexoraTableRow[]>();
+
+  public selectedRowIds = new Set<string>();
+
+  public masterSelected = false;
+
+  get selectionMode(): NexoraSelectionMode {
+
+    if (this.masterSelected) {
+      return 'master';
+    }
+
+    if (this.selectedRowIds.size > 0) {
+      return 'individual';
+    }
+
+    return 'none';
+  }
+
+  get currentPage(): number {
+    return this.data.pagination.page;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(
+      this.data.pagination.total /
+      this.data.pagination.pageSize
+    );
+  }
+
+  get pages(): number[] {
+    return Array.from(
+      { length: this.totalPages },
+      (_, index) => index + 1
+    );
+  }
+
+  get isFirstPage(): boolean {
+    return this.currentPage === 1;
+  }
+
+  get isLastPage(): boolean {
+    return this.currentPage === this.totalPages;
+  }
+
+  get startItem(): number {
+    return (
+      (this.currentPage - 1) *
+      this.data.pagination.pageSize
+    ) + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(
+      this.currentPage * this.data.pagination.pageSize,
+      this.data.pagination.total
+    );
+  }
+
+  get someRowsSelected(): boolean {
+
+    if (this.masterSelected) {
+      return false;
+    }
+
+    const selectableRows =
+      this.data.data.filter(row =>
+        this.isSelectable(row)
+      );
+
+    const selectedCount =
+      selectableRows.filter(row =>
+        this.selectedRowIds.has(row.id)
+      ).length;
+
+    return (
+      selectedCount > 0 &&
+      selectedCount < selectableRows.length
+    );
+  }
+
+  get allRowsSelected(): boolean {
+
+    const selectableRows =
+      this.data.data.filter(row =>
+        this.isSelectable(row)
+      );
+
+    return (
+      selectableRows.length > 0 &&
+      selectableRows.every(row =>
+        this.selectedRowIds.has(row.id)
+      )
+    );
+  }
+
+  isSelectable(row: NexoraTableRow): boolean {
+    return row.state?.selectable ?? true;
+  }
+
+  isEditable(row: NexoraTableRow): boolean {
+    return row.state?.editable ?? true;
+  }
+
+  isDeletable(row: NexoraTableRow): boolean {
+    return row.state?.deletable ?? true;
+  }
+
+  isEnableable(row: NexoraTableRow): boolean {
+    return row.state?.enableable ?? true;
+  }
+
+  isDisableable(row: NexoraTableRow): boolean {
+    return row.state?.disableable ?? true;
+  }
+
+  isSelected(row: NexoraTableRow): boolean {
+    return this.selectedRowIds.has(row.id);
+  }
+
+  toggleRow(row: NexoraTableRow): void {
+
+    if (!this.isSelectable(row)) {
+      return;
+    }
+
+    /*
+     * Selecting an individual row exits master mode.
+     */
+    this.masterSelected = false;
+
+    if (this.selectedRowIds.has(row.id)) {
+      this.selectedRowIds.delete(row.id);
+    } else {
+      this.selectedRowIds.add(row.id);
+    }
+
+    this.emitSelection();
+  }
+
+  toggleMasterSelection(): void {
+
+    if (this.masterSelected) {
+
+      /*
+       * Master selection is being cleared.
+       */
+      this.masterSelected = false;
+
+      this.selectedRowIds.clear();
+
+    } else {
+
+      /*
+       * Master mode replaces individual selection.
+       */
+      this.masterSelected = true;
+
+      this.selectedRowIds.clear();
+    }
+
+    this.emitSelection();
+  }
+
+  private emitSelection(): void {
+
+    this.selectionChange.emit(this.selectedRows);
+
+    // this.selectionChange.emit(
+    //   this.selectedRows
+    // );
+    // const selectedRows =
+    //   this.data.data.filter(row =>
+    //     this.selectedRowIds.has(row.id)
+    //   );
+    //
+    // this.selectionChange.emit(selectedRows);
+  }
+
+  changePage(page: number): void {
+
+    if (
+      page < 1 ||
+      page > this.totalPages ||
+      page === this.currentPage
+    ) {
+      return;
+    }
+
+    this.pageChange.emit(page);
+  }
+
+  get selectedRows(): NexoraTableRow[] {
+    return this.data.data.filter(row =>
+      this.selectedRowIds.has(row.id)
+    );
+  }
+
+  get selectionState(): NexoraSelectionState {
+    const rows = this.selectedRows;
+
+    const editableRows = rows.filter(row =>
+      this.isEditable(row)
+    );
+
+    const readOnlyRows = rows.filter(row =>
+      !this.isEditable(row)
+    );
+
+    const mode = this.selectionMode;
+
+    return {
+      mode,
+
+      count: this.selectedRowIds.size,
+
+      editableCount: editableRows.length,
+
+      readOnlyCount: readOnlyRows.length,
+
+      hasSelection:
+        this.selectedRowIds.size > 0 ||
+        this.masterSelected,
+
+      canEditIndividual:
+        mode === 'individual' &&
+        rows.length === 1 &&
+        editableRows.length === 1,
+
+      canBulkEdit:
+        mode === 'individual' &&
+        editableRows.length > 1,
+
+      canMasterEdit:
+        mode === 'master'
+    };
+  }
+}
