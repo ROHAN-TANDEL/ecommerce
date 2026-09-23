@@ -1,18 +1,17 @@
 <div class="min-h-screen bg-[#F3F6FC]">
 
   <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- BOOTSTRAPPING SPINNER                                         -->
+  <!-- BOOTSTRAPPING                                                 -->
   <!-- ══════════════════════════════════════════════════════════════ -->
-  <div *ngIf="bootstrapping"
-    class="flex h-screen items-center justify-center">
+  <div *ngIf="bootstrapping" class="flex h-screen items-center justify-center">
     <div class="flex flex-col items-center gap-4">
       <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#436CF3]"></div>
-      <p class="text-sm text-slate-400">Loading table configuration…</p>
+      <p class="text-sm text-slate-400">Loading configuration…</p>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- ERROR STATE                                                   -->
+  <!-- ERROR                                                         -->
   <!-- ══════════════════════════════════════════════════════════════ -->
   <div *ngIf="!bootstrapping && error"
     class="flex h-screen items-center justify-center px-6">
@@ -20,73 +19,266 @@
       <span class="text-4xl">⚠</span>
       <p class="mt-3 text-sm font-medium text-red-700">{{ error }}</p>
       <button type="button"
-        class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white
-               hover:bg-red-700 transition-colors"
-        (click)="bootstrap()">
-        Retry
-      </button>
+        class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
+        (click)="bootstrap()">Retry</button>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
   <!-- MAIN CONTENT                                                  -->
   <!-- ══════════════════════════════════════════════════════════════ -->
-  <div *ngIf="!bootstrapping && !error" class="px-6 py-8">
+  <div *ngIf="!bootstrapping && !error" class="px-6 py-8 space-y-12">
 
-    <!-- The single, fully-configured DataTable -->
-    <dt-table
-      title="Customers"
-      subtitle="Manage and monitor your customers across all regions."
-      [columns]="columns"
-      [rows]="rows"
-      [tableConfig]="tableConfig"
-      [pagination]="pagination"
-      [sorts]="sorts"
-      [filterValues]="filterValues"
-      [loading]="loading"
-      [collabUsers]="collabUsers"
-      primaryKey="id"
-      tableMinWidth="1100px"
-      (pageChange)="onPageChange($event)"
-      (pageSizeChange)="onPageSizeChange($event)"
-      (sortChange)="onSortChange($event)"
-      (filterChange)="onFilterChange($event)"
-      (cellChanged)="onCellChanged($event)"
-      (saveRowRequested)="onSaveRow($event)"
-      (bulkActionFired)="onBulkAction($event)"
-      (rowActionFired)="onRowAction($event)"
-      (exportRequested)="onExport($event)"
-      (generateRequested)="onGenerate()"
-      (downloadRequested)="onDownload($event)"
-      (columnsChanged)="onColumnsChanged($event)"
-      (selectionChange)="onSelectionChange($event)"
-    />
+    <!-- ─── Page header ──────────────────────────────────────────── -->
+    <div>
+      <h1 class="text-2xl font-bold text-[#0A173D]">Component Showcase</h1>
+      <p class="mt-1 text-sm text-slate-500">
+        Each table is assembled from the same
+        <code class="rounded bg-slate-100 px-1 py-0.5 text-[11px] font-mono text-[#436CF3]">&lt;dt-table&gt;</code>
+        configured differently to exercise every state, format, and rule across the 4-level hierarchy.
+      </p>
+    </div>
+
+    <!-- ─── Hierarchy legend ─────────────────────────────────────── -->
+    <div class="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+      <p class="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+        Hierarchy resolution — how each cell gets its presentation
+      </p>
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">TABLE capability</span>
+        <span class="text-slate-300">→</span>
+        <span class="rounded-full bg-blue-50 px-3 py-1 font-medium text-[#436CF3]">COLUMN contract</span>
+        <span class="text-slate-300">→</span>
+        <span class="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-600">ROW state</span>
+        <span class="text-slate-300">→</span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">CELL presentation</span>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 text-[11px] text-slate-500 sm:grid-cols-4">
+        <div><span class="mr-1 font-bold text-red-400">⊘ Disabled</span>— strongest, always wins</div>
+        <div><span class="mr-1 font-bold text-red-500">⚠ Error</span>— with cell-level overrides</div>
+        <div><span class="mr-1 font-bold text-amber-500">▲ Warning</span>— with cell-level overrides</div>
+        <div><span class="mr-1 font-bold text-[#436CF3]">✎ Editing</span>— col.editable gates each cell</div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- TABLE 1 — CUSTOMERS  (live API · comfortable · editable)  -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-[#0A173D]">Table 1 — Customers</h2>
+          <p class="text-xs text-slate-400">
+            Live API · Comfortable density · Editable · Zebra rows ·
+            Pagination · Sort · Filter · Live collaboration
+          </p>
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px]">
+          <span class="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">live API</span>
+          <span class="rounded-full bg-blue-50 px-2 py-0.5 font-medium text-[#436CF3]">comfortable</span>
+        </div>
+      </div>
+
+      <dt-table
+        title="Customers"
+        subtitle="Manage and monitor your customers across all regions."
+        [columns]="columns"
+        [rows]="rows"
+        [tableConfig]="tableConfig"
+        [pagination]="pagination"
+        [sorts]="sorts"
+        [filterValues]="filterValues"
+        [loading]="loading"
+        [collabUsers]="collabUsers"
+        primaryKey="id"
+        tableMinWidth="1100px"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+        (sortChange)="onSortChange($event)"
+        (filterChange)="onFilterChange($event)"
+        (cellChanged)="onCellChanged($event)"
+        (saveRowRequested)="onSaveRow($event)"
+        (bulkActionFired)="onBulkAction($event)"
+        (rowActionFired)="onRowAction($event)"
+        (exportRequested)="onExport($event)"
+        (generateRequested)="onGenerate()"
+        (downloadRequested)="onDownload($event)"
+        (columnsChanged)="onColumnsChanged($event)"
+        (selectionChange)="onSelectionChange($event)"
+      />
+    </section>
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- TABLE 2 — ORDERS  (static · compact · read-only)         -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-[#0A173D]">Table 2 — Orders</h2>
+          <p class="text-xs text-slate-400">
+            Compact density · Table-level read-only overrides all column.editable ·
+            Frozen Order # column · Horizontal scroll
+          </p>
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px]">
+          <span class="rounded-full bg-blue-50 px-2 py-0.5 font-medium text-[#436CF3]">compact</span>
+          <span class="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">🔒 read-only</span>
+        </div>
+      </div>
+
+      <dt-table
+        title="Orders"
+        subtitle="Order # is frozen — scroll right to see all columns."
+        [columns]="ordersColumns"
+        [rows]="ordersRows"
+        [tableConfig]="ordersConfig"
+        [pagination]="{ page:1, limit:ordersRows.length, total:ordersRows.length, totalPages:1 }"
+        [sorts]="[]"
+        [filterValues]="{}"
+        [tableReadonly]="true"
+        tableMinWidth="1200px"
+        (rowActionFired)="onRowAction($event)"
+      />
+    </section>
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- TABLE 3 — INVENTORY  (static · spacious · disabled/load) -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-[#0A173D]">Table 3 — Inventory</h2>
+          <p class="text-xs text-slate-400">Spacious density · Toggle disabled state and loading skeleton</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button"
+            class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[11px] font-medium transition-colors"
+            [class.border-red-300]="inventoryTableDisabled"
+            [class.bg-red-50]="inventoryTableDisabled"
+            [class.text-red-600]="inventoryTableDisabled"
+            [class.border-slate-200]="!inventoryTableDisabled"
+            [class.bg-white]="!inventoryTableDisabled"
+            [class.text-slate-600]="!inventoryTableDisabled"
+            (click)="toggleInventoryDisabled()">
+            {{ inventoryTableDisabled ? '⊘ Disabled' : 'Disable table' }}
+          </button>
+          <button type="button"
+            class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200
+                   bg-white px-3 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+            [disabled]="inventoryLoading"
+            (click)="toggleInventoryLoading()">
+            {{ inventoryLoading ? '⟳ Loading…' : 'Simulate load' }}
+          </button>
+          <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-[#436CF3]">spacious</span>
+        </div>
+      </div>
+
+      <dt-table
+        title="Inventory"
+        [columns]="inventoryColumns"
+        [rows]="inventoryRows"
+        [tableConfig]="inventoryConfig"
+        [pagination]="{ page:1, limit:inventoryRows.length, total:inventoryRows.length, totalPages:1 }"
+        [sorts]="[]"
+        [filterValues]="{}"
+        [tableDisabled]="inventoryTableDisabled"
+        [loading]="inventoryLoading"
+        tableMinWidth="860px"
+        (rowActionFired)="onRowAction($event)"
+        (cellChanged)="onCellChanged($event)"
+      />
+    </section>
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- TABLE 4 — TEAM MEMBERS  (static · all row states)        -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-[#0A173D]">Table 4 — Team Members</h2>
+          <p class="text-xs text-slate-400">
+            Every row state visible at once:
+            Normal · <span class="font-medium text-[#436CF3]">Editing</span> ·
+            <span class="font-medium text-slate-500">Read-only</span> ·
+            <span class="font-medium text-slate-400">Disabled</span> ·
+            <span class="font-medium text-red-500">Error</span> ·
+            <span class="font-medium text-amber-500">Warning</span>
+          </p>
+        </div>
+        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-[#436CF3]">comfortable</span>
+      </div>
+
+      <dt-table
+        title="Team Members"
+        [columns]="teamColumns"
+        [rows]="teamRows"
+        [tableConfig]="teamConfig"
+        [pagination]="{ page:1, limit:teamRows.length, total:teamRows.length, totalPages:1 }"
+        [sorts]="[]"
+        [filterValues]="{}"
+        tableMinWidth="860px"
+        (rowActionFired)="onRowAction($event)"
+        (cellChanged)="onCellChanged($event)"
+      />
+
+      <!-- Row-state legend -->
+      <div class="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-white p-4 text-[11px] sm:grid-cols-3">
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-slate-200 bg-white"></span>
+          <div><p class="font-medium text-slate-700">T001 Alice — Normal</p><p class="text-slate-400">editable=true, not in edit session</p></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm border-l-2 border-[#436CF3] bg-blue-100"></span>
+          <div><p class="font-medium text-[#436CF3]">T002 Bob — Editing</p><p class="text-slate-400">checkbox checked → row enters edit mode</p></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-slate-200 bg-slate-50"></span>
+          <div><p class="font-medium text-slate-500">T003 Carol — Read-only</p><p class="text-slate-400">editable=false overrides all columns</p></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm bg-slate-100 opacity-40"></span>
+          <div><p class="font-medium text-slate-400">T004 Dave — Disabled</p><p class="text-slate-400">disabled=true — strongest constraint</p></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-red-200 bg-red-50"></span>
+          <div><p class="font-medium text-red-500">T005 Eve — Error</p><p class="text-slate-400">rowState='error' + errorCells=['email']</p></div>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-amber-200 bg-amber-50"></span>
+          <div><p class="font-medium text-amber-600">T006 Frank — Warning</p><p class="text-slate-400">rowState='warning' + warningCells=['department']</p></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── Footer ────────────────────────────────────────────────── -->
+    <div class="py-6 text-center text-[11px] text-slate-300">
+      All four tables use the same
+      <code class="font-mono text-[#436CF3]">&lt;dt-table&gt;</code>
+      orchestrator — configured differently via
+      <code class="font-mono text-slate-400">ColumnDef[]</code> and
+      <code class="font-mono text-slate-400">TableConfigEntry</code>.
+    </div>
 
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TOAST NOTIFICATIONS                                           -->
+  <!-- TOASTS                                                        -->
   <!-- ══════════════════════════════════════════════════════════════ -->
   <div class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 pointer-events-none">
     <div *ngFor="let t of toasts"
       class="pointer-events-auto flex items-center gap-3 rounded-lg border px-4 py-3
-             shadow-lg text-xs font-medium animate-slide-up min-w-[240px]"
-      [class.border-emerald-200]="t.type === 'success'"
-      [class.bg-emerald-50]="t.type === 'success'"
-      [class.text-emerald-700]="t.type === 'success'"
-      [class.border-red-200]="t.type === 'error'"
-      [class.bg-red-50]="t.type === 'error'"
-      [class.text-red-700]="t.type === 'error'"
-      [class.border-blue-200]="t.type === 'info'"
-      [class.bg-blue-50]="t.type === 'info'"
-      [class.text-[#436CF3]]="t.type === 'info'">
-      <span>
-        {{ t.type === 'success' ? '✓' : t.type === 'error' ? '⚠' : 'ℹ' }}
-      </span>
+             shadow-lg text-xs font-medium min-w-[240px] animate-slide-up"
+      [class.border-emerald-200]="t.type==='success'" [class.bg-emerald-50]="t.type==='success'" [class.text-emerald-700]="t.type==='success'"
+      [class.border-red-200]="t.type==='error'"   [class.bg-red-50]="t.type==='error'"   [class.text-red-700]="t.type==='error'"
+      [class.border-blue-200]="t.type==='info'"   [class.bg-blue-50]="t.type==='info'"   [class.text-[#436CF3]]="t.type==='info'">
+      <span>{{ t.type==='success' ? '✓' : t.type==='error' ? '⚠' : 'ℹ' }}</span>
       <span class="flex-1">{{ t.message }}</span>
-      <button type="button"
-        class="opacity-50 hover:opacity-100"
-        (click)="dismissToast(t.id)">✕</button>
+      <button type="button" class="opacity-50 hover:opacity-100" (click)="dismissToast(t.id)">✕</button>
     </div>
   </div>
 

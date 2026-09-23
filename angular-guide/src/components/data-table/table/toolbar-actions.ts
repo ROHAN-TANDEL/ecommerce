@@ -244,6 +244,12 @@ export interface GenerateInfo {
         [title]="fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
         (click)="fullscreenChange.emit(!fullscreen)">⛶</button>
 
+      <!-- Minimize / expand table body -->
+      <button type="button" class="tb-icon"
+        [title]="minimized ? 'Expand table' : 'Collapse table'"
+        [class.active]="minimized"
+        (click)="minimizedChange.emit(!minimized)">{{ minimized ? '▽' : '△' }}</button>
+
       <!-- View preset -->
       <ng-container *ngIf="features.save_view">
         <div class="relative" (click)="$event.stopPropagation()">
@@ -385,6 +391,7 @@ export class ToolbarActions {
   };
   @Input() columns: ColumnDef[] = [];
   @Input() fullscreen: boolean = false;
+  @Input() minimized: boolean = false;
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Input() activeView: string = '';
   @Input() savedViews: string[] = [];
@@ -402,6 +409,7 @@ export class ToolbarActions {
   @Output() generateClicked = new EventEmitter<void>();
   @Output() downloadClicked = new EventEmitter<'excel' | 'csv'>();
   @Output() fullscreenChange = new EventEmitter<boolean>();
+  @Output() minimizedChange  = new EventEmitter<boolean>();
   @Output() densityChange = new EventEmitter<'compact' | 'comfortable' | 'spacious'>();
   @Output() viewChange = new EventEmitter<string>();
   @Output() saveViewClicked = new EventEmitter<void>();
