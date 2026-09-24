@@ -21,7 +21,8 @@ import { ReadonlyCell }              from '../cell/readonly';
         [class.bg-blue-50/30]="selected">
 
       <!-- Checkbox cell — sticky when fixedCheckboxes -->
-      <td class="w-[54px] px-3 py-2.5 align-middle bg-inherit"
+      <td class="w-[54px] px-3 align-middle bg-inherit"
+          [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedCheckboxes"
           [class.left-0]="fixedCheckboxes"
           [class.z-[5]]="fixedCheckboxes">
@@ -40,7 +41,8 @@ import { ReadonlyCell }              from '../cell/readonly';
 
       <!-- Data cells -->
       <ng-container *ngFor="let col of columns">
-        <td class="px-3 py-2.5 align-middle overflow-hidden text-center bg-inherit"
+        <td class="px-3 align-middle overflow-hidden text-center bg-inherit"
+            [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
             [style.width]="col.width"
             [class.sticky]="col.frozen"
             [class.z-[5]]="col.frozen"
@@ -77,7 +79,8 @@ import { ReadonlyCell }              from '../cell/readonly';
       </ng-container>
 
       <!-- Actions — always visible, sticky when fixedActions -->
-      <td class="w-[120px] px-3 py-2.5 align-middle bg-inherit"
+      <td class="w-[120px] px-3 align-middle bg-inherit"
+          [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions"
           [class.right-0]="fixedActions"
           [class.z-[5]]="fixedActions"
@@ -96,6 +99,7 @@ export class ReadonlyRow {
   @Input() fixedCheckboxes = false;
   @Input() fixedActions = false;
   @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Output() selectedChange = new EventEmitter<boolean>();
 
   flagEmoji(): string {

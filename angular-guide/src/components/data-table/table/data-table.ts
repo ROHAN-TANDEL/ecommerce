@@ -217,6 +217,7 @@ export type { ActionBarState };
               [selectedCount]="selectedIds.length"
               [totalCount]="selectableRowCount"
               [fixed]="fixedCheckboxes"
+              [density]="density"
               (masterChange)="onMasterSelect($event)"
             />
 
@@ -236,6 +237,7 @@ export type { ActionBarState };
               [frozen]="col.frozen"
               [frozenSide]="col.frozenSide ?? 'left'"
               [frozenOffset]="frozenOffset(col)"
+              [density]="density"
               [required]="col.required"
               [sortDirection]="getSortDirection(col.key)"
               (sortChange)="onSort(col.key, $event)"
@@ -244,8 +246,11 @@ export type { ActionBarState };
 
             <!-- Actions header — sticky right when fixedActions -->
             <th *ngIf="showActions"
-              class="w-[120px] bg-slate-50 px-3 py-2.5 align-middle text-center text-[11px]
+              class="w-[120px] bg-slate-50 px-3 align-middle text-center text-[11px]
                      font-semibold text-[#0A173D]"
+              [class.py-1.5]="density === 'compact'"
+              [class.py-2.5]="density === 'comfortable'"
+              [class.py-4]="density === 'spacious'"
               [class.sticky]="fixedActions"
               [class.right-0]="fixedActions"
               [class.z-20]="fixedActions"
@@ -264,6 +269,7 @@ export type { ActionBarState };
             [showActions]="showActions"
             [fixedActions]="fixedActions"
             [frozenOffset]="frozenOffset.bind(this)"
+            [density]="density"
             (filterChange)="onFilterChange($event)"
             (filterClear)="onFilterClear()"
             class="border-b border-slate-200 bg-white">
@@ -275,7 +281,10 @@ export type { ActionBarState };
 
             <!-- Checkbox cell — sticky if fixedCheckboxes -->
             <td *ngIf="showCheckboxes"
-              class="w-[54px] px-3 py-2 align-middle bg-blue-50/40"
+              class="w-[54px] px-3 align-middle bg-blue-50/40"
+              [class.py-1]="density === 'compact'"
+              [class.py-2]="density === 'comfortable'"
+              [class.py-3]="density === 'spacious'"
               [class.sticky]="fixedCheckboxes"
               [class.left-0]="fixedCheckboxes"
               [class.z-[15]]="fixedCheckboxes">
@@ -284,7 +293,10 @@ export type { ActionBarState };
 
             <!-- Per-column master-edit inputs — sticky if column is frozen -->
             <td *ngFor="let col of pagedColumns"
-              class="px-3 py-1.5 align-middle bg-blue-50/40"
+              class="px-3 align-middle bg-blue-50/40"
+              [class.py-1]="density === 'compact'"
+              [class.py-1.5]="density === 'comfortable'"
+              [class.py-3]="density === 'spacious'"
               [style.width]="col.width"
               [class.sticky]="col.frozen"
               [class.z-[15]]="col.frozen"
@@ -305,7 +317,10 @@ export type { ActionBarState };
 
             <!-- Actions cell — sticky if fixedActions -->
             <td *ngIf="showActions"
-              class="w-[120px] px-3 py-1.5 align-middle bg-blue-50/40"
+              class="w-[120px] px-3 align-middle bg-blue-50/40"
+              [class.py-1]="density === 'compact'"
+              [class.py-1.5]="density === 'comfortable'"
+              [class.py-3]="density === 'spacious'"
               [class.sticky]="fixedActions"
               [class.right-0]="fixedActions"
               [class.z-[15]]="fixedActions"
@@ -344,12 +359,12 @@ export type { ActionBarState };
           <!-- Empty state -->
           <ng-container *ngIf="!loading && rows.length === 0">
             <tr>
-              <td [attr.colspan]="pagedColumns.length + 2" class="py-20 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <span class="text-5xl opacity-20">◫</span>
-                  <p class="text-sm font-medium text-slate-400">No results found</p>
-                  <p class="text-xs text-slate-300">
-                    {{ hasActiveFilters ? 'Try adjusting or clearing your filters.' : 'Add records to get started.' }}
+              <td [attr.colspan]="emptyStateColspan" class="py-20 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <span class="text-4xl text-slate-300" aria-hidden="true">◫</span>
+                  <p class="text-sm font-medium text-slate-500">No data available</p>
+                  <p *ngIf="hasActiveFilters" class="text-xs text-slate-400">
+                    Try adjusting or clearing your filters.
                   </p>
                   <button *ngIf="hasActiveFilters" type="button"
                     class="mt-1 rounded-md border border-slate-200 bg-white px-4 py-1.5
@@ -374,7 +389,8 @@ export type { ActionBarState };
                   [columns]="pagedColumns"
                   [fixedCheckboxes]="fixedCheckboxes"
                   [fixedActions]="fixedActions"
-                  [frozenOffset]="frozenOffset.bind(this)">
+                  [frozenOffset]="frozenOffset.bind(this)"
+                  [density]="density">
                   <ng-container rowActions>
                     <dt-col-action
                       [row]="row"
@@ -395,6 +411,7 @@ export type { ActionBarState };
                   [fixedCheckboxes]="fixedCheckboxes"
                   [fixedActions]="fixedActions"
                   [frozenOffset]="frozenOffset.bind(this)"
+                  [density]="density"
                   (selectedChange)="toggleSelection(pk(row), $event)">
                   <ng-container rowActions>
                     <dt-col-action
@@ -436,6 +453,7 @@ export type { ActionBarState };
                   [fixedCheckboxes]="fixedCheckboxes"
                   [fixedActions]="fixedActions"
                   [frozenOffset]="frozenOffset.bind(this)"
+                  [density]="density"
                   (selectedChange)="toggleSelection(pk(row), $event)">
                   <ng-container rowActions>
                     <dt-col-action
@@ -612,6 +630,10 @@ export class DataTable implements OnInit, OnChanges {
 
   get selectableRowCount(): number {
     return this.rows.filter(r => !r.disabled && r.selectable !== false).length;
+  }
+
+  get emptyStateColspan(): number {
+    return this.pagedColumns.length + Number(this.showCheckboxes) + Number(this.showActions);
   }
 
   get hasActiveFilters(): boolean {

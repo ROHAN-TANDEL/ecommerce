@@ -181,8 +181,8 @@ export class Dashboard implements OnInit {
     { id:'T002', name:'Bob Martinez',  role:'Senior Designer',  email:'bob@co.com',   department:'Design',       status:'Active',   join_date:'2024-03-15', editable:true,  selectable:true  },
     { id:'T003', name:'Carol White',   role:'PM',               email:'carol@co.com', department:'Product',      status:'Pending',  join_date:'2024-06-20', editable:false, selectable:true  },
     { id:'T004', name:'Dave Brown',    role:'SRE',              email:'dave@co.com',  department:'Engineering', status:'Disabled', join_date:'2023-02-05', editable:false, selectable:false, disabled:true },
-    { id:'T005', name:'Eve Chen',      role:'QA Engineer',      email:'not-valid',    department:'QA',           status:'Active',   join_date:'2024-08-10', editable:true,  selectable:true,  rowState:'error',   errorCells:['email'],      errorMessage:'Invalid email' },
-    { id:'T006', name:'Frank Diaz',    role:'Data Analyst',     email:'frank@co.com', department:'Analytics',    status:'Pending',  join_date:'2024-09-22', editable:true,  selectable:true,  rowState:'warning', warningCells:['department'], warningMessage:'Dept unconfirmed' },
+    { id:'T005', name:'Eve Chen',      role:'QA Engineer',      email:'eve@co.com',   department:'QA',           status:'Active',   join_date:'2024-08-10', editable:true,  selectable:true },
+    { id:'T006', name:'Frank Diaz',    role:'Data Analyst',     email:'frank@co.com', department:'Analytics',    status:'Pending',  join_date:'2024-09-22', editable:true,  selectable:true },
   ];
 
   // ════════════════════════════════════════════════════════════════════
@@ -223,37 +223,9 @@ export class Dashboard implements OnInit {
     this.loading = true;
     this.api.loadData(this.BASE_URL, this.DATA_PATH, this.pagination.page, this.pagination.limit, this.sorts, this.filterValues).subscribe({
       next: ({ data, pagination }) => {
-        // Inject synthetic rows to demonstrate all row states alongside live data
-        const synthetic = [
-          {
-            id: '__demo_disabled__', customer_name: 'Locked Account (demo)',
-            email: 'locked@demo.com', status: 'Disabled', industry: 'Demo',
-            country: 'USA', country_code: 'US', annual_revenue: 0,
-            employee_count: 0, onboarding_date: null, risk_level: 'Low',
-            owner_name: 'System', is_active: false, editable: false,
-            disabled: true, selectable: false,
-            _demo: true,
-          },
-          {
-            id: '__demo_warning__', customer_name: 'Revenue Unverified (demo)',
-            email: 'warn@demo.com', status: 'Pending', industry: 'Demo',
-            country: 'Germany', country_code: 'DE', annual_revenue: 999999,
-            employee_count: 50, onboarding_date: null, risk_level: 'Medium',
-            owner_name: 'Alice', is_active: true, editable: true,
-            rowState: 'warning', warningCells: ['annual_revenue'], warningMessage: 'Revenue unverified',
-            selectable: true, _demo: true,
-          },
-          {
-            id: '__demo_error__', customer_name: 'Invalid Email (demo)',
-            email: 'not-valid-email', status: 'Active', industry: 'Demo',
-            country: 'India', country_code: 'IN', annual_revenue: 500000,
-            employee_count: 10, onboarding_date: null, risk_level: 'Low',
-            owner_name: 'Bob', is_active: true, editable: true,
-            rowState: 'error', errorCells: ['email'], errorMessage: 'Invalid email address',
-            selectable: true, _demo: true,
-          },
-        ];
-        this.rows       = [...data, ...synthetic];
+        // Row state is authoritative backend data. Do not manufacture warning,
+        // error, disabled, or placeholder rows in the UI.
+        this.rows       = data;
         this.pagination  = pagination;
         this.loading     = false;
         this.cdr.markForCheck();

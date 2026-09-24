@@ -13,8 +13,11 @@ export type SortDirection = 'asc' | 'desc' | null;
   imports: [CommonModule],
   template: `
     <th
-      class="relative select-none px-3 py-2.5 align-middle text-center text-[11px]
+      class="relative select-none px-3 align-middle text-center text-[11px]
              font-semibold text-[#0A173D] transition-colors"
+      [class.py-1.5]="density === 'compact'"
+      [class.py-2.5]="density === 'comfortable'"
+      [class.py-4]="density === 'spacious'"
       [style.width.px]="currentWidthPx"
       [style.minWidth]="minWidth"
       [style.maxWidth]="maxWidth"
@@ -110,6 +113,7 @@ export class ColumnHeader implements OnInit, OnDestroy {
   @Input() frozen: boolean = false;
   @Input() frozenSide: 'left' | 'right' = 'left';
   @Input() frozenOffset: string = '0px';
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Input() required: boolean = false;
   @Input() infoNote: string = '';
   @Input() sortDirection: SortDirection = null;

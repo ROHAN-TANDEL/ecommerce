@@ -26,7 +26,10 @@ import { ReadonlyCell }              from '../cell/readonly';
                bg-blue-50/40 transition-colors"
         [class.bg-blue-100/50]="selected">
 
-      <td class="w-[54px] px-3 py-2.5 align-middle bg-blue-50/40"
+      <td class="w-[54px] px-3 align-middle bg-blue-50/40"
+          [class.py-1.5]="density === 'compact'"
+          [class.py-2.5]="density === 'comfortable'"
+          [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedCheckboxes"
           [class.left-0]="fixedCheckboxes"
           [class.z-[10]]="fixedCheckboxes">
@@ -83,7 +86,10 @@ import { ReadonlyCell }              from '../cell/readonly';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 py-2.5 align-middle bg-blue-50/40"
+      <td class="w-[120px] px-3 align-middle bg-blue-50/40"
+          [class.py-1.5]="density === 'compact'"
+          [class.py-2.5]="density === 'comfortable'"
+          [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions"
           [class.right-0]="fixedActions"
           [class.z-[10]]="fixedActions"

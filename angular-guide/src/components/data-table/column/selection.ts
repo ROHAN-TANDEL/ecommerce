@@ -23,7 +23,10 @@ import { CommonModule } from '@angular/common';
   template: `
     <th
       *ngIf="visible"
-      class="w-[54px] bg-slate-50 px-3 py-2.5 align-middle text-left"
+      class="w-[54px] bg-slate-50 px-3 align-middle text-left"
+      [class.py-1.5]="density === 'compact'"
+      [class.py-2.5]="density === 'comfortable'"
+      [class.py-4]="density === 'spacious'"
       [class.sticky]="fixed"
       [class.left-0]="fixed"
       [class.z-30]="fixed"
@@ -31,7 +34,8 @@ import { CommonModule } from '@angular/common';
       [class.border-r-slate-200]="fixed"
       [attr.aria-label]="allSelected ? 'Deselect all rows' : 'Select all rows'"
     >
-      <div class="flex items-center justify-center">
+      <!-- Matches the left inset used by the row-level checkboxes. -->
+      <div class="flex items-center">
 
         <input
           type="checkbox"
@@ -49,6 +53,7 @@ import { CommonModule } from '@angular/common';
 export class SelectionColumn {
   @Input() visible: boolean = true;
   @Input() fixed = false;
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Input() selectedCount: number = 0;
   @Input() totalCount: number = 0;
   @Output() masterChange = new EventEmitter<boolean>();

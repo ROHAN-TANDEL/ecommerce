@@ -41,7 +41,10 @@ import type { FilterDataItem } from '../models/column-config.model';
   template: `
     <!-- Selection column — empty filter cell -->
     <th *ngIf="showCheckboxes"
-      class="w-[54px] px-3 py-2 bg-white"
+      class="w-[54px] px-3 bg-white"
+      [class.py-1]="density === 'compact'"
+      [class.py-2]="density === 'comfortable'"
+      [class.py-3]="density === 'spacious'"
       [class.sticky]="fixedCheckboxes"
       [class.left-0]="fixedCheckboxes"
       [class.z-[25]]="fixedCheckboxes"
@@ -50,7 +53,10 @@ import type { FilterDataItem } from '../models/column-config.model';
 
     <!-- Per-column filter cells -->
     <th *ngFor="let col of columns"
-      class="px-3 py-2 bg-white"
+      class="px-3 bg-white"
+      [class.py-1]="density === 'compact'"
+      [class.py-2]="density === 'comfortable'"
+      [class.py-3]="density === 'spacious'"
       [style.width]="col.width"
       [class.sticky]="col.frozen"
       [class.z-[25]]="col.frozen"
@@ -214,13 +220,16 @@ import type { FilterDataItem } from '../models/column-config.model';
     </th>
 
     <!-- Actions column — Clear all + Apply -->
-    <th *ngIf="showActions" class="w-[120px] px-3 py-2 bg-white"
+    <th *ngIf="showActions" class="w-[120px] px-3 bg-white"
+      [class.py-1]="density === 'compact'"
+      [class.py-2]="density === 'comfortable'"
+      [class.py-3]="density === 'spacious'"
       [class.sticky]="fixedActions"
       [class.right-0]="fixedActions"
       [class.z-[25]]="fixedActions"
       [class.border-l]="fixedActions"
       [class.border-l-slate-200]="fixedActions">
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center justify-end gap-1.5">
         <button type="button"
           class="h-8 rounded-md border border-slate-200 bg-white px-2.5
                  text-[10px] font-medium text-slate-500 hover:bg-slate-50 transition-colors"
@@ -244,6 +253,7 @@ export class FilterRow {
   @Input() fixedCheckboxes = false;
   @Input() showActions = true;
   @Input() fixedActions = false;
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
 
   @Output() filterChange = new EventEmitter<FilterValues>();
