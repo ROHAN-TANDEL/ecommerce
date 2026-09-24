@@ -68,10 +68,10 @@ export class Dashboard implements OnInit {
 
   // ── API endpoints ────────────────────────────────────────────────────
   private readonly BASE_URL        = 'http://localhost:3000/identity/management';
-  private readonly DATA_PATH       = '/customers';
-  private readonly CONFIG_PATH     = '/customers/config';
-  private readonly TABLE_CFG_PATH  = '/customers/table-config';
-  private readonly UPDATE_PATH     = '/customers/:id';
+  private DATA_PATH       = '/customers';
+  private CONFIG_PATH     = '/customers/config';
+  private TABLE_CFG_PATH  = '/customers/table-config';
+  private UPDATE_PATH     = '/customers/:id';
 
   // ════════════════════════════════════════════════════════════════════
   // TABLE 1 — CUSTOMERS  (live API)
@@ -204,6 +204,9 @@ export class Dashboard implements OnInit {
         this.columns    = columns;
         this.tableConfig = tableConfig;
         this.pagination  = { page:1, limit: tableConfig?.pagination?.default_page_size ?? 25, total:0, totalPages:1 };
+        // Prefer API-provided paths over hardcoded fallbacks
+        if (tableConfig?.data_api)   this.DATA_PATH   = tableConfig.data_api.replace(this.BASE_URL, '');
+        if (tableConfig?.update_api) this.UPDATE_PATH = tableConfig.update_api.replace(this.BASE_URL, '');
         this.bootstrapping = false;
         this.cdr.markForCheck();
         this.fetchData();

@@ -211,35 +211,9 @@ export type { ActionBarState };
           <!-- Row 1: Column headers -->
           <tr class="border-b border-slate-200 bg-slate-50">
 
-            <!-- Selection header -->
-<!--            <dt-col-selection-->
-<!--              [visible]="selectable"-->
-<!--              [selectedCount]="selectedIds.length"-->
-<!--              [totalCount]="selectableRowCount"-->
-<!--              (masterChange)="onMasterSelect($event)"-->
-<!--            />-->
-
-<!--            &lt;!&ndash; Column headers &ndash;&gt;-->
-<!--            <dt-column-header-->
-<!--              *ngFor="let col of pagedColumns"-->
-<!--              [label]="col.label"-->
-<!--              [width]="col.width"-->
-<!--              [minWidth]="col.minWidth"-->
-<!--              [maxWidth]="col.maxWidth"-->
-<!--              [sortable]="col.sortable && !tableDisabled && (tableConfig?.sorting?.enabled ?? true)"-->
-<!--              [filterable]="col.filterable"-->
-<!--              [filterActive]="isFilterActive(col.key)"-->
-<!--              [editable]="tableReadonly ? false : (col.editable ?? null)"-->
-<!--              [resizable]="col.resizable && (tableConfig?.column_resize?.enabled ?? true)"-->
-<!--              [frozen]="col.frozen"-->
-<!--              [required]="col.required"-->
-<!--              [sortDirection]="getSortDirection(col.key)"-->
-<!--              (sortChange)="onSort(col.key, $event)"-->
-<!--            />-->
-
             <dt-col-selection
               class="contents"
-              [visible]="selectable"
+              [visible]="showCheckboxes"
               [selectedCount]="selectedIds.length"
               [totalCount]="selectableRowCount"
               (masterChange)="onMasterSelect($event)"
@@ -252,6 +226,7 @@ export type { ActionBarState };
               [width]="col.width"
               [minWidth]="col.minWidth"
               [maxWidth]="col.maxWidth"
+              [infoNote]="col.infoNote ?? ''"
               [sortable]="col.sortable && !tableDisabled && (tableConfig?.sorting?.enabled ?? true)"
               [filterable]="col.filterable"
               [filterActive]="isFilterActive(col.key)"
@@ -261,10 +236,12 @@ export type { ActionBarState };
               [required]="col.required"
               [sortDirection]="getSortDirection(col.key)"
               (sortChange)="onSort(col.key, $event)"
+              (widthChange)="onColWidthChange(col.key, $event)"
             />
 
             <!-- Actions header -->
-            <th class="w-[120px] bg-slate-50 px-3 py-2.5 align-middle text-left text-[11px]
+            <th *ngIf="showActions"
+              class="w-[120px] bg-slate-50 px-3 py-2.5 align-middle text-left text-[11px]
                        font-semibold text-[#0A173D]">Actions</th>
 
           </tr>
@@ -554,6 +531,16 @@ export class DataTable implements OnInit, OnChanges {
   // COMPUTED GETTERS
   // ═══════════════════════════════════════════════════════════════════
 
+  get showCheckboxes(): boolean {
+    return (this.tableConfig as any)?.show_checkboxes !== false &&
+           (this.tableConfig?.selection?.enabled !== false) &&
+           this.selectable;
+  }
+
+  get showActions(): boolean {
+    return (this.tableConfig as any)?.show_actions !== false;
+  }
+
   get visibleColumns(): ColumnDef[] {
     return this.columns.filter(c => c.visible !== false);
   }
@@ -563,6 +550,7 @@ export class DataTable implements OnInit, OnChanges {
     const start = this.colPage * this.colPageSize;
     return this.visibleColumns.slice(start, start + this.colPageSize);
   }
+
 
   get colTotalPages(): number {
     return Math.max(1, Math.ceil(this.visibleColumns.length / this.colPageSize));
@@ -833,6 +821,19 @@ export class DataTable implements OnInit, OnChanges {
       updated = direction ? [{ key, direction }] : [];
     }
     this.sortChange.emit(updated);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // COLUMN RESIZE
+  // ═══════════════════════════════════════════════════════════════════
+
+  onColWidthChange(key: string, widthPx: number): void {
+    // Update the column's width in-place so the table reflows consistently
+    const col = this.columns.find(c => c.key === key);
+    if (col) {
+      col.width = widthPx + 'px';
+      this.cdr.markForCheck();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════

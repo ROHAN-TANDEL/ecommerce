@@ -22,8 +22,18 @@ import { ReadonlyCell }              from '../cell/readonly';
         [class.bg-blue-50/30]="selected">
 
       <td class="w-[54px] px-3 py-2.5 align-middle">
-        <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
-          [checked]="selected" (change)="selectedChange.emit(!selected)" />
+        <div class="flex items-center gap-1.5">
+          <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
+            [checked]="selected" (change)="selectedChange.emit(!selected)" />
+          <!-- Lock icon — shown when row is not allowed to be edited -->
+          <svg *ngIf="row.editable === false"
+            class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+            title="This row cannot be edited">
+            <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
       </td>
 
       <ng-container *ngFor="let col of columns">

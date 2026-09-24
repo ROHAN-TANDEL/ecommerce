@@ -100,6 +100,10 @@ export interface TableConfigEntry {
   config_api: string;
   table_config_api: string;
   primary_key: string;
+  /** Whether to show the checkbox column at all */
+  show_checkboxes?: boolean;
+  /** Whether to show the actions column at all */
+  show_actions?: boolean;
   selection: SelectionConfig;
   pagination: PaginationConfig;
   sorting: SortingConfig;

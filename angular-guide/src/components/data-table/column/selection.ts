@@ -26,7 +26,7 @@ import { CommonModule } from '@angular/common';
       class="w-[54px] bg-slate-50 px-3 py-2.5 align-middle text-left"
       [attr.aria-label]="allSelected ? 'Deselect all rows' : 'Select all rows'"
     >
-      <div class="flex flex-col items-center gap-1">
+      <div class="flex items-center justify-center">
 
         <input
           type="checkbox"
@@ -36,13 +36,6 @@ import { CommonModule } from '@angular/common';
           (change)="masterChange.emit(!allSelected)"
           [attr.aria-label]="allSelected ? 'Deselect all' : 'Select all'"
         />
-
-        <span
-          *ngIf="selectedCount > 0"
-          class="inline-flex h-4 min-w-[16px] items-center justify-center
-                 rounded-full bg-[#436CF3] px-1 text-[8px] font-bold text-white"
-          [attr.aria-label]="selectedCount + ' rows selected'"
-        >{{ selectedCount }}</span>
 
       </div>
     </th>
