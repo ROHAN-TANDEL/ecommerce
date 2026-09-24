@@ -13,28 +13,32 @@ export type SortDirection = 'asc' | 'desc' | null;
   imports: [CommonModule],
   template: `
     <th
-      class="relative select-none px-3 py-2.5 align-middle text-left text-[11px] font-semibold
-             text-[#0A173D] transition-colors"
+      class="relative select-none px-3 py-2.5 align-middle text-center text-[11px]
+             font-semibold text-[#0A173D] transition-colors"
       [style.width.px]="currentWidthPx"
       [style.minWidth]="minWidth"
       [style.maxWidth]="maxWidth"
       [class.bg-slate-50]="!frozen"
       [class.bg-[#EEF2FF]]="frozen"
-      [class.border-r-2]="frozen"
+      [class.border-r]="frozen"
       [class.border-r-[#436CF3]/30]="frozen"
       [class.sticky]="frozen"
-      [class.left-0]="frozen"
-      [class.z-10]="frozen"
+      [class.z-20]="frozen"
+      [style.left]="frozen && frozenSide === 'left' ? frozenOffset : null"
+      [style.right]="frozen && frozenSide === 'right' ? frozenOffset : null"
     >
-      <div class="flex items-center gap-1.5" [class.pr-3]="resizable" [class.pr-2]="!resizable">
+      <div class="flex items-center justify-center gap-1"
+           [class.pr-2]="resizable">
 
+        <!-- Sortable label -->
         <button *ngIf="sortable" type="button"
-          class="group/sort flex min-w-0 items-center gap-1.5 text-left"
+          class="group/sort flex min-w-0 items-center justify-center gap-1 text-center"
           (click)="cycleSort()"
           [attr.aria-label]="'Sort by ' + label"
           [attr.aria-sort]="sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none'">
-          <span class="truncate">{{ label }}</span>
-          <span class="flex flex-col gap-[1px] opacity-40 group-hover/sort:opacity-100 transition-opacity"
+          <span class="truncate" [title]="label">{{ label }}</span>
+          <span class="flex shrink-0 flex-col gap-[1px] opacity-50
+                       group-hover/sort:opacity-100 transition-opacity"
             [class.opacity-100]="sortDirection !== null">
             <span class="leading-none text-[8px]"
               [class.text-[#436CF3]]="sortDirection === 'asc'"
@@ -45,44 +49,48 @@ export type SortDirection = 'asc' | 'desc' | null;
           </span>
         </button>
 
-        <span *ngIf="!sortable" class="truncate">{{ label }}</span>
+        <!-- Non-sortable label -->
+        <span *ngIf="!sortable" class="truncate" [title]="label">{{ label }}</span>
 
-        <span *ngIf="required" class="shrink-0 text-red-400" title="Required">*</span>
-
-        <!-- Info note tooltip -->
+        <!-- Info note — only when present -->
         <span *ngIf="infoNote"
           class="shrink-0 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full
-                 border border-slate-300 text-[8px] text-slate-400 cursor-default"
+                 border border-slate-300 text-[8px] text-slate-400 cursor-default hover:border-slate-500"
           [title]="infoNote">ℹ</span>
 
+        <!-- Filter active -->
         <span *ngIf="filterable && filterActive"
           class="shrink-0 inline-flex h-4 w-4 items-center justify-center
                  rounded-full bg-[#436CF3] text-[8px] text-white"
           title="Filter active">⌕</span>
 
+        <!-- Required -->
+        <span *ngIf="required" class="shrink-0 text-red-400" title="Required">*</span>
+
+        <!-- Editable / read-only column indicators -->
         <svg *ngIf="editable === true" class="shrink-0 h-3 w-3 text-[#436CF3]/60"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" title="Editable column">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
         </svg>
-
-        <svg *ngIf="editable === false" class="shrink-0 h-3 w-3 text-slate-300"
+        <svg *ngIf="editable === false" class="shrink-0 h-3 w-3 text-slate-400"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" title="Read-only column">
           <rect x="3" y="11" width="18" height="10" rx="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
 
-        <span *ngIf="frozen" class="shrink-0 text-[9px] text-[#436CF3]/60" title="Frozen">📌</span>
+        <!-- Frozen indicator -->
+        <span *ngIf="frozen" class="shrink-0 text-[9px] text-[#436CF3]/70" title="Frozen column">📌</span>
 
       </div>
 
-      <!-- Resize handle — fully functional drag-to-resize -->
+      <!-- Drag-to-resize handle -->
       <div *ngIf="resizable"
-        class="absolute right-0 top-0 h-full w-2 cursor-col-resize transition-colors z-10"
-        [class.bg-[#436CF3]/25]="isResizing"
-        [class.hover:bg-[#436CF3]/15]="!isResizing"
+        class="absolute right-0 top-0 h-full w-1.5 cursor-col-resize z-10
+               hover:bg-[#436CF3]/20 transition-colors"
+        [class.bg-[#436CF3]/30]="isResizing"
         (mousedown)="startResize($event)"
         aria-hidden="true">
       </div>
@@ -100,6 +108,8 @@ export class ColumnHeader implements OnInit, OnDestroy {
   @Input() editable: boolean | null = null;
   @Input() resizable: boolean = false;
   @Input() frozen: boolean = false;
+  @Input() frozenSide: 'left' | 'right' = 'left';
+  @Input() frozenOffset: string = '0px';
   @Input() required: boolean = false;
   @Input() infoNote: string = '';
   @Input() sortDirection: SortDirection = null;
@@ -109,28 +119,20 @@ export class ColumnHeader implements OnInit, OnDestroy {
 
   currentWidthPx: number = 160;
   isResizing = false;
-
   private startX = 0;
   private startW = 0;
 
-  ngOnInit(): void {
-    this.currentWidthPx = parseInt(this.width, 10) || 160;
-  }
-
+  ngOnInit(): void { this.currentWidthPx = parseInt(this.width, 10) || 160; }
   ngOnDestroy(): void { this.isResizing = false; }
 
   cycleSort(): void {
-    const next: SortDirection =
-      this.sortDirection === null ? 'asc' : this.sortDirection === 'asc' ? 'desc' : null;
-    this.sortChange.emit(next);
+    const n: SortDirection = this.sortDirection === null ? 'asc' : this.sortDirection === 'asc' ? 'desc' : null;
+    this.sortChange.emit(n);
   }
 
   startResize(e: MouseEvent): void {
-    e.preventDefault();
-    e.stopPropagation();
-    this.isResizing = true;
-    this.startX = e.clientX;
-    this.startW = this.currentWidthPx;
+    e.preventDefault(); e.stopPropagation();
+    this.isResizing = true; this.startX = e.clientX; this.startW = this.currentWidthPx;
   }
 
   @HostListener('document:mousemove', ['$event'])

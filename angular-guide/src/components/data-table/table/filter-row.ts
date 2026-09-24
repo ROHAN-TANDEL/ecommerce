@@ -40,12 +40,26 @@ import type { FilterDataItem } from '../models/column-config.model';
   imports: [CommonModule, FormsModule],
   template: `
     <!-- Selection column — empty filter cell -->
-    <th class="w-[54px] px-3 py-2 bg-white"></th>
+    <th *ngIf="showCheckboxes"
+      class="w-[54px] px-3 py-2 bg-white"
+      [class.sticky]="fixedCheckboxes"
+      [class.left-0]="fixedCheckboxes"
+      [class.z-[25]]="fixedCheckboxes"
+      [class.border-r]="fixedCheckboxes"
+      [class.border-r-slate-200]="fixedCheckboxes"></th>
 
     <!-- Per-column filter cells -->
     <th *ngFor="let col of columns"
       class="px-3 py-2 bg-white"
-      [style.width]="col.width">
+      [style.width]="col.width"
+      [class.sticky]="col.frozen"
+      [class.z-[25]]="col.frozen"
+      [class.bg-[#EEF2FF]]="col.frozen"
+      [class.border-r]="col.frozen && col.frozenSide !== 'right'"
+      [class.border-l]="col.frozen && col.frozenSide === 'right'"
+      [class.border-slate-200]="col.frozen"
+      [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
+      [style.right]="col.frozen && col.frozenSide === 'right' ? frozenOffset(col) : null">
 
       <!-- ── search ────────────────────────────────────────────── -->
       <ng-container *ngIf="col.filterable && col.filterType === 'search'">
@@ -200,7 +214,12 @@ import type { FilterDataItem } from '../models/column-config.model';
     </th>
 
     <!-- Actions column — Clear all + Apply -->
-    <th class="w-[120px] px-3 py-2 bg-white">
+    <th *ngIf="showActions" class="w-[120px] px-3 py-2 bg-white"
+      [class.sticky]="fixedActions"
+      [class.right-0]="fixedActions"
+      [class.z-[25]]="fixedActions"
+      [class.border-l]="fixedActions"
+      [class.border-l-slate-200]="fixedActions">
       <div class="flex items-center gap-1.5">
         <button type="button"
           class="h-8 rounded-md border border-slate-200 bg-white px-2.5
@@ -221,6 +240,11 @@ import type { FilterDataItem } from '../models/column-config.model';
 export class FilterRow {
   @Input() columns: ColumnDef[] = [];
   @Input() values: FilterValues = {};
+  @Input() showCheckboxes = true;
+  @Input() fixedCheckboxes = false;
+  @Input() showActions = true;
+  @Input() fixedActions = false;
+  @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
 
   @Output() filterChange = new EventEmitter<FilterValues>();
   @Output() filterClear  = new EventEmitter<void>();

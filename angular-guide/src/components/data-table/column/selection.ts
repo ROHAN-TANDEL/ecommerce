@@ -24,6 +24,11 @@ import { CommonModule } from '@angular/common';
     <th
       *ngIf="visible"
       class="w-[54px] bg-slate-50 px-3 py-2.5 align-middle text-left"
+      [class.sticky]="fixed"
+      [class.left-0]="fixed"
+      [class.z-30]="fixed"
+      [class.border-r]="fixed"
+      [class.border-r-slate-200]="fixed"
       [attr.aria-label]="allSelected ? 'Deselect all rows' : 'Select all rows'"
     >
       <div class="flex items-center justify-center">
@@ -43,6 +48,7 @@ import { CommonModule } from '@angular/common';
 })
 export class SelectionColumn {
   @Input() visible: boolean = true;
+  @Input() fixed = false;
   @Input() selectedCount: number = 0;
   @Input() totalCount: number = 0;
   @Output() masterChange = new EventEmitter<boolean>();

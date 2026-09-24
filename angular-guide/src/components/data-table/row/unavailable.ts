@@ -25,7 +25,8 @@ import { UnavailableCell }           from '../cell/unavailable';
         [class.border-slate-100]="rowState === 'normal'"
         [class.bg-white]="rowState === 'normal'">
 
-      <td class="w-[54px] px-3 py-2.5 align-middle">
+      <td class="w-[54px] px-3 py-2.5 align-middle"
+          [class.sticky]="fixedCheckboxes" [class.left-0]="fixedCheckboxes" [class.z-[10]]="fixedCheckboxes">
         <div class="flex items-center gap-1.5">
           <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
             [checked]="selected" (change)="selectedChange.emit(!selected)" />
@@ -35,7 +36,10 @@ import { UnavailableCell }           from '../cell/unavailable';
       </td>
 
       <ng-container *ngFor="let col of columns">
-        <td class="px-3 py-2.5 align-middle" [style.width]="col.width">
+        <td class="px-3 py-2.5 align-middle" [style.width]="col.width"
+            [class.sticky]="col.frozen" [class.z-[10]]="col.frozen" [class.bg-[#FFFDF2]]="col.frozen"
+            [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
+            [style.right]="col.frozen && col.frozenSide === 'right' ? frozenOffset(col) : null">
           <ng-container *ngIf="errorCells.includes(col.key)">
             <dt-cell-unavailable state="error" [message]="errorMessage" />
           </ng-container>
@@ -60,7 +64,8 @@ import { UnavailableCell }           from '../cell/unavailable';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 py-2.5 align-middle opacity-0 group-hover:opacity-100 transition-opacity">
+      <td class="w-[120px] px-3 py-2.5 align-middle"
+          [class.sticky]="fixedActions" [class.right-0]="fixedActions" [class.z-[10]]="fixedActions">
         <ng-content select="[rowActions]" />
       </td>
     </tr>
@@ -75,5 +80,8 @@ export class UnavailableRow {
   @Input() errorMessage = 'Error';
   @Input() warningCells: string[] = [];
   @Input() warningMessage = 'Warning';
+  @Input() fixedCheckboxes = false;
+  @Input() fixedActions = false;
+  @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Output() selectedChange = new EventEmitter<boolean>();
 }

@@ -216,6 +216,7 @@ export type { ActionBarState };
               [visible]="showCheckboxes"
               [selectedCount]="selectedIds.length"
               [totalCount]="selectableRowCount"
+              [fixed]="fixedCheckboxes"
               (masterChange)="onMasterSelect($event)"
             />
 
@@ -233,16 +234,23 @@ export type { ActionBarState };
               [editable]="tableReadonly ? false : (col.editable ?? null)"
               [resizable]="col.resizable && (tableConfig?.column_resize?.enabled ?? true)"
               [frozen]="col.frozen"
+              [frozenSide]="col.frozenSide ?? 'left'"
+              [frozenOffset]="frozenOffset(col)"
               [required]="col.required"
               [sortDirection]="getSortDirection(col.key)"
               (sortChange)="onSort(col.key, $event)"
               (widthChange)="onColWidthChange(col.key, $event)"
             />
 
-            <!-- Actions header -->
+            <!-- Actions header — sticky right when fixedActions -->
             <th *ngIf="showActions"
-              class="w-[120px] bg-slate-50 px-3 py-2.5 align-middle text-left text-[11px]
-                       font-semibold text-[#0A173D]">Actions</th>
+              class="w-[120px] bg-slate-50 px-3 py-2.5 align-middle text-center text-[11px]
+                     font-semibold text-[#0A173D]"
+              [class.sticky]="fixedActions"
+              [class.right-0]="fixedActions"
+              [class.z-20]="fixedActions"
+              [class.border-l]="fixedActions"
+              [class.border-l-slate-200]="fixedActions">Actions</th>
 
           </tr>
 
@@ -251,6 +259,11 @@ export type { ActionBarState };
             *ngIf="tableConfig?.filtering?.enabled !== false"
             [columns]="pagedColumns"
             [values]="filterValues"
+            [showCheckboxes]="showCheckboxes"
+            [fixedCheckboxes]="fixedCheckboxes"
+            [showActions]="showActions"
+            [fixedActions]="fixedActions"
+            [frozenOffset]="frozenOffset.bind(this)"
             (filterChange)="onFilterChange($event)"
             (filterClear)="onFilterClear()"
             class="border-b border-slate-200 bg-white">
@@ -260,15 +273,24 @@ export type { ActionBarState };
           <tr *ngIf="selectedIds.length > 0 && tableConfig?.editing?.enabled && !tableReadonly && !tableDisabled"
             class="border-b border-[#436CF3]/20 bg-blue-50/40">
 
-            <!-- Selection cell — master edit label -->
-            <td class="w-[54px] px-3 py-2 align-middle">
+            <!-- Checkbox cell — sticky if fixedCheckboxes -->
+            <td *ngIf="showCheckboxes"
+              class="w-[54px] px-3 py-2 align-middle bg-blue-50/40"
+              [class.sticky]="fixedCheckboxes"
+              [class.left-0]="fixedCheckboxes"
+              [class.z-[15]]="fixedCheckboxes">
               <span class="text-[9px] font-semibold text-[#436CF3] uppercase tracking-wide">All</span>
             </td>
 
-            <!-- Per-column master-edit inputs -->
+            <!-- Per-column master-edit inputs — sticky if column is frozen -->
             <td *ngFor="let col of pagedColumns"
-              class="px-3 py-1.5 align-middle"
-              [style.width]="col.width">
+              class="px-3 py-1.5 align-middle bg-blue-50/40"
+              [style.width]="col.width"
+              [class.sticky]="col.frozen"
+              [class.z-[15]]="col.frozen"
+              [class.bg-blue-100/60]="col.frozen"
+              [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
+              [style.right]="col.frozenSide === 'right' ? frozenOffset(col) : null">
               <ng-container *ngIf="col.editable && col.masterEditAllow; else masterRoCell">
                 <input type="text"
                   class="h-7 w-full rounded-md border border-[#436CF3]/50 bg-white px-2.5
@@ -281,8 +303,14 @@ export type { ActionBarState };
               <ng-template #masterRoCell><div class="h-7"></div></ng-template>
             </td>
 
-            <!-- Actions cell -->
-            <td class="w-[120px] px-3 py-1.5 align-middle">
+            <!-- Actions cell — sticky if fixedActions -->
+            <td *ngIf="showActions"
+              class="w-[120px] px-3 py-1.5 align-middle bg-blue-50/40"
+              [class.sticky]="fixedActions"
+              [class.right-0]="fixedActions"
+              [class.z-[15]]="fixedActions"
+              [class.border-l]="fixedActions"
+              [class.border-l-[#436CF3]/20]="fixedActions">
               <button type="button"
                 class="h-7 rounded-md border border-slate-200 bg-white px-2.5
                        text-[10px] font-medium text-slate-500 hover:bg-slate-50"
@@ -343,7 +371,10 @@ export type { ActionBarState };
                 <dt-row-disabled *ngSwitchCase="'disabled'"
                   class="contents"
                   [row]="row"
-                  [columns]="pagedColumns">
+                  [columns]="pagedColumns"
+                  [fixedCheckboxes]="fixedCheckboxes"
+                  [fixedActions]="fixedActions"
+                  [frozenOffset]="frozenOffset.bind(this)">
                   <ng-container rowActions>
                     <dt-col-action
                       [row]="row"
@@ -361,6 +392,9 @@ export type { ActionBarState };
                   [errorCells]="row.errorCells ?? []"
                   [warningCells]="row.warningCells ?? []"
                   [selected]="isSelected(pk(row))"
+                  [fixedCheckboxes]="fixedCheckboxes"
+                  [fixedActions]="fixedActions"
+                  [frozenOffset]="frozenOffset.bind(this)"
                   (selectedChange)="toggleSelection(pk(row), $event)">
                   <ng-container rowActions>
                     <dt-col-action
@@ -379,6 +413,9 @@ export type { ActionBarState };
                   [masterSelected]="masterAllSelected"
                   [masterEditValues]="masterEditValues"
                   [density]="density"
+                  [fixedCheckboxes]="fixedCheckboxes"
+                  [fixedActions]="fixedActions"
+                  [frozenOffset]="frozenOffset.bind(this)"
                   (selectedChange)="toggleSelection(pk(row), $event)"
                   (cellChange)="onCellChange(pk(row), $event)">
                   <ng-container rowActions>
@@ -396,6 +433,9 @@ export type { ActionBarState };
                   [columns]="pagedColumns"
                   [selected]="isSelected(pk(row))"
                   [zebra]="zebra && even"
+                  [fixedCheckboxes]="fixedCheckboxes"
+                  [fixedActions]="fixedActions"
+                  [frozenOffset]="frozenOffset.bind(this)"
                   (selectedChange)="toggleSelection(pk(row), $event)">
                   <ng-container rowActions>
                     <dt-col-action
@@ -539,6 +579,14 @@ export class DataTable implements OnInit, OnChanges {
 
   get showActions(): boolean {
     return (this.tableConfig as any)?.show_actions !== false;
+  }
+
+  get fixedCheckboxes(): boolean {
+    return (this.tableConfig as any)?.fixed_checkboxes !== false;
+  }
+
+  get fixedActions(): boolean {
+    return (this.tableConfig as any)?.fixed_actions !== false;
   }
 
   get visibleColumns(): ColumnDef[] {
@@ -834,6 +882,26 @@ export class DataTable implements OnInit, OnChanges {
       col.width = widthPx + 'px';
       this.cdr.markForCheck();
     }
+  }
+
+  /** CSS left/right offset for a frozen column's sticky <th>/<td>. */
+  frozenOffset(col: ColumnDef): string {
+    // Only sticky neighbours reserve space. A non-sticky checkbox/actions column
+    // scrolls away with the table and must not leave a gap beside a frozen column.
+    const cbW = this.showCheckboxes && this.fixedCheckboxes ? 54 : 0;
+    const actW = this.showActions && this.fixedActions ? 120 : 0;
+    // Column navigation renders only this slice, so offsets must be based on the
+    // columns currently present in the DOM, not hidden columns on another page.
+    const leftFrozen = this.pagedColumns.filter(c => c.frozen && c.frozenSide !== 'right');
+    const rightFrozen = this.pagedColumns.filter(c => c.frozenSide === 'right').reverse();
+    if (col.frozenSide === 'right') {
+      const idx = rightFrozen.findIndex(c => c.key === col.key);
+      const prior = rightFrozen.slice(0, idx).reduce((s, c) => s + (parseInt(c.width, 10) || 160), 0);
+      return (actW + prior) + 'px';
+    }
+    const idx = leftFrozen.findIndex(c => c.key === col.key);
+    const prior = leftFrozen.slice(0, idx).reduce((s, c) => s + (parseInt(c.width, 10) || 160), 0);
+    return (cbW + prior) + 'px';
   }
 
   // ═══════════════════════════════════════════════════════════════════

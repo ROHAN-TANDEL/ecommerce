@@ -104,6 +104,16 @@ export interface TableConfigEntry {
   show_checkboxes?: boolean;
   /** Whether to show the actions column at all */
   show_actions?: boolean;
+  /** Whether to show the headers section (header row, filter row, master-edit row) */
+  show_headers?: boolean;
+  /** Whether to show the live-count / collaboration panel */
+  live_count_panel?: boolean;
+  /** Whether to show the main action toolbar panel */
+  main_action_panel?: boolean;
+  /** Whether the checkbox column is sticky (fixed) while scrolling horizontally */
+  fixed_checkboxes?: boolean;
+  /** Whether the actions column is sticky (fixed) at the far right while scrolling */
+  fixed_actions?: boolean;
   selection: SelectionConfig;
   pagination: PaginationConfig;
   sorting: SortingConfig;

@@ -207,11 +207,10 @@ export class TableApiService {
     const freezeEnd = tableConfig?.column_freeze?.end ?? 0;
     const resizeEnabled = tableConfig?.column_resize?.enabled ?? true;
 
-    const keys = Object.keys(config);
-    const total = keys.length;
+    const activeKeys = Object.keys(config).filter(key => config[key].active);
+    const total = activeKeys.length;
 
-    return keys
-      .filter(key => config[key].active)
+    return activeKeys
       .map((key, idx): ColumnDef => {
         const cfg: ColumnConfigItem = config[key];
         const w = resolveWidth(key);

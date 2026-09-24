@@ -26,7 +26,10 @@ import { ReadonlyCell }              from '../cell/readonly';
                bg-blue-50/40 transition-colors"
         [class.bg-blue-100/50]="selected">
 
-      <td class="w-[54px] px-3 py-2.5 align-middle">
+      <td class="w-[54px] px-3 py-2.5 align-middle bg-blue-50/40"
+          [class.sticky]="fixedCheckboxes"
+          [class.left-0]="fixedCheckboxes"
+          [class.z-[10]]="fixedCheckboxes">
         <div class="flex items-center gap-1.5">
           <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
             [checked]="selected" [indeterminate]="masterSelected && !selected"
@@ -41,7 +44,15 @@ import { ReadonlyCell }              from '../cell/readonly';
             [class.py-2]="density === 'compact'"
             [class.py-2.5]="density === 'comfortable' || !density"
             [class.py-4]="density === 'spacious'"
-            [style.width]="col.width">
+            [style.width]="col.width"
+            [class.sticky]="col.frozen"
+            [class.z-[10]]="col.frozen"
+            [class.bg-blue-100/60]="col.frozen"
+            [class.border-r]="col.frozen && col.frozenSide !== 'right'"
+            [class.border-l]="col.frozen && col.frozenSide === 'right'"
+            [class.border-slate-200]="col.frozen"
+            [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
+            [style.right]="col.frozen && col.frozenSide === 'right' ? frozenOffset(col) : null">
 
           <ng-container *ngIf="col.editable && row.editable; else roCell">
             <dt-cell-editable
@@ -72,7 +83,12 @@ import { ReadonlyCell }              from '../cell/readonly';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 py-2.5 align-middle">
+      <td class="w-[120px] px-3 py-2.5 align-middle bg-blue-50/40"
+          [class.sticky]="fixedActions"
+          [class.right-0]="fixedActions"
+          [class.z-[10]]="fixedActions"
+          [class.border-l]="fixedActions"
+          [class.border-l-slate-200]="fixedActions">
         <ng-content select="[rowActions]" />
       </td>
     </tr>
@@ -85,6 +101,9 @@ export class EditableRow implements OnInit, OnChanges {
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Input() masterSelected = false;
   @Input() masterEditValues: Record<string, any> = {};
+  @Input() fixedCheckboxes = false;
+  @Input() fixedActions = false;
+  @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Output() selectedChange = new EventEmitter<boolean>();
   @Output() cellChange = new EventEmitter<{ key: string; value: any }>();
 

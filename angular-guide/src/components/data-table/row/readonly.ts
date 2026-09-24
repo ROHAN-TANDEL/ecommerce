@@ -9,7 +9,6 @@ import { NumberSeparationWithComma } from '../cell/number';
 import { StatusBadgeCell }           from '../cell/status-badge';
 import { ReadonlyCell }              from '../cell/readonly';
 
-/** Standard readable row — no edit controls. */
 @Component({
   selector: 'dt-row-readonly',
   standalone: true,
@@ -21,13 +20,16 @@ import { ReadonlyCell }              from '../cell/readonly';
         [class.bg-slate-50/40]="zebra && !selected"
         [class.bg-blue-50/30]="selected">
 
-      <td class="w-[54px] px-3 py-2.5 align-middle">
+      <!-- Checkbox cell — sticky when fixedCheckboxes -->
+      <td class="w-[54px] px-3 py-2.5 align-middle bg-inherit"
+          [class.sticky]="fixedCheckboxes"
+          [class.left-0]="fixedCheckboxes"
+          [class.z-[5]]="fixedCheckboxes">
         <div class="flex items-center gap-1.5">
           <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
             [checked]="selected" (change)="selectedChange.emit(!selected)" />
-          <!-- Lock icon — shown when row is not allowed to be edited -->
           <svg *ngIf="row.editable === false"
-            class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none"
+            class="h-3.5 w-3.5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
             title="This row cannot be edited">
             <rect x="3" y="11" width="18" height="10" rx="2"></rect>
@@ -36,8 +38,18 @@ import { ReadonlyCell }              from '../cell/readonly';
         </div>
       </td>
 
+      <!-- Data cells -->
       <ng-container *ngFor="let col of columns">
-        <td class="px-3 py-2.5 align-middle overflow-hidden" [style.width]="col.width">
+        <td class="px-3 py-2.5 align-middle overflow-hidden text-center bg-inherit"
+            [style.width]="col.width"
+            [class.sticky]="col.frozen"
+            [class.z-[5]]="col.frozen"
+            [class.bg-[#F4F7FF]]="col.frozen"
+            [class.border-r]="col.frozen && col.frozenSide !== 'right'"
+            [class.border-l]="col.frozen && col.frozenSide === 'right'"
+            [class.border-slate-200]="col.frozen"
+            [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
+            [style.right]="col.frozen && col.frozenSide === 'right' ? frozenOffset(col) : null">
           <dt-cell-readonly>
             <ng-container [ngSwitch]="col.format">
               <dt-cell-image-text *ngSwitchCase="'avatar'"
@@ -57,13 +69,20 @@ import { ReadonlyCell }              from '../cell/readonly';
                 {{ row[col.key] ? 'Yes' : 'No' }}
               </span>
               <dt-cell-plain-text *ngSwitchCase="'date'" [value]="formatDate(row[col.key])" />
-              <dt-cell-plain-text *ngSwitchDefault [value]="row[col.key] != null ? ('' + row[col.key]) : ''" />
+              <dt-cell-plain-text *ngSwitchDefault
+                [value]="row[col.key] != null ? ('' + row[col.key]) : ''" />
             </ng-container>
           </dt-cell-readonly>
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 py-2.5 align-middle opacity-0 group-hover:opacity-100 transition-opacity">
+      <!-- Actions — always visible, sticky when fixedActions -->
+      <td class="w-[120px] px-3 py-2.5 align-middle bg-inherit"
+          [class.sticky]="fixedActions"
+          [class.right-0]="fixedActions"
+          [class.z-[5]]="fixedActions"
+          [class.border-l]="fixedActions"
+          [class.border-l-slate-200]="fixedActions">
         <ng-content select="[rowActions]" />
       </td>
     </tr>
@@ -74,6 +93,9 @@ export class ReadonlyRow {
   @Input() columns: ColumnDef[] = [];
   @Input() selected = false;
   @Input() zebra = false;
+  @Input() fixedCheckboxes = false;
+  @Input() fixedActions = false;
+  @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Output() selectedChange = new EventEmitter<boolean>();
 
   flagEmoji(): string {
