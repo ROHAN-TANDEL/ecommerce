@@ -1,130 +1,96 @@
-// src/platform/routebind/RouteBinder.ts
-import express from 'express';
-import { PlatformContext } from '../context.js';
+// APIRegister.ts
+import express from "express";
 
-export interface RouteInfo {
+interface ApiConfig {
+    id: string;
     method: string;
     path: string;
-    handler: Function;
-    middlewares?: Function[];
+    domain: string;
+    tenant: boolean;
 }
 
-export interface ProductContext {
-    productId: string;
-    db: any;
-}
+export abstract class APIRegister {
+    protected context: any;
+    protected domain: string = 'default';
+    protected tenant: boolean = true;
+    protected routes: ApiConfig[] = [];
 
-export class RouteBinder {
-    constructor(private platform: PlatformContext) {}
-
-    /**
-     * Bind multiple route classes to a product
-     * Returns a router with all routes attached
-     */
-    bind(routes: any[], productId: string): express.Router {
-        // Validate product exists
-        this.platform.registry.validateProduct(productId);
-
-        // Get database access for this product
-        const db = this.platform.getDatabase(productId);
-
-        // Create main router
-        const mainRouter = express.Router();
-
-        // Middleware to attach db to all requests
-        mainRouter.use((req: any, res: any, next: any) => {
-            req.productId = productId;
-            req.db = db;
-            next();
-        });
-
-        // Register all routes
-        for (const RouteClass of routes) {
-            const routeInstance = new RouteClass();
-            const routeRouter = routeInstance.route();
-
-            // Capture routes for API registration
-            this.captureAndRegisterApis(routeRouter, productId);
-
-            // Mount route
-            mainRouter.use(routeRouter);
-        }
-
-        return mainRouter;
+    constructor(context: any) {
+        this.context = context;
     }
 
-    /**
-     * Bind a single route class to a product
-     */
-    bindOne(RouteClass: any, productId: string): express.Router {
-        return this.bind([RouteClass], productId);
-    }
+    // Abstract method that child classes must implement
+    protected abstract registerRoutes(route: express.Router): void;
 
-    /**
-     * Capture routes and register APIs
-     */
-    private captureAndRegisterApis(router: express.Router, productId: string): void {
-        const routes: RouteInfo[] = [];
-        const methods = ['get', 'post', 'put', 'delete', 'patch'];
-
-        // Intercept route registrations
-        for (const method of methods) {
-            const original = (router as any)[method];
-
-            (router as any)[method] = function(path: string, ...handlers: any[]) {
-                routes.push({
-                    method: method.toUpperCase(),
-                    path,
-                    handler: handlers[handlers.length - 1],
-                    middlewares: handlers.slice(0, -1)
-                });
-
-                return original.call(this, path, ...handlers);
-            };
-        }
-
-        // Restore original methods (we don't want to keep intercepting)
-        // Actually, we need to call route() to trigger the interceptors
-        // But route() was already called in bind()
-        // So we need to extract routes differently
-
-        // Rebuild routes from the router's stack
-        this.extractRoutesFromRouter(router, productId);
-    }
-
-    private extractRoutesFromRouter(router: express.Router, productId: string): void {
-        // Get the router's stack
-        const stack = (router as any).stack || [];
-
-        for (const layer of stack) {
-            if (layer.route) {
-                const { path, methods, stack: routeStack } = layer.route;
-                const method = Object.keys(methods)[0]?.toUpperCase();
-
-                if (method) {
-                    const apiId = this.generateApiId(method, path);
-                    const fullId = `${productId}.${apiId}`;
-
-                    this.platform.registry.registerApi({
-                        id: fullId,
-                        method,
-                        path,
-                        product: productId,
-                        tenant: false
-                    });
-                }
+    // Register all captured APIs
+    private registerApis() {
+        for (const api of this.routes) {
+            try {
+                this.context.platform?.getApiRegistry().register(api);
+            } catch (error) {
+                console.warn(`Failed to register API ${api.id}:`, error);
             }
         }
     }
 
-    private generateApiId(method: string, path: string): string {
-        let cleanPath = path.replace(/^\//, '').replace(/\//g, '.');
+    // Main method to build and return the route
+    public route(): express.Router {
+        const router = express.Router();
+        const self = this;
 
-        if (!cleanPath) return method.toLowerCase();
-        if (path.includes(':id')) {
+        // Create a proxy router to capture route registrations
+        const captureRouter = express.Router();
+
+        // Intercept route methods
+        ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'].forEach(method => {
+            const original = (captureRouter as any)[method];
+            (captureRouter as any)[method] = function(path: string, ...handlers: any[]) {
+                // Generate API ID from path and method
+                const apiId = self.generateApiId(path, method.toUpperCase());
+
+                // Store route info
+                self.routes.push({
+                    id: `${self.domain}.${apiId}`,
+                    method: method.toUpperCase(),
+                    path: path,
+                    domain: self.domain,
+                    tenant: self.tenant
+                });
+
+                // Call original router method
+                return original.call(this, path, ...handlers);
+            };
+        });
+
+        // Let child class register its routes
+        this.registerRoutes(captureRouter);
+
+        // Register all captured APIs
+        this.registerApis();
+
+        // Use the captured router
+        router.use(captureRouter);
+
+        return router;
+    }
+
+    private generateApiId(path: string, method: string): string {
+        // Clean the path: remove leading slash and replace / with .
+        const cleanPath = path.replace(/^\//, '').replace(/\//g, '.');
+        const methodLower = method.toLowerCase();
+
+        // Handle root path
+        if (!cleanPath) return methodLower;
+
+        // Handle paths with :id parameter
+        if (cleanPath.includes(':id')) {
+            // For /users/:id -> users.get
             return cleanPath.replace(/:id\.?/g, '').replace(/\.$/, '') + '.get';
         }
-        if (method === 'GET') {
+
+        // For collections (GET without :id) -> users.list
+        if (method === 'GET' && !path.includes(':')) {
+            // Check if it's a collection (plural)
             const parts = cleanPath.split('.');
             const lastPart = parts[parts.length - 1];
             if (lastPart.endsWith('s') && parts.length > 1) {
@@ -132,10 +98,35 @@ export class RouteBinder {
             }
             return `${cleanPath}.get`;
         }
-        if (method === 'POST') return `${cleanPath}.create`;
-        if (method === 'PUT') return `${cleanPath}.update`;
-        if (method === 'DELETE') return `${cleanPath}.delete`;
 
-        return `${cleanPath}.${method.toLowerCase()}`;
+        // For POST -> users.create
+        if (method === 'POST') {
+            return `${cleanPath}.create`;
+        }
+
+        // For PUT -> users.update
+        if (method === 'PUT') {
+            return `${cleanPath}.update`;
+        }
+
+        // For DELETE -> users.delete
+        if (method === 'DELETE') {
+            return `${cleanPath}.delete`;
+        }
+
+        // Default
+        return `${cleanPath}.${methodLower}`;
+    }
+
+    // Helper method to set domain
+    public setDomain(domain: string): this {
+        this.domain = domain;
+        return this;
+    }
+
+    // Helper method to set tenant
+    public setTenant(tenant: boolean): this {
+        this.tenant = tenant;
+        return this;
     }
 }

@@ -16,11 +16,11 @@ export default class CheckoutRoute {
         const coController = new CheckoutController(this.context);
         const authMid = new AuthMiddleware(this.context).auth;
 
-        // route.use(authMid);
+        route.use(authMid);
 
-        route.get('/cart',  coController.getCart);
+        route.get('/cart', coController.getCart);
 
-        route.post('/cart/items',  coController.addCartItem);
+        route.post('/cart/items', coController.addCartItem);
 
         route.patch('/cart/items/:id', coController.updateCartItem);
 
@@ -30,7 +30,7 @@ export default class CheckoutRoute {
 
         route.post('/checkout', coController.checkout, coController.deleteCart);
 
-        register.use('cart/check',route);
+        register.use('/checkout', route);
 
         return register;
     }

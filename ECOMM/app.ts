@@ -1,12 +1,17 @@
 import express from "express";
 import { KernelContext } from "./src/bootstrap/app/app-context.js";
+import Platform, { type ApiRegistration } from "./src/platform/index.js";
+
 import AuthRoute from "./src/modules/auth/AuthRoute.js";
+import UserRoute from "./src/modules/user/UserRoute.js";
 import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
-import Context from "./src/platformdb/context.js";
-import SchemaConnect from "./src/platformdb/schema-connect.js";
+import TenantRoute from "./src/modules/tenant/TenantRoute.js";
+import {Database} from "./src/infra/database/database.js";
+
+
 
 class Application {
 
@@ -41,6 +46,9 @@ class Application {
         app.use((new context.appMiddleware.before.cookieMiddleware(context)).startMiddleware());
 
         app.use((new context.appMiddleware.before.expressStaticMiddleware(context)).startMiddleware());
+
+        app.use((new context.appMiddleware.before.tenantContextMiddleware(context)).startMiddleware());
+
     }
 
     appAfterMiddleware(app:any) {
@@ -70,69 +78,115 @@ class Application {
 
     platform()
     {
-        const platform = createPlatformContext(routeModules);
+        // ============================================================
+// 1. Initialize Platform (Self-contained, pluggable)
+// ============================================================
+        const platform = Platform.getInstance();
+
+// Register APIs
+        const apiRegistrations: ApiRegistration[] = [
+            // Identity Access Management
+            { id: 'iam.user.get', method: 'GET', path: '/users/:id', domain: 'identity_access_management', tenant: true },
+            { id: 'iam.user.list', method: 'GET', path: '/users', domain: 'identity_access_management', tenant: true },
+            { id: 'iam.user.create', method: 'POST', path: '/users', domain: 'identity_access_management', tenant: true },
+            { id: 'iam.user.update', method: 'PUT', path: '/users/:id', domain: 'identity_access_management', tenant: true },
+            { id: 'iam.user.delete', method: 'DELETE', path: '/users/:id', domain: 'identity_access_management', tenant: true },
+            { id: 'iam.tenant.create', method: 'POST', path: '/tenants', domain: 'identity_access_management', tenant: false },
+            { id: 'iam.auth.login', method: 'POST', path: '/auth/login', domain: 'identity_access_management', tenant: false },
+
+            // Authorization Management
+            { id: 'authz.role.get', method: 'GET', path: '/roles/:id', domain: 'authorization_management', tenant: true },
+            { id: 'authz.role.list', method: 'GET', path: '/roles', domain: 'authorization_management', tenant: true },
+            { id: 'authz.permission.check', method: 'POST', path: '/permissions/check', domain: 'authorization_management', tenant: true },
+        ];
+
+        platform.registerAPIs(apiRegistrations);
+
         return platform;
+        console.log(`Platform initialized with ${platform.getApiRegistry().list().length} APIs`);
+
     }
 
-    logPlatformInit(platform:any)
+    platformHealth(platform:any)
     {
-        platform.products.logConfig();
+        // Optional: Health check for platform
+        app.get('/platform/health', async (req, res) => {
+            const health = await platform.healthCheck();
+            res.json({
+                status: 'ok',
+                domains: health,
+                apis: platform.getApiRegistry().list().length
+            });
+        });
     }
 
-    autoRegisterApis(platform:any, app:any)
+    platformMiddleware(app)
     {
-        app.use('/api', platform.autoRegister());
-    }
-
-    platformBuild(app:any)
-    {
-        const platform = this.platform();
-        this.logPlatformInit(platform);
-        this.autoRegisterApis(platform, app);
-        // this.registerAdminRoutes(platform, app);
-        return platform;
+        app.use(platform.apiMiddleware.getHandler());
     }
 }
 // todo FREEZ the object
-let app = express();
+
+const app = express();
 
 const application = new Application();
 
 application.appContext();
 
+const platform = application.platform();
+
+application.platformHealth(platform);
+
+application.platformMiddleware(app);
+
 application.appBeforeMiddleware(app);
 
 await application.runtime();
 
-let context = application.buildContext();
-
-(globalThis as any).context = context;
-
-[app, context] = (new Context(app, context)).build();
-
-context.platform = application.platformBuild(app);
+const context = application.buildContext();
 
 //routes go here
+app.use('/health', context.scripts.health.check);
+
+app.use((new AuthRoute(context)).route(context));
+
+app.use((new UserRoute(context)).route(context));
+
+app.use((new ProductRoute(context)).route(context));
+
+app.use((new CheckoutRoute(context)).route());
+
+app.use((new AuditRoute(context)).route());
+
+app.use((new OrderRoute(context)).route());
+
+app.use((new TenantRoute(context)).route(context));
 
 application.appAfterMiddleware(app);
 
-const connection:any = new SchemaConnect().connect(
-    "1000001",
-    {
-        host: "localhost",
-        port: 5432,
-        database: "identity_access_management_client",
-        user: "root",
-        password: "root123"
-    }
-);
+// ============================================================
+// 5. Graceful Shutdown - Close platform connections
+// ============================================================
+const originalClose = app.listen;
+app.listen = function(...args: any[]) {
+    const server = originalClose.apply(this, args);
 
-console.log("connectiont esting");
-const result:any = await connection.query(
-    "SELECT current_schema()"
-);
+    const shutdown = async (signal: string) => {
+        console.log(`\n${signal} received, shutting down...`);
 
-console.log(result.rows[0]);
+        server.close(async () => {
+            // Close platform connections
+            await platform.close();
+            console.log('✅ Platform connections closed');
+            process.exit(0);
+        });
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+
+    return server;
+};
 
 export { app, context };
 //# sourceMappingURL=app.js.map

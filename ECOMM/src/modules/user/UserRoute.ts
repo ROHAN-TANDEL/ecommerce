@@ -1,7 +1,19 @@
 import express from "express";
 import UserController from "./UserController.js";
 import AuthMiddleware from "../auth/AuthMiddleware.js";
-export default class UserRoute {
+import AuthMiddleware from "../auth/AuthMiddleware.js";
+import APIRegister from "../../platform/routebind/APIRegister.js";
+
+export default class UserRoute extends APIRegister {
+
+
+    context;
+
+    constructor(context: any) {
+        this.context = context;
+        this.setDomain('identity_access_management');
+        this.setTenant(true); // Tenant routes are NOT tenant-specific
+    }
 
     route(context: any) {
 
@@ -11,7 +23,11 @@ export default class UserRoute {
 
         const userController = new UserController(context);
 
-        userRoute.get('/:id', userController.getUser);
+        const authMid = new AuthMiddleware(context).auth;
+
+        userRoute.use(authMid);
+
+        userRoute.get('/:id', authMid, userController.getUser);
 
         userRoute.get('/', userController.getUsers);
 
