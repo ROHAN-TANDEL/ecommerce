@@ -22,6 +22,10 @@ RUN npm ci --omit=dev
 
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist
+# Copy database migrations
+COPY --from=builder /app/src/database/migrations/*.sql ./src/database/migrations/
+# Copy database seeders
+COPY --from=builder /app/src/database/seeders ./src/database/seeders
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

@@ -46,6 +46,7 @@ export class EnvValidator {
             REDIS_PORT : z.string(),
             REDIS_PASSWORD : z.string(),
             REDIS_USERNAME: z.string(),
+            REDIS_TLS:environmentBoolean.default(true),
         };
     }
 }

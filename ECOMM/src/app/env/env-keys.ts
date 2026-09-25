@@ -37,6 +37,7 @@ export class EnvKeys {
             REDIS_PORT : env.REDIS_PORT,
             REDIS_USERNAME : env.REDIS_USERNAME,
             REDIS_PASSWORD : env.REDIS_PASSWORD,
+            REDIS_TLS : env.REDIS_TLS
         };
     }
 }
