@@ -243,6 +243,7 @@ export type { ActionBarState };
               [sortDirection]="getSortDirection(col.key)"
               (sortChange)="onSort(col.key, $event)"
               (widthChange)="onColWidthChange(col.key, $event)"
+              (pinChange)="onColumnPin(col.key, $event)"
             />
 
             <!-- Actions header — sticky right when fixedActions -->
@@ -474,6 +475,22 @@ export type { ActionBarState };
 
               </ng-container>
 
+              <!-- EXPANDED ROW -->
+              <tr *ngIf="tableConfig?.row_expansion && isExpanded(pk(row))" class="border-b border-slate-200 bg-slate-50">
+                <td [attr.colspan]="emptyStateColspan" class="p-0">
+                  <div class="p-4 bg-slate-50 shadow-inner">
+                    <ng-container *ngIf="row.expandedContent; else defaultExpanded">
+                      <div [innerHTML]="row.expandedContent"></div>
+                    </ng-container>
+                    <ng-template #defaultExpanded>
+                      <div class="text-sm text-slate-500 italic flex items-center justify-center py-4">
+                        Expanded content for {{ pk(row) }}
+                      </div>
+                    </ng-template>
+                  </div>
+                </td>
+              </tr>
+
             </ng-container>
           </ng-container>
 
@@ -552,7 +569,11 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
 
   selectedIds: string[] = [];
   editingRows: string[] = [];
+  expandedRows: string[] = [];
   pendingChanges: Record<string, Record<string, any>> = {};
+  
+  lockedRows: Record<string, number> = {};
+  private lockTimers: Record<string, any> = {};
 
   masterAllSelected = false;
   masterEditValues: Record<string, any> = {};
@@ -819,6 +840,22 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
     this.masterEditValues = {};
   }
 
+  onColumnPin(key: string, action: 'left' | 'right' | 'unpin') {
+    const col = this.columns.find(c => c.key === key);
+    if (col) {
+      if (action === 'unpin') {
+        col.frozen = false;
+        col.frozenSide = undefined;
+      } else {
+        col.frozen = true;
+        col.frozenSide = action;
+      }
+      this.columnsChanged.emit([...this.columns]);
+      this.cdr.markForCheck();
+      queueMicrotask(() => this.updateHorizontalMetrics());
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // TOOLBAR ACTIONS
   // ═══════════════════════════════════════════════════════════════════
@@ -872,14 +909,28 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   // ROW ACTIONS
   // ═══════════════════════════════════════════════════════════════════
 
+  isExpanded(id: string): boolean {
+    return this.expandedRows.includes(id);
+  }
+
   buildRowActions(row: any) {
     const cfg = this.tableConfig?.actions ?? this.defaultActions;
     const isEditing = this.editingRows.includes(this.pk(row));
+    const isRowExpanded = this.isExpanded(this.pk(row));
     return [
+      ...(this.tableConfig?.row_expansion ? [{ key: 'expand', label: isRowExpanded ? 'Collapse row' : 'Expand row', icon: isRowExpanded ? '▼' : '▶' }] : []),
       ...(cfg.edit    ? [{ key: 'edit',   label: isEditing ? 'Lock (stop editing)' : 'Edit', icon: isEditing ? '🔒' : '✎', requiresEditable: !isEditing }] : []),
       ...(cfg.delete  ? [{ key: 'delete', label: 'Delete', icon: '🗑', requiresDeletable: true }] : []),
       ...(cfg.revert  ? [{ key: 'revert', label: 'Revert changes', icon: '↶' }] : []),
       ...(cfg.more    ? [{ key: 'view',   label: 'View details', icon: '◉' }] : []),
+      { key: 'pin_top', label: 'Pin on top', icon: '⇡' },
+      { key: 'pin_bottom', label: 'Pin on bottom', icon: '⇣' },
+      { key: 'unpin_row', label: 'Unpin row', icon: 'x' },
+      { 
+        key: 'lock_update', 
+        label: this.lockedRows[this.pk(row)] ? `Unlock update (${this.lockedRows[this.pk(row)]}s)` : 'Lock update (1m)', 
+        icon: this.lockedRows[this.pk(row)] ? '🔒' : '🔓' 
+      },
     ];
   }
 
@@ -909,6 +960,35 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
       case 'revert':
         this.cellChanged.emit({ rowId: id, key: '__revert__', value: {} });
         delete this.pendingChanges[id];
+        break;
+      case 'expand':
+        if (this.expandedRows.includes(id)) {
+          this.expandedRows = this.expandedRows.filter(e => e !== id);
+        } else {
+          this.expandedRows = [...this.expandedRows, id];
+        }
+        this.cdr.markForCheck();
+        break;
+      case 'lock_update':
+        if (this.lockedRows[id]) {
+          delete this.lockedRows[id];
+          clearInterval(this.lockTimers[id]);
+          delete this.lockTimers[id];
+        } else {
+          this.lockedRows[id] = 60;
+          this.lockTimers[id] = setInterval(() => {
+            if (this.lockedRows[id] > 1) {
+              this.lockedRows[id]--;
+              this.cdr.markForCheck();
+            } else {
+              delete this.lockedRows[id];
+              clearInterval(this.lockTimers[id]);
+              delete this.lockTimers[id];
+              this.cdr.markForCheck();
+            }
+          }, 1000);
+        }
+        this.cdr.markForCheck();
         break;
       default:
         this.rowActionFired.emit(event);

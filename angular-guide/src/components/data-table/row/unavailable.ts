@@ -67,7 +67,7 @@ import { UnavailableCell }           from '../cell/unavailable';
         </td>
       </ng-container>
 
-      <td *ngIf="showActions" class="w-[120px] px-3 align-middle"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle hover:z-[60] focus-within:z-[60]"
           [class.bg-red-50]="rowState === 'error'" [class.bg-amber-50]="rowState === 'warning'" [class.bg-white]="rowState === 'normal'"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions" [class.right-0]="fixedActions" [class.z-[10]]="fixedActions">

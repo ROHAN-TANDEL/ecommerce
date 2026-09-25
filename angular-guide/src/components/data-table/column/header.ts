@@ -88,6 +88,36 @@ export type SortDirection = 'asc' | 'desc' | null;
         <span *ngIf="frozen" class="shrink-0 text-[9px] text-[#436CF3]/70" title="Frozen column">📌</span>
 
       </div>
+      
+      <!-- Column Options Dropdown -->
+      <div class="absolute right-2 top-1/2 -translate-y-1/2 z-10" (click)="$event.stopPropagation()">
+        <button type="button"
+          class="inline-flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+          (click)="showMenu = !showMenu"
+          title="Column options">⋮</button>
+          
+        <div *ngIf="showMenu" class="absolute right-0 top-full mt-1 min-w-[120px] rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl font-normal text-left z-50 text-slate-700">
+          <button type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] hover:bg-blue-50 hover:text-[#436CF3]"
+            (click)="onPinAction('left')">
+            <span class="w-3 text-center">{{ frozen && frozenSide === 'left' ? '✓' : '' }}</span> Pin left
+          </button>
+          <button type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] hover:bg-blue-50 hover:text-[#436CF3]"
+            (click)="onPinAction('right')">
+            <span class="w-3 text-center">{{ frozen && frozenSide === 'right' ? '✓' : '' }}</span> Pin right
+          </button>
+          <button type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] hover:bg-blue-50 hover:text-[#436CF3]"
+            (click)="onPinAction('unpin')">
+            <span class="w-3 text-center">{{ !frozen ? '✓' : '' }}</span> Unpin
+          </button>
+          <div class="my-1 border-t border-slate-100"></div>
+          <button type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] text-red-600 hover:bg-red-50"
+            (click)="onLockUpdate()">
+            <span class="w-3 text-center">{{ isLocked ? '🔒' : '🔓' }}</span> 
+            <span>{{ isLocked ? 'Unlock update' : 'Lock update (1m)' }}</span>
+            <span *ngIf="isLocked" class="ml-auto text-[9px]">{{ countdown }}s</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Drag-to-resize handle -->
       <div *ngIf="resizable"
@@ -120,14 +150,57 @@ export class ColumnHeader implements OnInit, OnDestroy {
 
   @Output() sortChange = new EventEmitter<SortDirection>();
   @Output() widthChange = new EventEmitter<number>();
+  @Output() pinChange = new EventEmitter<'left' | 'right' | 'unpin'>();
 
   currentWidthPx: number = 160;
   isResizing = false;
+  showMenu = false;
+  isLocked = false;
+  countdown = 60;
+  private intervalId: any;
   private startX = 0;
   private startW = 0;
 
   ngOnInit(): void { this.currentWidthPx = parseInt(this.width, 10) || 160; }
-  ngOnDestroy(): void { this.isResizing = false; }
+  
+  ngOnDestroy(): void { 
+    this.isResizing = false;
+    this.clearTimer();
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void { this.showMenu = false; }
+
+  onPinAction(action: 'left' | 'right' | 'unpin') {
+    this.pinChange.emit(action);
+    this.showMenu = false;
+  }
+  
+  onLockUpdate() {
+    this.isLocked = !this.isLocked;
+    if (this.isLocked) {
+      this.countdown = 60;
+      this.clearTimer();
+      this.intervalId = setInterval(() => {
+        if (this.countdown > 1) {
+          this.countdown--;
+        } else {
+          this.isLocked = false;
+          this.clearTimer();
+        }
+      }, 1000);
+    } else {
+      this.clearTimer();
+    }
+    // Leave menu open to show countdown, or close it. We'll leave it open.
+  }
+  
+  private clearTimer() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
 
   cycleSort(): void {
     const n: SortDirection = this.sortDirection === null ? 'asc' : this.sortDirection === 'asc' ? 'desc' : null;

@@ -5,10 +5,12 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+import { AutoRefreshComponent } from './auto-refresh';
+import { LockUpdateComponent } from './lock-update';
 import type { ColumnDef } from '../models/column-def.model';
 import type { ActionsConfig, ExportConfig, DownloadConfig, ColumnManagementConfig, FeaturesConfig } from '../models/table-config.model';
 
-export type ActionKey = 'edit' | 'delete' | 'enable' | 'disable' | 'revert';
+export type ActionKey = 'edit' | 'delete' | 'enable' | 'disable' | 'revert' | 'refresh' | 'lock_update';
 export type ActionState = 'enabled' | 'disabled' | 'not_available';
 
 export interface ActionBarState {
@@ -45,7 +47,7 @@ export interface GenerateInfo {
   selector: 'dt-toolbar-actions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Default,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AutoRefreshComponent, LockUpdateComponent],
   styles: [`
     :host { display: block; }
     .tb-btn {
@@ -82,6 +84,16 @@ export interface GenerateInfo {
 
     <!-- ───────────────────────── LEFT: action buttons ───────────────────────── -->
     <div class="flex items-center gap-0.5">
+
+      <!-- Auto Refresh -->
+      <div class="mr-1 pr-1 border-r border-slate-200">
+        <dt-auto-refresh (refresh)="actionClicked.emit('refresh')"></dt-auto-refresh>
+      </div>
+
+      <!-- Lock Update -->
+      <div class="mr-2 border-r border-slate-200 pr-2">
+        <dt-lock-update (lock)="actionClicked.emit('lock_update')"></dt-lock-update>
+      </div>
 
       <!-- Selection info -->
       <div *ngIf="selectionCount > 0"

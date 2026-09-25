@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface RowAction {
@@ -44,7 +44,7 @@ export interface RowAction {
           title="More actions">⋯</button>
 
         <div *ngIf="showOverflow"
-          class="absolute right-0 bottom-8 z-50 min-w-[150px] rounded-lg
+          class="absolute right-0 top-full mt-1 z-50 min-w-[150px] rounded-lg
                  border border-slate-200 bg-white p-1.5 shadow-xl"
           (click)="$event.stopPropagation()">
           <button *ngFor="let action of overflowActions" type="button"
@@ -65,8 +65,16 @@ export class ActionColumn {
   @Input() row: any = {};
   @Input() actions: RowAction[] = [];
   @Output() actionFired = new EventEmitter<{ action: string; row: any }>();
+  @Output() menuOpened = new EventEmitter<boolean>();
 
-  showOverflow = false;
+  private _showOverflow = false;
+  get showOverflow(): boolean {
+    return this._showOverflow;
+  }
+  set showOverflow(value: boolean) {
+    this._showOverflow = value;
+    this.menuOpened.emit(value);
+  }
 
   get primaryActions(): RowAction[] { return this.actions.slice(0, 2); }
   get overflowActions(): RowAction[] { return this.actions.slice(2); }
@@ -75,5 +83,12 @@ export class ActionColumn {
     if (action.requiresEditable && !this.row?.editable) return true;
     if (action.requiresDeletable && !this.row?.deletable) return true;
     return false;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    if (this.showOverflow) {
+      this.showOverflow = false;
+    }
   }
 }

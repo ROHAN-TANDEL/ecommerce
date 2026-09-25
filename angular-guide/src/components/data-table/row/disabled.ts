@@ -51,7 +51,7 @@ import { DisabledCell }              from '../cell/disabled';
         </td>
       </ng-container>
 
-      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-slate-50"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-slate-50 hover:z-[60] focus-within:z-[60]"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions" [class.right-0]="fixedActions" [class.z-[10]]="fixedActions">
         <div class="opacity-20 pointer-events-none"><ng-content select="[rowActions]" /></div>

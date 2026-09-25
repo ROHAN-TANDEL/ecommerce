@@ -81,7 +81,7 @@ import { ReadonlyCell }              from '../cell/readonly';
       </ng-container>
 
       <!-- Actions — always visible, sticky when fixedActions -->
-      <td *ngIf="showActions" class="w-[120px] px-3 align-middle"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle hover:z-[60] focus-within:z-[60]"
           [class.bg-white]="!zebra && !selected" [class.bg-slate-50]="zebra && !selected" [class.bg-blue-50]="selected"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions"

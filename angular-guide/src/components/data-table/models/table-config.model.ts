@@ -104,6 +104,8 @@ export interface TableConfigEntry {
   show_checkboxes?: boolean;
   /** Whether to show the actions column at all */
   show_actions?: boolean;
+  /** Whether row expansion is enabled */
+  row_expansion?: boolean;
   /** Whether to show the headers section (header row, filter row, master-edit row) */
   show_headers?: boolean;
   /** Whether to show the live-count / collaboration panel */

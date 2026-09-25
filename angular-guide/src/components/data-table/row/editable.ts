@@ -86,7 +86,7 @@ import { ReadonlyCell }              from '../cell/readonly';
         </td>
       </ng-container>
 
-      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-blue-50"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-blue-50 hover:z-[60] focus-within:z-[60]"
           [class.py-1.5]="density === 'compact'"
           [class.py-2.5]="density === 'comfortable'"
           [class.py-4]="density === 'spacious'"
