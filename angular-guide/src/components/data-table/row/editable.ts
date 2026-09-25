@@ -23,10 +23,10 @@ import { ReadonlyCell }              from '../cell/readonly';
             NumberSeparationWithComma, StatusBadgeCell, EditableCell, ReadonlyCell],
   template: `
     <tr class="group border-b border-slate-200 border-l-[3px] border-l-[#436CF3]
-               bg-blue-50/40 transition-colors"
-        [class.bg-blue-100/50]="selected">
+               bg-blue-50 transition-colors"
+        [class.bg-blue-100]="selected">
 
-      <td class="w-[54px] px-3 align-middle bg-blue-50/40"
+      <td *ngIf="showCheckboxes" class="w-[54px] px-3 align-middle bg-blue-50"
           [class.py-1.5]="density === 'compact'"
           [class.py-2.5]="density === 'comfortable'"
           [class.py-4]="density === 'spacious'"
@@ -50,7 +50,7 @@ import { ReadonlyCell }              from '../cell/readonly';
             [style.width]="col.width"
             [class.sticky]="col.frozen"
             [class.z-[10]]="col.frozen"
-            [class.bg-blue-100/60]="col.frozen"
+            [class.bg-blue-100]="col.frozen"
             [class.border-r]="col.frozen && col.frozenSide !== 'right'"
             [class.border-l]="col.frozen && col.frozenSide === 'right'"
             [class.border-slate-200]="col.frozen"
@@ -86,7 +86,7 @@ import { ReadonlyCell }              from '../cell/readonly';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 align-middle bg-blue-50/40"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-blue-50"
           [class.py-1.5]="density === 'compact'"
           [class.py-2.5]="density === 'comfortable'"
           [class.py-4]="density === 'spacious'"
@@ -109,6 +109,8 @@ export class EditableRow implements OnInit, OnChanges {
   @Input() masterEditValues: Record<string, any> = {};
   @Input() fixedCheckboxes = false;
   @Input() fixedActions = false;
+  @Input() showCheckboxes = true;
+  @Input() showActions = true;
   @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Output() selectedChange = new EventEmitter<boolean>();
   @Output() cellChange = new EventEmitter<{ key: string; value: any }>();

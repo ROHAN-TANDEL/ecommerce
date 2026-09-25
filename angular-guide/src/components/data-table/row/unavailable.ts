@@ -19,13 +19,14 @@ import { UnavailableCell }           from '../cell/unavailable';
     <tr class="group border-b transition-colors"
         [class.border-l-[3px]]="rowState !== 'normal'"
         [class.border-l-red-400]="rowState === 'error'"
-        [class.bg-red-50/30]="rowState === 'error'"
+        [class.bg-red-50]="rowState === 'error'"
         [class.border-l-amber-400]="rowState === 'warning'"
-        [class.bg-amber-50/20]="rowState === 'warning'"
+        [class.bg-amber-50]="rowState === 'warning'"
         [class.border-slate-100]="rowState === 'normal'"
         [class.bg-white]="rowState === 'normal'">
 
-      <td class="w-[54px] px-3 align-middle"
+      <td *ngIf="showCheckboxes" class="w-[54px] px-3 align-middle"
+          [class.bg-red-50]="rowState === 'error'" [class.bg-amber-50]="rowState === 'warning'" [class.bg-white]="rowState === 'normal'"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedCheckboxes" [class.left-0]="fixedCheckboxes" [class.z-[10]]="fixedCheckboxes">
         <div class="flex items-center gap-1.5">
@@ -66,7 +67,8 @@ import { UnavailableCell }           from '../cell/unavailable';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 align-middle"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle"
+          [class.bg-red-50]="rowState === 'error'" [class.bg-amber-50]="rowState === 'warning'" [class.bg-white]="rowState === 'normal'"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions" [class.right-0]="fixedActions" [class.z-[10]]="fixedActions">
         <ng-content select="[rowActions]" />
@@ -85,6 +87,8 @@ export class UnavailableRow {
   @Input() warningMessage = 'Warning';
   @Input() fixedCheckboxes = false;
   @Input() fixedActions = false;
+  @Input() showCheckboxes = true;
+  @Input() showActions = true;
   @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Output() selectedChange = new EventEmitter<boolean>();

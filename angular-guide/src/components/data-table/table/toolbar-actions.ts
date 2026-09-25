@@ -221,18 +221,18 @@ export interface GenerateInfo {
       <ng-container *ngIf="features.column_navigation">
         <span class="text-[11px] text-slate-500">Cols</span>
         <button type="button" class="tb-icon"
-          [disabled]="colPage === 0"
-          [class.opacity-30]="colPage === 0"
+          [disabled]="!canScrollPrevious"
+          [class.opacity-30]="!canScrollPrevious"
           title="Previous columns"
-          (click)="colPage > 0 && colPageChange.emit(colPage - 1)">‹</button>
+          (click)="canScrollPrevious && columnNavigate.emit('previous')">‹</button>
         <span class="min-w-[90px] text-center text-[11px] font-medium text-slate-600">
-          {{ colRangeLabel }}
+          {{ columnScrollLabel }}
         </span>
         <button type="button" class="tb-icon"
-          [disabled]="colPage >= colTotalPages - 1"
-          [class.opacity-30]="colPage >= colTotalPages - 1"
+          [disabled]="!canScrollNext"
+          [class.opacity-30]="!canScrollNext"
           title="Next columns"
-          (click)="colPage < colTotalPages - 1 && colPageChange.emit(colPage + 1)">›</button>
+          (click)="canScrollNext && columnNavigate.emit('next')">›</button>
       </ng-container>
 
       <!-- Divider -->
@@ -397,11 +397,10 @@ export class ToolbarActions {
   @Input() savedViews: string[] = [];
   @Input() generateInfo: GenerateInfo = { generated: false };
 
-  // Column navigation
-  @Input() colPage: number = 0;
-  @Input() colPageSize: number = 8;
-  @Input() colTotalPages: number = 1;
-  @Input() colRangeLabel: string = '1–8 of 8 columns';
+  // Horizontal column navigation
+  @Input() canScrollPrevious = false;
+  @Input() canScrollNext = false;
+  @Input() columnScrollLabel = 'Columns';
 
   // ── Outputs ─────────────────────────────────────────────────────────
   @Output() actionClicked = new EventEmitter<ActionKey | string>();
@@ -414,7 +413,7 @@ export class ToolbarActions {
   @Output() viewChange = new EventEmitter<string>();
   @Output() saveViewClicked = new EventEmitter<void>();
   @Output() resetViewClicked = new EventEmitter<void>();
-  @Output() colPageChange = new EventEmitter<number>();
+  @Output() columnNavigate = new EventEmitter<'previous' | 'next'>();
   @Output() columnVisibilityChange = new EventEmitter<Record<string, boolean>>();
   @Output() applyColumnsClicked = new EventEmitter<Record<string, boolean>>();
   @Output() resetColumnsClicked = new EventEmitter<void>();

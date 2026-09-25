@@ -1,1581 +1,433 @@
-<div class="w-full rounded-xl border border-slate-200 bg-white shadow-sm">
 
-  <!-- ========================================================= -->
-  <!-- PAGE / CONTEXT HEADER -->
-  <!-- ========================================================= -->
+<div class="min-h-screen bg-[#F7F9FC] p-6">
 
-  <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+  <!-- Table Container -->
+  <div class="w-full overflow-hidden rounded-xl border border-[#D9DFEA] bg-white shadow-sm">
 
-    <div>
-      <div class="flex items-center gap-2">
-        <h2 class="text-lg font-semibold text-[#0A173D]">
+    <!-- Table Header / Title Area -->
+    <div class="flex items-center justify-between border-b border-[#D9DFEA] px-5 py-4">
+
+      <div>
+        <h2 class="text-lg font-semibold text-[#101828]">
           Customers
         </h2>
 
-        <span
-          class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#436CF3]"
-        >
-              1,250
-            </span>
+        <p class="mt-1 text-sm text-[#667085]">
+          Manage and view customer records
+        </p>
       </div>
 
-      <p class="mt-1 text-xs text-slate-500">
-        Manage and monitor your customers across all regions.
-      </p>
     </div>
 
-    <div class="text-xs text-slate-400">
-      Home
-      <span class="mx-2">›</span>
-      <span class="text-slate-600">Customers</span>
-    </div>
 
-  </div>
+    <!-- Table -->
+    <div class="w-full overflow-x-auto">
+
+      <table class="w-full min-w-[1100px] border-collapse">
+
+        <!-- Header -->
+        <thead>
+        <tr class="border-b border-[#D9DFEA] bg-[#F7F9FC]">
+
+          <th
+            class="w-12 px-4 py-3 text-left"
+          >
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Customer Name
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Email
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Status
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Industry
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Country
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Created Date
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Revenue
+          </th>
+
+          <th
+            class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#667085]"
+          >
+            Owner
+          </th>
+
+          <th
+            class="w-16 px-4 py-3"
+          >
+          </th>
+
+        </tr>
+        </thead>
 
 
-  <!-- ========================================================= -->
-  <!-- ACTION TOOLBAR -->
-  <!-- ========================================================= -->
+        <!-- Body -->
+        <tbody>
 
-  <div class="border-b border-slate-200 px-3 py-2">
+        <!-- Row 1 -->
+        <tr class="border-b border-[#D9DFEA] bg-white hover:bg-[#F7F9FC]">
 
-    <div class="flex min-h-[46px] items-center justify-between gap-3 rounded-lg border border-[#436CF3]/30 bg-gradient-to-r from-blue-50/70 to-white px-3">
+          <td class="px-4 py-4">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </td>
 
-      <!-- Left actions -->
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            Acme Corp
+          </td>
 
-      <div class="flex items-center gap-1">
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            acme@corp.com
+          </td>
 
-        <!-- Selection -->
-
-        <div class="mr-2 flex items-center gap-2 border-r border-slate-200 pr-3">
-
-          <input
-            type="checkbox"
-            class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
-          />
-
-          <span class="text-xs font-medium text-slate-700">
-                2 selected
+          <td class="px-4 py-4">
+              <span
+                class="inline-flex rounded-full bg-[#EAF1FF] px-2.5 py-1 text-xs font-medium text-[#436CF3]"
+              >
+                Active
               </span>
-
-        </div>
-
-
-        <button
-          type="button"
-          class="toolbar-action"
-          [disabled]="selectedRows.length === 0"
-          (click)="editSelectedRows()"
-        >
-          <span>✎</span>
-          Edit
-        </button>
-
-        <button
-          type="button"
-          class="toolbar-action"
-        >
-          <span>♜</span>
-          Delete
-        </button>
-
-        <button
-          type="button"
-          class="toolbar-action"
-        >
-          <span>✓</span>
-          Enable
-        </button>
-
-        <button
-          type="button"
-          class="toolbar-action"
-        >
-          <span>◉</span>
-          Disable
-        </button>
-
-        <button
-          type="button"
-          class="toolbar-action"
-        >
-          <span>↶</span>
-          Revert
-        </button>
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="toolbar-action"
-            (click)="toggleMenu('left-more', $event)"
-          >
-            <span>⋮</span>
-            More
-            <span class="text-[10px]">⌄</span>
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'left-more'"
-            class="popup-menu nexora-popup left-0 top-full w-52"
-          >
-            <button type="button" class="dropdown-item">
-              <span>↗</span>
-              View details
-            </button>
-            <button type="button" class="dropdown-item">
-              <span>⌁</span>
-              Duplicate selection
-            </button>
-            <div class="my-1 border-t border-slate-100"></div>
-            <button type="button" class="dropdown-item">
-              <span>↶</span>
-              Reset changes
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-
-      <!-- Right controls -->
-
-      <!-- ========================================================= -->
-      <!-- RIGHT TOOLBAR CONTROLS -->
-      <!-- ========================================================= -->
-
-      <div class="flex items-center gap-2">
-
-        <!-- Export -->
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="toolbar-action"
-            title="Export data"
-            (click)="toggleMenu('export', $event)"
-          >
-            <span>⇩</span>
-            Export
-            <span class="text-[10px]">⌄</span>
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'export'"
-            class="popup-menu nexora-popup right-0 top-full w-48"
-          >
-            <div class="popup-label">Export format</div>
-            <button type="button" class="dropdown-item">
-              <span class="font-medium">X</span>
-              <span class="flex-1">Excel</span>
-              <span class="text-[10px] text-slate-400">.xlsx</span>
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="font-medium">CSV</span>
-              <span class="flex-1">CSV</span>
-              <span class="text-[10px] text-slate-400">.csv</span>
-            </button>
-          </div>
-        </div>
-
-
-        <!-- Generate -->
-
-        <button
-          type="button"
-          class="toolbar-action"
-          title="Generate downloadable file"
-        >
-          <span>⟳</span>
-          Generate
-        </button>
-
-
-        <!-- Download -->
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="toolbar-action"
-            title="Generate a file before downloading"
-            (click)="toggleMenu('download', $event)"
-          >
-            <span>⇩</span>
-            Download
-            <span class="text-[10px]">⌄</span>
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'download'"
-            class="popup-menu nexora-popup right-0 top-full w-48"
-          >
-            <div class="popup-label">Download format</div>
-            <button type="button" class="dropdown-item">
-              <span class="font-medium">X</span>
-              <span class="flex-1">Excel</span>
-              <span class="text-[10px] text-slate-400">.xlsx</span>
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="font-medium">CSV</span>
-              <span class="flex-1">CSV</span>
-              <span class="text-[10px] text-slate-400">.csv</span>
-            </button>
-          </div>
-        </div>
-
-
-        <!-- More -->
-
-        <div class="relative nexora-popup-anchor">
-
-          <button
-            type="button"
-            class="toolbar-action"
-            title="More actions"
-            (click)="toggleMenu('right-more', $event)"
-          >
-            <span>⋮</span>
-            More
-            <span class="text-[10px]">⌄</span>
-          </button>
-
-          <!-- More dropdown -->
-
-          <div
-            *ngIf="openMenu === 'right-more'"
-            (click)="$event.stopPropagation()"
-            class="popup-menu nexora-popup right-0 top-full w-52"
-          >
-
-            <button
-              type="button"
-              class="dropdown-item"
-            >
-              <span>⇩</span>
-              Export
-            </button>
-
-            <button
-              type="button"
-              class="dropdown-item"
-            >
-              <span>⇧</span>
-              Import
-            </button>
-
-            <div class="my-1 border-t border-slate-100"></div>
-
-            <button
-              type="button"
-              class="dropdown-item"
-            >
-              <span>⚙</span>
-              Column settings
-            </button>
-
-            <button
-              type="button"
-              class="dropdown-item"
-            >
-              <span>▣</span>
-              Save view
-            </button>
-
-            <button
-              type="button"
-              class="dropdown-item"
-            >
-              <span>↶</span>
-              Reset view
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <div class="mx-1 h-6 w-px bg-slate-200"></div>
-
-
-        <!-- Column navigation -->
-
-        <span class="text-xs text-slate-500">
-    Column view
-  </span>
-
-        <button
-          type="button"
-          class="icon-button"
-          disabled
-        >
-          ‹
-        </button>
-
-        <span class="min-w-[90px] text-center text-xs font-medium text-slate-600">
-    1–8 of 12 columns
-  </span>
-
-        <button
-          type="button"
-          class="icon-button"
-        >
-          ›
-        </button>
-
-
-        <!-- Fullscreen -->
-
-        <button
-          type="button"
-          class="icon-button ml-1"
-          title="Fullscreen"
-        >
-          ⛶
-        </button>
-
-
-        <!-- View -->
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="view-button"
-            (click)="toggleMenu('view', $event)"
-          >
-            <span>☷</span>
-            Default
-            <span>⌄</span>
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'view'"
-            class="popup-menu nexora-popup right-0 top-full w-56"
-          >
-            <div class="popup-label">Saved views</div>
-            <button type="button" class="dropdown-item">
-              <span class="w-4 text-[#436CF3]">✓</span>
-              Default
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="w-4"></span>
-              My customers
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="w-4"></span>
-              Active customers
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="w-4"></span>
-              Finance view
-            </button>
-            <div class="my-1 border-t border-slate-100"></div>
-            <button type="button" class="dropdown-item text-[#436CF3]">
-              <span>＋</span>
-              Save current view
-            </button>
-          </div>
-        </div>
-
-
-        <!-- Density -->
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="icon-button"
-            title="Density"
-            (click)="toggleMenu('density', $event)"
-          >
-            ≋
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'density'"
-            class="popup-menu nexora-popup right-0 top-full w-40"
-          >
-            <div class="popup-label">Density</div>
-            <button type="button" class="dropdown-item">
-              <span class="w-4 text-[#436CF3]">✓</span>
-              Comfortable
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="w-4"></span>
-              Compact
-            </button>
-            <button type="button" class="dropdown-item">
-              <span class="w-4"></span>
-              Spacious
-            </button>
-          </div>
-        </div>
-
-
-        <!-- Columns -->
-
-        <div class="relative nexora-popup-anchor">
-          <button
-            type="button"
-            class="icon-button text-[#436CF3]"
-            title="Columns"
-            (click)="toggleMenu('columns', $event)"
-          >
-            ▦
-          </button>
-
-          <div
-            (click)="$event.stopPropagation()"
-            *ngIf="openMenu === 'columns'"
-            class="popup-menu nexora-popup right-0 top-full w-72 p-0"
-          >
-            <div class="border-b border-slate-100 px-3 py-3">
-              <div class="text-xs font-semibold text-[#0A173D]">Columns</div>
-              <div class="mt-0.5 text-[10px] text-slate-400">
-                Manage visible columns
-              </div>
-            </div>
-
-            <div class="border-b border-slate-100 p-2">
-              <div class="relative nexora-popup-anchor">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
-                <input
-                  type="text"
-                  placeholder="Search columns..."
-                  class="h-8 w-full rounded-md border border-slate-200 pl-7 pr-2 text-[11px] outline-none focus:border-[#436CF3]"
-                />
-              </div>
-            </div>
-
-            <div class="max-h-64 overflow-y-auto p-1.5">
-              <button
-                *ngFor="let column of columns"
-                type="button"
-                class="column-manager-item"
-              >
-                <span class="cursor-grab text-slate-300">⋮⋮</span>
-                <span class="flex-1 text-left">{{ column.label }}</span>
-                <span class="text-[#436CF3]">✓</span>
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-slate-100 px-3 py-2">
-              <button type="button" class="text-[11px] font-medium text-slate-500 hover:text-[#436CF3]">
-                Reset
-              </button>
-              <div class="flex gap-1.5">
-                <button type="button" class="popup-secondary-button">Cancel</button>
-                <button type="button" class="popup-primary-button">Apply</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <!-- ========================================================= -->
-  <!-- LIVE COLLABORATION / PRESENCE -->
-  <!-- ========================================================= -->
-
-  <div
-    class="flex items-center justify-between border-b border-slate-200 bg-[#F7F9FC] px-4 py-2"
-  >
-
-    <div class="flex items-center gap-3">
-
-      <div class="flex items-center gap-2">
-
-      <span class="relative flex h-2.5 w-2.5">
-        <span
-          class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"
-        ></span>
-
-        <span
-          class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
-        ></span>
-      </span>
-
-        <span class="text-xs font-medium text-slate-700">
-        Live collaboration
-      </span>
-
-      </div>
-
-
-      <div class="h-4 w-px bg-slate-200"></div>
-
-
-      <div class="flex items-center -space-x-2">
-
-        <div
-          class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-indigo-100 text-[9px] font-semibold text-indigo-700"
-          title="John Doe"
-        >
-          JD
-        </div>
-
-        <div
-          class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-violet-100 text-[9px] font-semibold text-violet-700"
-          title="Sarah Connor"
-        >
-          SC
-        </div>
-
-        <div
-          class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-pink-100 text-[9px] font-semibold text-pink-700"
-          title="Tony Stark"
-        >
-          TS
-        </div>
-
-      </div>
-
-
-      <span class="text-xs text-slate-500">
-      <span class="font-medium text-slate-700">3 users</span>
-      are viewing this table
-    </span>
-
-    </div>
-
-
-    <div class="flex items-center gap-2 text-[11px] text-slate-400">
-
-    <span>
-      1 user is editing
-    </span>
-
-      <span
-        class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-semibold text-amber-700"
-        title="Sarah Connor is editing"
-      >
-      SC
-    </span>
-
-    </div>
-
-  </div>
-
-  <!-- ========================================================= -->
-  <!-- TABLE -->
-  <!-- ========================================================= -->
-
-  <div class="overflow-x-auto">
-
-    <table class="min-w-[1350px] w-full table-fixed">
-
-      <!-- ======================================================= -->
-      <!-- COLUMN HEADERS -->
-      <!-- ======================================================= -->
-
-      <thead>
-
-      <tr class="border-b border-slate-200 bg-slate-50">
-
-        <!-- Master checkbox -->
-
-        <th class="w-[54px] px-4 py-3 text-left">
-          <input
-            type="checkbox"
-            class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
-          />
-        </th>
-
-
-        <th
-          *ngFor="let column of columns"
-          [style.width]="column.width"
-          class="px-4 py-3 text-left"
-        >
-
-          <div class="flex items-center gap-2">
-
-            <button
-              *ngIf="column.sortable"
-              type="button"
-              class="flex min-w-0 items-center gap-2 text-left"
-              (click)="toggleMenu('sort-' + column.key, $event)"
-            >
-                    <span class="text-[11px] font-semibold text-[#0A173D]">
-                      {{ column.label }}
-                    </span>
-            </button>
-
-            <span
-              *ngIf="!column.sortable"
-              class="text-[11px] font-semibold text-[#0A173D]"
-            >
-                    {{ column.label }}
-                  </span>
-
-            <!-- Editable column -->
-            <svg
-              *ngIf="column.editable === true"
-              class="h-3.5 w-3.5 text-slate-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              title="Editable column"
-            >
-              <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-              <path d="M17 8V7a5 5 0 0 0-9.9-1"></path>
-            </svg>
-
-            <!-- Read-only column -->
-            <svg
-              *ngIf="column.editable === false"
-              class="h-3.5 w-3.5 text-slate-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              title="Read-only column"
-            >
-              <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-
-            <span
-              *ngIf="column.sortable"
-              class="text-[11px] text-slate-400"
-            >
-                    ↕
-                  </span>
-
-            <div
-              *ngIf="column.sortable && openMenu === 'sort-' + column.key"
-              class="popup-menu nexora-popup left-0 top-full w-44"
-            >
-              <button type="button" class="dropdown-item">
-                <span>↑</span>
-                Sort ascending
-              </button>
-              <button type="button" class="dropdown-item">
-                <span>↓</span>
-                Sort descending
-              </button>
-              <div class="my-1 border-t border-slate-100"></div>
-              <button type="button" class="dropdown-item">
-                <span>↕</span>
-                Add to sort
-              </button>
-            </div>
-
-          </div>
-
-        </th>
-
-
-        <th class="w-[125px] px-4 py-3 text-left">
-                <span class="text-[11px] font-semibold text-[#0A173D]">
-                  Actions
-                </span>
-        </th>
-
-      </tr>
-
-
-      <!-- ===================================================== -->
-      <!-- FILTER ROW -->
-      <!-- ===================================================== -->
-
-      <tr class="border-b border-slate-200 bg-white">
-
-        <th class="px-4 py-2"></th>
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-
-                  <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                    ⌕
-                  </span>
-
-            <input
-              type="text"
-              placeholder="Search customers..."
-              class="h-8 w-full rounded-md border border-slate-200 bg-white pl-7 pr-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
-            />
-
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-            <button
-              type="button"
-              class="filter-select"
-              (click)="toggleFilter('status', $event)"
-            >
-              <span>2 selected</span>
-              <span>⌄</span>
-            </button>
-
-            <div *ngIf="activeFilter === 'status'" class="popup-menu nexora-popup left-0 top-full w-52">
-              <div class="popup-label">Status</div>
-              <button type="button" class="filter-option"><span class="filter-check">✓</span> Active</button>
-              <button type="button" class="filter-option"><span class="filter-check">✓</span> Pending</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Disabled</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Suspended</button>
-              <div class="my-1 border-t border-slate-100"></div>
-              <div class="flex justify-between px-2 py-1">
-                <button type="button" class="text-[10px] text-slate-500">Clear all</button>
-                <button type="button" class="text-[10px] font-medium text-[#436CF3]">Apply</button>
-              </div>
-            </div>
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-            <button
-              type="button"
-              class="filter-select"
-              (click)="toggleFilter('industry', $event)"
-            >
-              <span>All industries</span>
-              <span>⌄</span>
-            </button>
-
-            <div *ngIf="activeFilter === 'industry'" class="popup-menu nexora-popup left-0 top-full w-48">
-              <div class="popup-label">Select industry</div>
-              <div class="px-2 pb-2">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
-                />
-              </div>
-              <button type="button" class="filter-option"><span class="filter-check"></span> All industrys</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Example option</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Another option</button>
-              <div class="my-1 border-t border-slate-100"></div>
-              <div class="flex justify-end px-2 py-1">
-                <button type="button" class="text-[10px] font-medium text-[#436CF3]">Apply</button>
-              </div>
-            </div>
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-            <button
-              type="button"
-              class="filter-select"
-              (click)="toggleFilter('country', $event)"
-            >
-              <span>All countries</span>
-              <span>⌄</span>
-            </button>
-
-            <div *ngIf="activeFilter === 'country'" class="popup-menu nexora-popup left-0 top-full w-48">
-              <div class="popup-label">Select country</div>
-              <div class="px-2 pb-2">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
-                />
-              </div>
-              <button type="button" class="filter-option"><span class="filter-check"></span> All countrys</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Example option</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Another option</button>
-              <div class="my-1 border-t border-slate-100"></div>
-              <div class="flex justify-end px-2 py-1">
-                <button type="button" class="text-[10px] font-medium text-[#436CF3]">Apply</button>
-              </div>
-            </div>
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-            <button
-              type="button"
-              class="filter-date"
-              (click)="toggleFilter('createdDate', $event)"
-            >
-              <span>▣</span>
-              <span>Select range</span>
-            </button>
-
-            <div *ngIf="activeFilter === 'createdDate'" class="popup-menu nexora-popup right-0 top-full w-64">
-              <div class="popup-label">Created date</div>
-              <div class="grid grid-cols-2 gap-2 px-2 pb-2">
-                <div>
-                  <label class="mb-1 block text-[10px] text-slate-400">From</label>
-                  <input type="text" placeholder="DD MMM YYYY" class="h-8 w-full rounded-md border border-slate-200 px-2 text-[10px] outline-none focus:border-[#436CF3]" />
-                </div>
-                <div>
-                  <label class="mb-1 block text-[10px] text-slate-400">To</label>
-                  <input type="text" placeholder="DD MMM YYYY" class="h-8 w-full rounded-md border border-slate-200 px-2 text-[10px] outline-none focus:border-[#436CF3]" />
-                </div>
-              </div>
-              <div class="flex justify-end border-t border-slate-100 px-2 py-2">
-                <button type="button" class="text-[10px] font-medium text-[#436CF3]">Apply</button>
-              </div>
-            </div>
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="flex items-center gap-1">
-
-            <input
-              type="text"
-              placeholder="Min"
-              class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
-            />
-
-            <span class="text-slate-300">−</span>
-
-            <input
-              type="text"
-              placeholder="Max"
-              class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
-            />
-
-          </div>
-
-        </th>
-
-
-        <th class="px-3 py-2">
-
-          <div class="relative nexora-popup-anchor">
-            <button
-              type="button"
-              class="filter-select"
-              (click)="toggleFilter('owner', $event)"
-            >
-              <span>All owners</span>
-              <span>⌄</span>
-            </button>
-
-            <div *ngIf="activeFilter === 'owner'" class="popup-menu nexora-popup left-0 top-full w-48">
-              <div class="popup-label">Select owner</div>
-              <div class="px-2 pb-2">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
-                />
-              </div>
-              <button type="button" class="filter-option"><span class="filter-check"></span> All owners</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Example option</button>
-              <button type="button" class="filter-option"><span class="filter-check"></span> Another option</button>
-              <div class="my-1 border-t border-slate-100"></div>
-              <div class="flex justify-end px-2 py-1">
-                <button type="button" class="text-[10px] font-medium text-[#436CF3]">Apply</button>
-              </div>
-            </div>
-          </div>
-
-        </th>
-
-
-        <th class="px-4 py-2 text-center">
-
-          <button
-            type="button"
-            class="text-[11px] font-medium text-[#436CF3] hover:underline"
-          >
-            Clear all
-          </button>
-
-        </th>
-
-      </tr>
-
-
-      <!-- ===================================================== -->
-      <!-- INPUT / FILTER VALUE ROW -->
-      <!-- ===================================================== -->
-
-      <tr class="border-b border-slate-200 bg-slate-50/40">
-
-        <!-- Selection -->
-
-        <th class="px-4 py-2">
-        </th>
-
-
-        <!-- Customer Name -->
-
-        <th class="px-3 py-2">
-
-          <input
-            type="text"
-            placeholder="Enter customer name"
-            class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
-          />
-
-        </th>
-
-
-        <!-- Status -->
-
-        <th class="px-3 py-2">
-
-          <input
-            type="text"
-            placeholder="Enter status"
-            class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
-          />
-
-        </th>
-
-
-        <!-- Industry -->
-
-        <th class="px-3 py-2">
-
-          <input
-            type="text"
-            placeholder="Enter industry"
-            class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
-          />
-
-        </th>
-
-
-        <!-- Country -->
-
-        <th class="px-3 py-2">
-
-          <input
-            type="text"
-            placeholder="Enter country"
-            class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
-          />
-
-        </th>
-
-
-        <!-- Created Date -->
-
-        <th class="px-3 py-2">
-
-          <div class="flex items-center gap-1">
-
-            <input
-              type="text"
-              placeholder="From"
-              class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
-            />
-
-            <span class="text-slate-300">
-        −
-      </span>
-
-            <input
-              type="text"
-              placeholder="To"
-              class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
-            />
-
-          </div>
-
-        </th>
-
-
-        <!-- Revenue -->
-
-        <th class="px-3 py-2">
-
-          <div class="flex items-center gap-1">
-
-            <input
-              type="text"
-              placeholder="Min"
-              class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
-            />
-
-            <span class="text-slate-300">
-        −
-      </span>
-
-            <input
-              type="text"
-              placeholder="Max"
-              class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
-            />
-
-          </div>
-
-        </th>
-
-
-        <!-- Owner -->
-
-        <th class="px-3 py-2">
-
-          <input
-            type="text"
-            placeholder="Enter owner"
-            class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
-          />
-
-        </th>
-
-
-        <!-- Actions -->
-
-        <th class="px-4 py-2">
-
-          <button
-            type="button"
-            class="h-8 rounded-md border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-500 hover:bg-slate-50"
-          >
-            Apply
-          </button>
-
-        </th>
-
-      </tr>
-
-      </thead>
-
-
-      <!-- ======================================================= -->
-      <!-- DATA -->
-      <!-- ======================================================= -->
-
-      <tbody>
-
-      <ng-container *ngFor="let row of rows">
-
-        <tr
-          class="group border-b border-slate-100 transition odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/40"
-        >
-
-          <!-- Checkbox -->
-
-          <td class="w-10 px-2 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
-
-              <input
-                type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3]"
-                [disabled]="!row.selectable"
-                [checked]="selectedRows.includes(row.id)"
-                (change)="toggleRowSelection(row)"
-              />
-
-              <!-- Editable row -->
-
-              <svg
-                *ngIf="row.editable"
-                class="h-3.5 w-3.5 text-slate-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                title="Editable row"
-              >
-                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-                <path d="M17 8V7a5 5 0 0 0-9.9-1"></path>
-              </svg>
-
-              <!-- Read-only row -->
-
-              <svg
-                *ngIf="!row.editable"
-                class="h-3.5 w-3.5 text-slate-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                title="Read-only row"
-              >
-                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-
-            </div>
           </td>
 
-
-          <!-- Customer -->
-
-          <td class="px-4 py-3">
-
-            <div class="flex min-w-0 items-center gap-3">
-
-              <div
-                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#436CF3] to-[#3B32BC] text-[11px] font-semibold text-white"
-              >
-                {{ row.customerName.substring(0, 2).toUpperCase() }}
-              </div>
-
-              <div class="min-w-0 flex-1">
-
-                <ng-container
-                  *ngIf="editingRows.includes(row.id) && row.editable && columns[0].editable; else customerView"
-                >
-
-                  <input
-                    type="text"
-                    [value]="row.customerName"
-                    (input)="row.customerName = $any($event.target).value"
-                    class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-200"
-                  />
-
-                </ng-container>
-
-                <ng-template #customerView>
-
-                  <div
-                    class="truncate text-xs font-semibold text-[#0A173D]"
-                    [title]="row.customerName"
-                  >
-                    {{ row.customerName }}
-                  </div>
-
-                  <div class="mt-0.5 truncate text-[10px] text-slate-400">
-                    {{ row.email }}
-                  </div>
-
-                </ng-template>
-
-              </div>
-
-            </div>
-
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Fintech
           </td>
 
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            🇮🇳 India
+          </td>
 
-          <!-- Email -->
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            12 Sep 2026
+          </td>
 
-          <td class="px-4 py-3">
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            ₹50,000,000
+          </td>
 
-            <ng-container
-              *ngIf="editingRows.includes(row.id) && row.editable && columns[1].editable; else emailView"
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            John Doe
+          </td>
+
+          <td class="px-4 py-4 text-right">
+            <button
+              class="rounded-md p-1.5 text-[#667085] hover:bg-[#EAF1FF] hover:text-[#436CF3]"
             >
-
-              <input
-                type="text"
-                [value]="row.email"
-                (input)="row.email = $any($event.target).value"
-                class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-200"
-              />
-
-            </ng-container>
-
-            <ng-template #emailView>
-
-      <span class="truncate text-xs text-slate-600">
-        {{ row.email }}
-      </span>
-
-            </ng-template>
-
-          </td>
-
-
-          <!-- Status -->
-
-          <td class="px-4 py-3">
-
-            <ng-container
-              *ngIf="editingRows.includes(row.id) && row.editable && columns[2].editable; else statusView"
-            >
-
-              <input
-                type="text"
-                [value]="row.status"
-                (input)="row.status = $any($event.target).value"
-                class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-200"
-              />
-
-            </ng-container>
-
-            <ng-template #statusView>
-
-      <span
-        class="status-badge"
-        [ngClass]="{
-          'status-active': row.status === 'Active',
-          'status-pending': row.status === 'Pending',
-          'status-disabled': row.status === 'Disabled',
-          'status-suspended': row.status === 'Suspended'
-        }"
-      >
-        <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-        {{ row.status }}
-      </span>
-
-            </ng-template>
-
-          </td>
-
-
-          <!-- Industry -->
-
-          <td class="px-4 py-3">
-
-            <ng-container
-              *ngIf="editingRows.includes(row.id) && row.editable && columns[3].editable; else industryView"
-            >
-
-              <input
-                type="text"
-                [value]="row.industry"
-                (input)="row.industry = $any($event.target).value"
-                class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none"
-              />
-
-            </ng-container>
-
-            <ng-template #industryView>
-
-      <span class="truncate text-xs text-slate-600">
-        {{ row.industry }}
-      </span>
-
-            </ng-template>
-
-          </td>
-
-
-          <!-- Country -->
-
-          <td class="px-4 py-3">
-
-            <ng-container
-              *ngIf="editingRows.includes(row.id) && row.editable && columns[4].editable; else countryView"
-            >
-
-              <input
-                type="text"
-                [value]="row.country"
-                (input)="row.country = $any($event.target).value"
-                class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none"
-              />
-
-            </ng-container>
-
-            <ng-template #countryView>
-
-              <div class="flex items-center gap-2">
-
-        <span class="text-base">
-          {{ row.flag }}
-        </span>
-
-                <span class="text-xs text-slate-600">
-          {{ row.country }}
-        </span>
-
-              </div>
-
-            </ng-template>
-
-          </td>
-
-
-          <!-- Created -->
-
-          <td class="px-4 py-3">
-
-    <span class="text-xs text-slate-600">
-      {{ row.createdDate }}
-    </span>
-
-          </td>
-
-
-          <!-- Revenue -->
-
-          <td class="px-4 py-3">
-
-    <span class="text-xs font-medium text-[#0A173D]">
-      {{ row.revenue }}
-    </span>
-
-          </td>
-
-
-          <!-- Owner -->
-
-          <td class="px-4 py-3">
-
-            <ng-container
-              *ngIf="editingRows.includes(row.id) && row.editable && columns[7].editable; else ownerView"
-            >
-
-              <input
-                type="text"
-                [value]="row.owner"
-                (input)="row.owner = $any($event.target).value"
-                class="h-8 w-full rounded-md border border-[#436CF3] bg-white px-2 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-blue-200"
-              />
-
-            </ng-container>
-
-            <ng-template #ownerView>
-
-              <div class="flex items-center gap-2">
-
-                <div
-                  class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold"
-                  [ngClass]="row.ownerColor"
-                >
-                  {{ row.ownerInitials }}
-                </div>
-
-                <span class="truncate text-xs text-slate-600">
-          {{ row.owner }}
-        </span>
-
-              </div>
-
-            </ng-template>
-
-          </td>
-
-
-          <!-- Actions -->
-
-          <td class="px-3 py-3">
-
-            <div
-              class="flex items-center justify-end gap-1 opacity-70 transition group-hover:opacity-100"
-            >
-
-              <button
-                type="button"
-                [disabled]="!row.editable"
-                class="row-action"
-                title="Edit"
-                (click)="selectedRows = [row.id]; editSelectedRows()"
-              >
-                ✎
-              </button>
-
-              <button
-                type="button"
-                [disabled]="!row.deletable"
-                class="row-action"
-                title="Delete"
-              >
-                ♜
-              </button>
-
-              <div class="relative nexora-popup-anchor">
-
-                <button
-                  type="button"
-                  class="row-action"
-                  title="More"
-                  (click)="toggleMenu('row-' + row.id, $event)"
-                >
-                  ⋯
-                </button>
-
-                <div
-                  (click)="$event.stopPropagation()"
-                  *ngIf="openMenu === 'row-' + row.id"
-                  class="popup-menu nexora-popup bottom-8 right-0 w-40"
-                >
-
-                  <button type="button" class="dropdown-item">
-                    <span>◉</span>
-                    View
-                  </button>
-
-                  <button type="button" class="dropdown-item">
-                    <span>⧉</span>
-                    Duplicate
-                  </button>
-
-                  <div class="my-1 border-t border-slate-100"></div>
-
-                  <button type="button" class="dropdown-item">
-                    <span>⋯</span>
-                    More details
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
+              ⋮
+            </button>
           </td>
 
         </tr>
 
-      </ng-container>
 
-      </tbody>
+        <!-- Row 2 -->
+        <tr class="border-b border-[#D9DFEA] bg-[#F7F9FC] hover:bg-[#EAF1FF]">
 
-    </table>
+          <td class="px-4 py-4">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </td>
 
-  </div>
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            Globex
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            info@globex.com
+          </td>
+
+          <td class="px-4 py-4">
+              <span
+                class="inline-flex rounded-full bg-[#FFF4E5] px-2.5 py-1 text-xs font-medium text-[#B54708]"
+              >
+                Pending
+              </span>
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            SaaS
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            🇩🇪 Germany
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            14 Sep 2026
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            €2,300,000
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Sarah Connor
+          </td>
+
+          <td class="px-4 py-4 text-right">
+            <button
+              class="rounded-md p-1.5 text-[#667085] hover:bg-[#EAF1FF] hover:text-[#436CF3]"
+            >
+              ⋮
+            </button>
+          </td>
+
+        </tr>
 
 
-  <!-- ========================================================= -->
-  <!-- PAGINATION -->
-  <!-- ========================================================= -->
+        <!-- Row 3 -->
+        <tr class="border-b border-[#D9DFEA] bg-white hover:bg-[#F7F9FC]">
 
-  <div class="flex items-center justify-between border-t border-slate-200 px-5 py-3">
+          <td class="px-4 py-4">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </td>
 
-    <div class="text-xs text-slate-500">
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            Umbrella Inc
+          </td>
 
-      Showing
-      <span class="font-medium text-slate-700">1–25</span>
-      of
-      <span class="font-medium text-slate-700">1,250</span>
-      results
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            contact@umbrella.com
+          </td>
+
+          <td class="px-4 py-4">
+              <span
+                class="inline-flex rounded-full bg-[#EAF1FF] px-2.5 py-1 text-xs font-medium text-[#436CF3]"
+              >
+                Active
+              </span>
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Healthcare
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            🇺🇸 USA
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            16 Sep 2026
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            $1,200,000
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Michael Kim
+          </td>
+
+          <td class="px-4 py-4 text-right">
+            <button
+              class="rounded-md p-1.5 text-[#667085] hover:bg-[#EAF1FF] hover:text-[#436CF3]"
+            >
+              ⋮
+            </button>
+          </td>
+
+        </tr>
+
+
+        <!-- Row 4 -->
+        <tr class="border-b border-[#D9DFEA] bg-[#F7F9FC] hover:bg-[#EAF1FF]">
+
+          <td class="px-4 py-4">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            Stark Industries
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            admin@stark.com
+          </td>
+
+          <td class="px-4 py-4">
+              <span
+                class="inline-flex rounded-full bg-[#FFF4E5] px-2.5 py-1 text-xs font-medium text-[#B54708]"
+              >
+                Pending
+              </span>
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Manufacturing
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            🇺🇸 USA
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            10 Sep 2026
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            $5,600,000
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Tony Stark
+          </td>
+
+          <td class="px-4 py-4 text-right">
+            <button
+              class="rounded-md p-1.5 text-[#667085] hover:bg-[#EAF1FF] hover:text-[#436CF3]"
+            >
+              ⋮
+            </button>
+          </td>
+
+        </tr>
+
+
+        <!-- Row 5 -->
+        <tr class="bg-white hover:bg-[#F7F9FC]">
+
+          <td class="px-4 py-4">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#436CF3]"
+            />
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            Wayne Corp
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            wayne@corp.com
+          </td>
+
+          <td class="px-4 py-4">
+              <span
+                class="inline-flex rounded-full bg-[#EAF1FF] px-2.5 py-1 text-xs font-medium text-[#436CF3]"
+              >
+                Active
+              </span>
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Energy
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            🇬🇧 UK
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#667085]">
+            08 Sep 2026
+          </td>
+
+          <td class="px-4 py-4 text-sm font-medium text-[#101828]">
+            £3,400,000
+          </td>
+
+          <td class="px-4 py-4 text-sm text-[#101828]">
+            Bruce Wayne
+          </td>
+
+          <td class="px-4 py-4 text-right">
+            <button
+              class="rounded-md p-1.5 text-[#667085] hover:bg-[#EAF1FF] hover:text-[#436CF3]"
+            >
+              ⋮
+            </button>
+          </td>
+
+        </tr>
+
+        </tbody>
+
+      </table>
 
     </div>
 
 
-    <div class="flex items-center gap-1">
+    <!-- Table Footer -->
+    <div class="flex items-center justify-between border-t border-[#D9DFEA] px-5 py-3">
 
-      <button
-        type="button"
-        class="pagination-button text-slate-300"
-      >
-        «
-      </button>
+      <div class="text-sm text-[#667085]">
+        Showing 1–5 of 25 customers
+      </div>
 
-      <button
-        type="button"
-        class="pagination-button text-slate-300"
-      >
-        ‹
-      </button>
+      <div class="flex items-center gap-1">
 
-      <button
-        type="button"
-        class="pagination-button pagination-active"
-      >
-        1
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        2
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        3
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        4
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        5
-      </button>
-
-      <span class="px-1 text-xs text-slate-400">
-            ...
-          </span>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        50
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        ›
-      </button>
-
-      <button
-        type="button"
-        class="pagination-button"
-      >
-        »
-      </button>
-
-    </div>
-
-
-    <div class="flex items-center gap-2">
-
-          <span class="text-xs text-slate-500">
-            Rows per page
-          </span>
-
-      <div class="relative nexora-popup-anchor">
         <button
-          type="button"
-          class="flex h-8 items-center gap-4 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-600 hover:border-slate-300"
-          (click)="toggleMenu('page-size', $event)"
+          class="rounded-md border border-[#D9DFEA] px-3 py-1.5 text-sm text-[#667085] hover:bg-[#F7F9FC]"
         >
-          25
-          <span>⌄</span>
+          Previous
         </button>
 
-        <div
-          (click)="$event.stopPropagation()"
-          *ngIf="openMenu === 'page-size'"
-          class="popup-menu nexora-popup bottom-full right-0 mb-2 w-32"
+        <button
+          class="rounded-md bg-[#436CF3] px-3 py-1.5 text-sm font-medium text-white"
         >
-          <div class="popup-label">Rows per page</div>
-          <button type="button" class="dropdown-item">
-            <span class="w-4 text-[#436CF3]">✓</span> 25
-          </button>
-          <button type="button" class="dropdown-item">
-            <span class="w-4"></span> 50
-          </button>
-          <button type="button" class="dropdown-item">
-            <span class="w-4"></span> 100
-          </button>
-        </div>
+          1
+        </button>
+
+        <button
+          class="rounded-md border border-[#D9DFEA] px-3 py-1.5 text-sm text-[#667085] hover:bg-[#F7F9FC]"
+        >
+          2
+        </button>
+
+        <button
+          class="rounded-md border border-[#D9DFEA] px-3 py-1.5 text-sm text-[#667085] hover:bg-[#F7F9FC]"
+        >
+          3
+        </button>
+
+        <button
+          class="rounded-md border border-[#D9DFEA] px-3 py-1.5 text-sm text-[#667085] hover:bg-[#F7F9FC]"
+        >
+          Next
+        </button>
+
       </div>
 
     </div>

@@ -16,10 +16,10 @@ import { DisabledCell }              from '../cell/disabled';
   imports: [CommonModule, PlainTextCell, ImageAndPlainText, FlagAndPlainText,
             NumberSeparationWithComma, StatusBadgeCell, DisabledCell],
   template: `
-    <tr class="border-b border-slate-100 bg-slate-50/40 pointer-events-none select-none"
+    <tr class="border-b border-slate-100 bg-slate-50 pointer-events-none select-none"
         aria-disabled="true">
 
-      <td class="w-[54px] px-3 align-middle bg-slate-50/40"
+      <td *ngIf="showCheckboxes" class="w-[54px] px-3 align-middle bg-slate-50"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedCheckboxes" [class.left-0]="fixedCheckboxes" [class.z-[10]]="fixedCheckboxes">
         <div class="flex items-center gap-1 opacity-30">
@@ -51,7 +51,7 @@ import { DisabledCell }              from '../cell/disabled';
         </td>
       </ng-container>
 
-      <td class="w-[120px] px-3 align-middle bg-slate-50/40"
+      <td *ngIf="showActions" class="w-[120px] px-3 align-middle bg-slate-50"
           [class.py-1.5]="density === 'compact'" [class.py-2.5]="density === 'comfortable'" [class.py-4]="density === 'spacious'"
           [class.sticky]="fixedActions" [class.right-0]="fixedActions" [class.z-[10]]="fixedActions">
         <div class="opacity-20 pointer-events-none"><ng-content select="[rowActions]" /></div>
@@ -64,6 +64,8 @@ export class DisabledRow {
   @Input() columns: ColumnDef[] = [];
   @Input() fixedCheckboxes = false;
   @Input() fixedActions = false;
+  @Input() showCheckboxes = true;
+  @Input() showActions = true;
   @Input() frozenOffset: (col: ColumnDef) => string = () => '0px';
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
 }

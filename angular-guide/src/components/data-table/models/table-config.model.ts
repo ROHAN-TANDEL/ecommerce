@@ -94,7 +94,7 @@ export interface FeaturesConfig {
 /** Shape of one table entry within the table-config response */
 export interface TableConfigEntry {
   table_name: string;
-  display_name: string;
+  display_name: string | null;
   data_api: string;
   update_api: string;
   config_api: string;

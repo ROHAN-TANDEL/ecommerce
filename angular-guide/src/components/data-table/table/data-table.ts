@@ -1,5 +1,5 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, OnChanges,
+  Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, ElementRef, ViewChild,
   SimpleChanges, HostListener, ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -70,8 +70,8 @@ export type { ActionBarState };
  *   masterEditAllow = true.
  *
  * ─── COLUMN NAVIGATION ───────────────────────────────────────────────
- *   Columns are paged in sets of colPageSize.
- *   Left arrow disabled when on page 0; right arrow disabled at last page.
+ *   All visible columns remain rendered. The navigation arrows scroll the
+ *   horizontal viewport; they never replace one set of columns with another.
  */
 @Component({
   selector: 'dt-table',
@@ -108,11 +108,11 @@ export type { ActionBarState };
   >
 
     <!-- ── PAGE HEADER ──────────────────────────────────────────── -->
-    <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
+    <div *ngIf="displayName" class="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
       <div>
         <div class="flex items-center gap-2">
-          <h2 class="text-base font-semibold text-[#0A173D]">{{ title }}</h2>
-          <span *ngIf="pagination.total > 0"
+          <h2 class="text-base font-semibold text-[#0A173D]">{{ displayName }}</h2>
+          <span *ngIf="showLiveCountPanel && pagination.total > 0"
             class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#436CF3]">
             {{ pagination.total | number }}
           </span>
@@ -122,7 +122,7 @@ export type { ActionBarState };
       <div class="flex items-center gap-1 text-xs text-slate-400">
         <span>Home</span>
         <span class="mx-1">›</span>
-        <span class="text-slate-600">{{ title }}</span>
+        <span class="text-slate-600">{{ displayName }}</span>
       </div>
     </div>
 
@@ -141,7 +141,7 @@ export type { ActionBarState };
     </div>
 
     <!-- ── TOOLBAR ACTIONS ──────────────────────────────────────── -->
-    <div class="border-b border-slate-200 px-3 py-2">
+    <div *ngIf="showMainActionPanel" class="border-b border-slate-200 px-3 py-2">
       <dt-toolbar-actions
         [actions]="tableConfig?.actions ?? defaultActions"
         [exportConfig]="tableConfig?.export ?? defaultExport"
@@ -157,10 +157,9 @@ export type { ActionBarState };
         [activeView]="activeView"
         [savedViews]="savedViews"
         [generateInfo]="generateInfo"
-        [colPage]="colPage"
-        [colPageSize]="colPageSize"
-        [colTotalPages]="colTotalPages"
-        [colRangeLabel]="colRangeLabel"
+        [canScrollPrevious]="canScrollPrevious"
+        [canScrollNext]="canScrollNext"
+        [columnScrollLabel]="columnScrollLabel"
         (actionClicked)="onToolbarAction($event)"
         (exportClicked)="onExport($event)"
         (generateClicked)="onGenerate()"
@@ -171,7 +170,7 @@ export type { ActionBarState };
         (viewChange)="activeView = $event"
         (saveViewClicked)="saveCurrentView()"
         (resetViewClicked)="resetView()"
-        (colPageChange)="colPage = $event"
+        (columnNavigate)="scrollColumns($event)"
         (applyColumnsClicked)="applyColumnVisibility($event)"
         (resetColumnsClicked)="resetColumnVisibility()"
       />
@@ -179,7 +178,7 @@ export type { ActionBarState };
 
     <!-- ── LIVE COLLABORATION BAR ────────────────────────────────── -->
     <dt-collab-bar
-      *ngIf="tableConfig?.live_collaboration?.enabled && collabUsers.length > 0"
+      *ngIf="showLiveCountPanel && tableConfig?.live_collaboration?.enabled && collabUsers.length > 0"
       [users]="collabUsers"
     />
 
@@ -195,18 +194,20 @@ export type { ActionBarState };
     <!-- SCROLLABLE TABLE AREA                                       -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div *ngIf="!minimized"
+      #tableViewport
       class="overflow-x-auto"
       [class.flex-1]="fullscreen"
       [class.overflow-y-auto]="fullscreen"
       dtLazyScroll
       [threshold]="200"
       [loading]="loading"
+      (scroll)="onTableScroll(tableViewport)"
       (loadMore)="onLoadMore()">
 
-      <table class="w-full table-fixed" [style.minWidth]="tableMinWidth" role="grid">
+      <table class="w-full table-fixed" [style.minWidth]="computedTableMinWidth" role="grid">
 
         <!-- ── THEAD ──────────────────────────────────────────────── -->
-        <thead class="sticky top-0 z-20">
+        <thead *ngIf="showHeaders" class="sticky top-0 z-20">
 
           <!-- Row 1: Column headers -->
           <tr class="border-b border-slate-200 bg-slate-50">
@@ -232,7 +233,7 @@ export type { ActionBarState };
               [sortable]="col.sortable && !tableDisabled && (tableConfig?.sorting?.enabled ?? true)"
               [filterable]="col.filterable"
               [filterActive]="isFilterActive(col.key)"
-              [editable]="tableReadonly ? false : (col.editable ?? null)"
+              [editable]="tableReadonly ? false : (col?.editable ?? null)"
               [resizable]="col.resizable && (tableConfig?.column_resize?.enabled ?? true)"
               [frozen]="col.frozen"
               [frozenSide]="col.frozenSide ?? 'left'"
@@ -276,12 +277,12 @@ export type { ActionBarState };
           </tr>
 
           <!-- Row 3: Master-edit input row (shown when rows selected) -->
-          <tr *ngIf="selectedIds.length > 0 && tableConfig?.editing?.enabled && !tableReadonly && !tableDisabled"
-            class="border-b border-[#436CF3]/20 bg-blue-50/40">
+          <tr *ngIf="hasData && selectedIds.length > 0 && tableConfig?.editing?.enabled && !tableReadonly && !tableDisabled"
+            class="border-b border-[#436CF3]/20 bg-blue-50">
 
             <!-- Checkbox cell — sticky if fixedCheckboxes -->
             <td *ngIf="showCheckboxes"
-              class="w-[54px] px-3 align-middle bg-blue-50/40"
+              class="w-[54px] px-3 align-middle bg-blue-50"
               [class.py-1]="density === 'compact'"
               [class.py-2]="density === 'comfortable'"
               [class.py-3]="density === 'spacious'"
@@ -293,14 +294,14 @@ export type { ActionBarState };
 
             <!-- Per-column master-edit inputs — sticky if column is frozen -->
             <td *ngFor="let col of pagedColumns"
-              class="px-3 align-middle bg-blue-50/40"
+              class="px-3 align-middle bg-blue-50"
               [class.py-1]="density === 'compact'"
               [class.py-1.5]="density === 'comfortable'"
               [class.py-3]="density === 'spacious'"
               [style.width]="col.width"
               [class.sticky]="col.frozen"
               [class.z-[15]]="col.frozen"
-              [class.bg-blue-100/60]="col.frozen"
+              [class.bg-blue-100]="col.frozen"
               [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
               [style.right]="col.frozenSide === 'right' ? frozenOffset(col) : null">
               <ng-container *ngIf="col.editable && col.masterEditAllow; else masterRoCell">
@@ -317,7 +318,7 @@ export type { ActionBarState };
 
             <!-- Actions cell — sticky if fixedActions -->
             <td *ngIf="showActions"
-              class="w-[120px] px-3 align-middle bg-blue-50/40"
+              class="w-[120px] px-3 align-middle bg-blue-50"
               [class.py-1]="density === 'compact'"
               [class.py-1.5]="density === 'comfortable'"
               [class.py-3]="density === 'spacious'"
@@ -342,7 +343,7 @@ export type { ActionBarState };
           <!-- Loading skeleton -->
           <ng-container *ngIf="loading">
             <tr *ngFor="let s of skeletonRows" class="border-b border-slate-100 animate-pulse">
-              <td class="w-[54px] px-3 py-2.5">
+              <td *ngIf="showCheckboxes" class="w-[54px] px-3 py-2.5">
                 <div class="h-4 w-4 rounded bg-slate-200"></div>
               </td>
               <td *ngFor="let col of pagedColumns" [style.width]="col.width" class="px-3 py-2.5">
@@ -350,7 +351,7 @@ export type { ActionBarState };
                   [style.width]="col.format === 'avatar' ? '75%' : '60%'"></div>
                 <div *ngIf="col.format === 'avatar'" class="mt-1.5 h-2 w-2/5 rounded bg-slate-100"></div>
               </td>
-              <td class="w-[120px] px-3 py-2.5">
+              <td *ngIf="showActions" class="w-[120px] px-3 py-2.5">
                 <div class="h-3 w-12 rounded bg-slate-200 ml-auto"></div>
               </td>
             </tr>
@@ -387,6 +388,8 @@ export type { ActionBarState };
                   class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
+                  [showCheckboxes]="showCheckboxes"
+                  [showActions]="showActions"
                   [fixedCheckboxes]="fixedCheckboxes"
                   [fixedActions]="fixedActions"
                   [frozenOffset]="frozenOffset.bind(this)"
@@ -404,6 +407,8 @@ export type { ActionBarState };
                   class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
+                  [showCheckboxes]="showCheckboxes"
+                  [showActions]="showActions"
                   [rowState]="row.rowState"
                   [errorCells]="row.errorCells ?? []"
                   [warningCells]="row.warningCells ?? []"
@@ -426,6 +431,8 @@ export type { ActionBarState };
                   class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
+                  [showCheckboxes]="showCheckboxes"
+                  [showActions]="showActions"
                   [selected]="isSelected(pk(row))"
                   [masterSelected]="masterAllSelected"
                   [masterEditValues]="masterEditValues"
@@ -448,6 +455,8 @@ export type { ActionBarState };
                   class="contents"
                   [row]="row"
                   [columns]="pagedColumns"
+                  [showCheckboxes]="showCheckboxes"
+                  [showActions]="showActions"
                   [selected]="isSelected(pk(row))"
                   [zebra]="zebra && even"
                   [fixedCheckboxes]="fixedCheckboxes"
@@ -474,7 +483,7 @@ export type { ActionBarState };
 
     <!-- ── PAGINATION FOOTER ─────────────────────────────────────── -->
     <dt-pagination
-      *ngIf="!minimized && tableConfig?.pagination?.enabled !== false"
+      *ngIf="!minimized && hasData && tableConfig?.pagination?.enabled !== false"
       [state]="pagination"
       [pageSizeOptions]="tableConfig?.pagination?.page_size_options ?? [10,25,50,100]"
       (pageChange)="onPageChange($event)"
@@ -484,7 +493,7 @@ export type { ActionBarState };
   </div>
   `,
 })
-export class DataTable implements OnInit, OnChanges {
+export class DataTable implements OnInit, OnChanges, AfterViewInit {
 
   // ── Core inputs ───────────────────────────────────────────────────
   /** Display name shown in the page header */
@@ -552,8 +561,9 @@ export class DataTable implements OnInit, OnChanges {
   savedViews: string[] = [];
   generateInfo: GenerateInfo = { generated: false };
 
-  colPage = 0;
-  readonly colPageSize = 8;
+  @ViewChild('tableViewport') private tableViewport?: ElementRef<HTMLDivElement>;
+  horizontalScrollLeft = 0;
+  horizontalMaxScroll = 0;
 
   readonly skeletonRows = Array(5);
 
@@ -575,14 +585,19 @@ export class DataTable implements OnInit, OnChanges {
     this.loadSavedViews();
   }
 
+  ngAfterViewInit(): void {
+    queueMicrotask(() => this.updateHorizontalMetrics());
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['tableConfig'] && this.tableConfig) {
       this.density = this.tableConfig.view?.default_density ?? 'comfortable';
     }
-    if (changes['columns'] && this.columns.length) {
-      this.colPage = 0;
+    if (changes['rows'] && !this.hasData && this.selectedIds.length > 0) {
+      this.clearSelection();
     }
     this.cdr.markForCheck();
+    queueMicrotask(() => this.updateHorizontalMetrics());
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -590,13 +605,34 @@ export class DataTable implements OnInit, OnChanges {
   // ═══════════════════════════════════════════════════════════════════
 
   get showCheckboxes(): boolean {
-    return (this.tableConfig as any)?.show_checkboxes !== false &&
+    return this.hasData && this.tableConfig?.show_checkboxes !== false &&
            (this.tableConfig?.selection?.enabled !== false) &&
            this.selectable;
   }
 
   get showActions(): boolean {
-    return (this.tableConfig as any)?.show_actions !== false;
+    return this.hasData && this.tableConfig?.show_actions !== false;
+  }
+
+  get showHeaders(): boolean {
+    return this.tableConfig?.show_headers !== false;
+  }
+
+  get showLiveCountPanel(): boolean {
+    return this.hasData && this.tableConfig?.live_count_panel !== false;
+  }
+
+  get showMainActionPanel(): boolean {
+    return this.hasData && this.tableConfig?.main_action_panel !== false;
+  }
+
+  get displayName(): string | null {
+    const configuredName = this.tableConfig?.display_name;
+    return configuredName === null ? null : (configuredName ?? this.title);
+  }
+
+  get hasData(): boolean {
+    return this.rows.length > 0;
   }
 
   get fixedCheckboxes(): boolean {
@@ -612,20 +648,23 @@ export class DataTable implements OnInit, OnChanges {
   }
 
   get pagedColumns(): ColumnDef[] {
-    if (!(this.tableConfig?.features?.column_navigation)) return this.visibleColumns;
-    const start = this.colPage * this.colPageSize;
-    return this.visibleColumns.slice(start, start + this.colPageSize);
+    return this.visibleColumns;
   }
 
-
-  get colTotalPages(): number {
-    return Math.max(1, Math.ceil(this.visibleColumns.length / this.colPageSize));
+  get computedTableMinWidth(): string {
+    const configured = parseInt(this.tableMinWidth, 10) || 0;
+    const columnWidth = this.visibleColumns.reduce((total, col) => total + (parseInt(col.width, 10) || 160), 0);
+    const controlWidth = (this.showCheckboxes ? 54 : 0) + (this.showActions ? 120 : 0);
+    return `${Math.max(configured, columnWidth + controlWidth)}px`;
   }
 
-  get colRangeLabel(): string {
-    const start = this.colPage * this.colPageSize + 1;
-    const end = Math.min((this.colPage + 1) * this.colPageSize, this.visibleColumns.length);
-    return `${start}–${end} of ${this.visibleColumns.length} columns`;
+  get canScrollPrevious(): boolean { return this.horizontalScrollLeft > 1; }
+
+  get canScrollNext(): boolean { return this.horizontalScrollLeft < this.horizontalMaxScroll - 1; }
+
+  get columnScrollLabel(): string {
+    if (!this.horizontalMaxScroll) return `${this.visibleColumns.length} columns`;
+    return `${Math.round((this.horizontalScrollLeft / this.horizontalMaxScroll) * 100)}%`;
   }
 
   get selectableRowCount(): number {
@@ -906,16 +945,36 @@ export class DataTable implements OnInit, OnChanges {
     }
   }
 
+  onTableScroll(viewport: HTMLDivElement): void {
+    this.horizontalScrollLeft = viewport.scrollLeft;
+    this.horizontalMaxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    this.cdr.markForCheck();
+  }
+
+  private updateHorizontalMetrics(): void {
+    const viewport = this.tableViewport?.nativeElement;
+    if (!viewport) return;
+    this.onTableScroll(viewport);
+  }
+
+  scrollColumns(direction: 'previous' | 'next'): void {
+    const viewport = this.tableViewport?.nativeElement;
+    if (!viewport) return;
+
+    viewport.scrollBy({
+      left: (direction === 'next' ? 1 : -1) * Math.max(240, Math.round(viewport.clientWidth * 0.8)),
+      behavior: 'smooth',
+    });
+  }
+
   /** CSS left/right offset for a frozen column's sticky <th>/<td>. */
   frozenOffset(col: ColumnDef): string {
     // Only sticky neighbours reserve space. A non-sticky checkbox/actions column
     // scrolls away with the table and must not leave a gap beside a frozen column.
     const cbW = this.showCheckboxes && this.fixedCheckboxes ? 54 : 0;
     const actW = this.showActions && this.fixedActions ? 120 : 0;
-    // Column navigation renders only this slice, so offsets must be based on the
-    // columns currently present in the DOM, not hidden columns on another page.
-    const leftFrozen = this.pagedColumns.filter(c => c.frozen && c.frozenSide !== 'right');
-    const rightFrozen = this.pagedColumns.filter(c => c.frozenSide === 'right').reverse();
+    const leftFrozen = this.visibleColumns.filter(c => c.frozen && c.frozenSide !== 'right');
+    const rightFrozen = this.visibleColumns.filter(c => c.frozenSide === 'right').reverse();
     if (col.frozenSide === 'right') {
       const idx = rightFrozen.findIndex(c => c.key === col.key);
       const prior = rightFrozen.slice(0, idx).reduce((s, c) => s + (parseInt(c.width, 10) || 160), 0);
