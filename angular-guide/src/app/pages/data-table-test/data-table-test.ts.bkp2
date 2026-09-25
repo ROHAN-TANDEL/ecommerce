@@ -1,0 +1,1595 @@
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+
+interface NexoraColumn {
+  key: string;
+  label: string;
+  width: string;
+  sortable?: boolean;
+  editable?: boolean;
+  filterType?: 'text' | 'select' | 'multi-select' | 'date-range' | 'number-range';
+}
+
+
+interface NexoraRow {
+  id: string;
+  customerName: string;
+  email: string;
+  status: 'Active' | 'Pending' | 'Disabled' | 'Suspended';
+  industry: string;
+  country: string;
+  flag: string;
+  createdDate: string;
+  revenue: string;
+  owner: string;
+  ownerInitials: string;
+  ownerColor: string;
+  selectable: boolean;
+  editable: boolean;
+  deletable: boolean;
+  enableable: boolean;
+  disableable: boolean;
+}
+
+@Component({
+  selector: 'nexora-data-table',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="w-full rounded-xl border border-slate-200 bg-white shadow-sm">
+
+      <!-- ========================================================= -->
+      <!-- PAGE / CONTEXT HEADER -->
+      <!-- ========================================================= -->
+
+      <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-[#0A173D]">
+              Customers
+            </h2>
+
+            <span
+              class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#436CF3]"
+            >
+              1,250
+            </span>
+          </div>
+
+          <p class="mt-1 text-xs text-slate-500">
+            Manage and monitor your customers across all regions.
+          </p>
+        </div>
+
+        <div class="text-xs text-slate-400">
+          Home
+          <span class="mx-2">›</span>
+          <span class="text-slate-600">Customers</span>
+        </div>
+
+      </div>
+
+
+      <!-- ========================================================= -->
+      <!-- ACTION TOOLBAR -->
+      <!-- ========================================================= -->
+
+      <div class="border-b border-slate-200 px-3 py-2">
+
+        <div class="flex min-h-[46px] items-center justify-between gap-3 rounded-lg border border-[#436CF3]/30 bg-gradient-to-r from-blue-50/70 to-white px-3">
+
+          <!-- Left actions -->
+
+          <div class="flex items-center gap-1">
+
+            <!-- Selection -->
+
+            <div class="mr-2 flex items-center gap-2 border-r border-slate-200 pr-3">
+
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
+              />
+
+              <span class="text-xs font-medium text-slate-700">
+                2 selected
+              </span>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>✎</span>
+              Edit
+            </button>
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>♜</span>
+              Delete
+            </button>
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>✓</span>
+              Enable
+            </button>
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>◉</span>
+              Disable
+            </button>
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>↶</span>
+              Revert
+            </button>
+
+            <button
+              type="button"
+              class="toolbar-action"
+            >
+              <span>⋮</span>
+              More
+              <span class="text-[10px]">⌄</span>
+            </button>
+
+          </div>
+
+
+          <!-- Right controls -->
+
+          <!-- ========================================================= -->
+          <!-- RIGHT TOOLBAR CONTROLS -->
+          <!-- ========================================================= -->
+
+          <div class="flex items-center gap-2">
+
+            <!-- Export -->
+
+            <button
+              type="button"
+              class="toolbar-action"
+              title="Export data"
+            >
+              <span>⇩</span>
+              Export
+              <span class="text-[10px]">⌄</span>
+            </button>
+
+
+            <!-- Generate -->
+
+            <button
+              type="button"
+              class="toolbar-action"
+              title="Generate downloadable file"
+            >
+              <span>⟳</span>
+              Generate
+            </button>
+
+
+            <!-- Download -->
+
+            <button
+              type="button"
+              class="toolbar-action"
+              title="Generate a file before downloading"
+            >
+              <span>⇩</span>
+              Download
+              <span class="text-[10px]">⌄</span>
+            </button>
+
+
+            <!-- More -->
+
+            <div class="relative">
+
+              <button
+                type="button"
+                class="toolbar-action"
+                title="More actions"
+              >
+                <span>⋮</span>
+                More
+                <span class="text-[10px]">⌄</span>
+              </button>
+
+              <!-- More dropdown -->
+
+              <div
+                class="absolute right-0 top-full z-50 mt-2 w-52 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
+              >
+
+                <button
+                  type="button"
+                  class="dropdown-item"
+                >
+                  <span>⇩</span>
+                  Export
+                </button>
+
+                <button
+                  type="button"
+                  class="dropdown-item"
+                >
+                  <span>⇧</span>
+                  Import
+                </button>
+
+                <div class="my-1 border-t border-slate-100"></div>
+
+                <button
+                  type="button"
+                  class="dropdown-item"
+                >
+                  <span>⚙</span>
+                  Column settings
+                </button>
+
+                <button
+                  type="button"
+                  class="dropdown-item"
+                >
+                  <span>▣</span>
+                  Save view
+                </button>
+
+                <button
+                  type="button"
+                  class="dropdown-item"
+                >
+                  <span>↶</span>
+                  Reset view
+                </button>
+
+              </div>
+
+            </div>
+
+
+            <div class="mx-1 h-6 w-px bg-slate-200"></div>
+
+
+            <!-- Column navigation -->
+
+            <span class="text-xs text-slate-500">
+    Column view
+  </span>
+
+            <button
+              type="button"
+              class="icon-button"
+              disabled
+            >
+              ‹
+            </button>
+
+            <span class="min-w-[90px] text-center text-xs font-medium text-slate-600">
+    1–8 of 12 columns
+  </span>
+
+            <button
+              type="button"
+              class="icon-button"
+            >
+              ›
+            </button>
+
+
+            <!-- Fullscreen -->
+
+            <button
+              type="button"
+              class="icon-button ml-1"
+              title="Fullscreen"
+            >
+              ⛶
+            </button>
+
+
+            <!-- View -->
+
+            <button
+              type="button"
+              class="view-button"
+            >
+              <span>☷</span>
+              Default
+              <span>⌄</span>
+            </button>
+
+
+            <!-- Columns -->
+
+            <button
+              type="button"
+              class="icon-button text-[#436CF3]"
+              title="Columns"
+            >
+              ▦
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ========================================================= -->
+      <!-- LIVE COLLABORATION / PRESENCE -->
+      <!-- ========================================================= -->
+
+      <div
+        class="flex items-center justify-between border-b border-slate-200 bg-[#F7F9FC] px-4 py-2"
+      >
+
+        <div class="flex items-center gap-3">
+
+          <div class="flex items-center gap-2">
+
+      <span class="relative flex h-2.5 w-2.5">
+        <span
+          class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"
+        ></span>
+
+        <span
+          class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
+        ></span>
+      </span>
+
+            <span class="text-xs font-medium text-slate-700">
+        Live collaboration
+      </span>
+
+          </div>
+
+
+          <div class="h-4 w-px bg-slate-200"></div>
+
+
+          <div class="flex items-center -space-x-2">
+
+            <div
+              class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-indigo-100 text-[9px] font-semibold text-indigo-700"
+              title="John Doe"
+            >
+              JD
+            </div>
+
+            <div
+              class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-violet-100 text-[9px] font-semibold text-violet-700"
+              title="Sarah Connor"
+            >
+              SC
+            </div>
+
+            <div
+              class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-pink-100 text-[9px] font-semibold text-pink-700"
+              title="Tony Stark"
+            >
+              TS
+            </div>
+
+          </div>
+
+
+          <span class="text-xs text-slate-500">
+      <span class="font-medium text-slate-700">3 users</span>
+      are viewing this table
+    </span>
+
+        </div>
+
+
+        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+
+    <span>
+      1 user is editing
+    </span>
+
+          <span
+            class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-semibold text-amber-700"
+            title="Sarah Connor is editing"
+          >
+      SC
+    </span>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- TABLE -->
+      <!-- ========================================================= -->
+
+      <div class="overflow-x-auto">
+
+        <table class="min-w-[1350px] w-full table-fixed">
+
+          <!-- ======================================================= -->
+          <!-- COLUMN HEADERS -->
+          <!-- ======================================================= -->
+
+          <thead>
+
+          <tr class="border-b border-slate-200 bg-slate-50">
+
+            <!-- Master checkbox -->
+
+            <th class="w-[54px] px-4 py-3 text-left">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
+              />
+            </th>
+
+
+            <th
+              *ngFor="let column of columns"
+              [style.width]="column.width"
+              class="px-4 py-3 text-left"
+            >
+
+              <div class="flex items-center gap-2">
+
+                  <span class="text-[11px] font-semibold text-[#0A173D]">
+                    {{ column.label }}
+                  </span>
+
+                <!-- Editable column -->
+                <svg
+                  *ngIf="column.editable === true"
+                  class="h-3.5 w-3.5 text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  title="Editable column"
+                >
+                  <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                  <path d="M17 8V7a5 5 0 0 0-9.9-1"></path>
+                </svg>
+
+                <!-- Read-only column -->
+                <svg
+                  *ngIf="column.editable === false"
+                  class="h-3.5 w-3.5 text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  title="Read-only column"
+                >
+                  <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+
+                <span
+                  *ngIf="column.sortable"
+                  class="text-[11px] text-slate-400"
+                >
+                    ↕
+                  </span>
+
+              </div>
+
+            </th>
+
+
+            <th class="w-[125px] px-4 py-3 text-left">
+                <span class="text-[11px] font-semibold text-[#0A173D]">
+                  Actions
+                </span>
+            </th>
+
+          </tr>
+
+
+          <!-- ===================================================== -->
+          <!-- FILTER ROW -->
+          <!-- ===================================================== -->
+
+          <tr class="border-b border-slate-200 bg-white">
+
+            <th class="px-4 py-2"></th>
+
+            <th class="px-3 py-2">
+
+              <div class="relative">
+
+                  <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    ⌕
+                  </span>
+
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  class="h-8 w-full rounded-md border border-slate-200 bg-white pl-7 pr-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
+                />
+
+              </div>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <button
+                type="button"
+                class="filter-select"
+              >
+                <span>2 selected</span>
+                <span>⌄</span>
+              </button>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <button
+                type="button"
+                class="filter-select"
+              >
+                <span>All industries</span>
+                <span>⌄</span>
+              </button>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <button
+                type="button"
+                class="filter-select"
+              >
+                <span>All countries</span>
+                <span>⌄</span>
+              </button>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <button
+                type="button"
+                class="filter-date"
+              >
+                <span>▣</span>
+                <span>Select range</span>
+              </button>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <div class="flex items-center gap-1">
+
+                <input
+                  type="text"
+                  placeholder="Min"
+                  class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
+                />
+
+                <span class="text-slate-300">−</span>
+
+                <input
+                  type="text"
+                  placeholder="Max"
+                  class="h-8 w-full rounded-md border border-slate-200 px-2 text-[11px] outline-none focus:border-[#436CF3]"
+                />
+
+              </div>
+
+            </th>
+
+
+            <th class="px-3 py-2">
+
+              <button
+                type="button"
+                class="filter-select"
+              >
+                <span>All owners</span>
+                <span>⌄</span>
+              </button>
+
+            </th>
+
+
+            <th class="px-4 py-2 text-center">
+
+              <button
+                type="button"
+                class="text-[11px] font-medium text-[#436CF3] hover:underline"
+              >
+                Clear all
+              </button>
+
+            </th>
+
+          </tr>
+
+
+          <!-- ===================================================== -->
+          <!-- INPUT / FILTER VALUE ROW -->
+          <!-- ===================================================== -->
+
+          <tr class="border-b border-slate-200 bg-slate-50/40">
+
+            <!-- Selection -->
+
+            <th class="px-4 py-2">
+            </th>
+
+
+            <!-- Customer Name -->
+
+            <th class="px-3 py-2">
+
+              <input
+                type="text"
+                placeholder="Enter customer name"
+                class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
+              />
+
+            </th>
+
+
+            <!-- Status -->
+
+            <th class="px-3 py-2">
+
+              <input
+                type="text"
+                placeholder="Enter status"
+                class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
+              />
+
+            </th>
+
+
+            <!-- Industry -->
+
+            <th class="px-3 py-2">
+
+              <input
+                type="text"
+                placeholder="Enter industry"
+                class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
+              />
+
+            </th>
+
+
+            <!-- Country -->
+
+            <th class="px-3 py-2">
+
+              <input
+                type="text"
+                placeholder="Enter country"
+                class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
+              />
+
+            </th>
+
+
+            <!-- Created Date -->
+
+            <th class="px-3 py-2">
+
+              <div class="flex items-center gap-1">
+
+                <input
+                  type="text"
+                  placeholder="From"
+                  class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
+                />
+
+                <span class="text-slate-300">
+        −
+      </span>
+
+                <input
+                  type="text"
+                  placeholder="To"
+                  class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
+                />
+
+              </div>
+
+            </th>
+
+
+            <!-- Revenue -->
+
+            <th class="px-3 py-2">
+
+              <div class="flex items-center gap-1">
+
+                <input
+                  type="text"
+                  placeholder="Min"
+                  class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
+                />
+
+                <span class="text-slate-300">
+        −
+      </span>
+
+                <input
+                  type="text"
+                  placeholder="Max"
+                  class="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3]"
+                />
+
+              </div>
+
+            </th>
+
+
+            <!-- Owner -->
+
+            <th class="px-3 py-2">
+
+              <input
+                type="text"
+                placeholder="Enter owner"
+                class="h-8 w-full rounded-md border border-slate-200 bg-white px-2.5 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100"
+              />
+
+            </th>
+
+
+            <!-- Actions -->
+
+            <th class="px-4 py-2">
+
+              <button
+                type="button"
+                class="h-8 rounded-md border border-slate-200 bg-white px-3 text-[11px] font-medium text-slate-500 hover:bg-slate-50"
+              >
+                Apply
+              </button>
+
+            </th>
+
+          </tr>
+
+          </thead>
+
+
+          <!-- ======================================================= -->
+          <!-- DATA -->
+          <!-- ======================================================= -->
+
+          <tbody>
+
+          <ng-container *ngFor="let row of rows">
+
+            <tr
+              class="group border-b border-slate-100 transition hover:bg-blue-50/30"
+            >
+
+              <!-- Checkbox -->
+
+              <td class="w-10 px-2 py-3 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+
+                  <!-- Row selection -->
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3]"
+                    [disabled]="!row.selectable"
+                  />
+
+                  <!-- Editable row -->
+                  <svg
+                    *ngIf="row.editable"
+                    class="h-3.5 w-3.5 text-slate-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    title="Editable row"
+                  >
+                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                    <path d="M17 8V7a5 5 0 0 0-9.9-1"></path>
+                  </svg>
+
+                  <!-- Read-only row -->
+                  <svg
+                    *ngIf="!row.editable"
+                    class="h-3.5 w-3.5 text-slate-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    title="Read-only row"
+                  >
+                    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+
+                </div>
+              </td>
+
+
+              <!-- Customer -->
+
+              <td class="px-4 py-3">
+
+                <div class="flex min-w-0 items-center gap-3">
+
+                  <div
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#436CF3] to-[#3B32BC] text-[11px] font-semibold text-white"
+                  >
+                    {{ row.customerName.substring(0, 2).toUpperCase() }}
+                  </div>
+
+                  <div class="min-w-0">
+
+                    <div
+                      class="truncate text-xs font-semibold text-[#0A173D]"
+                      [title]="row.customerName"
+                    >
+                      {{ row.customerName }}
+                    </div>
+
+                    <div class="mt-0.5 truncate text-[10px] text-slate-400">
+                      {{ row.email }}
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- Status -->
+
+              <td class="px-4 py-3">
+
+                  <span
+                    class="status-badge"
+                    [ngClass]="{
+                      'status-active': row.status === 'Active',
+                      'status-pending': row.status === 'Pending',
+                      'status-disabled': row.status === 'Disabled',
+                      'status-suspended': row.status === 'Suspended'
+                    }"
+                  >
+
+                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+
+                    {{ row.status }}
+
+                  </span>
+
+              </td>
+
+
+              <!-- Industry -->
+
+              <td class="px-4 py-3">
+
+                  <span class="truncate text-xs text-slate-600">
+                    {{ row.industry }}
+                  </span>
+
+              </td>
+
+
+              <!-- Country -->
+
+              <td class="px-4 py-3">
+
+                <div class="flex items-center gap-2">
+
+                    <span class="text-base">
+                      {{ row.flag }}
+                    </span>
+
+                  <span class="text-xs text-slate-600">
+                      {{ row.country }}
+                    </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- Created -->
+
+              <td class="px-4 py-3">
+
+                  <span class="text-xs text-slate-600">
+                    {{ row.createdDate }}
+                  </span>
+
+              </td>
+
+
+              <!-- Revenue -->
+
+              <td class="px-4 py-3">
+
+                  <span class="text-xs font-medium text-[#0A173D]">
+                    {{ row.revenue }}
+                  </span>
+
+              </td>
+
+
+              <!-- Owner -->
+
+              <td class="px-4 py-3">
+
+                <div class="flex items-center gap-2">
+
+                  <div
+                    class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold"
+                    [ngClass]="row.ownerColor"
+                  >
+                    {{ row.ownerInitials }}
+                  </div>
+
+                  <span class="truncate text-xs text-slate-600">
+                      {{ row.owner }}
+                    </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- Actions -->
+
+              <td class="px-3 py-3">
+
+                <div class="flex items-center justify-end gap-1 opacity-70 transition group-hover:opacity-100">
+
+                  <button
+                    type="button"
+                    [disabled]="!row.editable"
+                    class="row-action"
+                    title="Edit"
+                  >
+                    ✎
+                  </button>
+
+                  <button
+                    type="button"
+                    [disabled]="!row.deletable"
+                    class="row-action"
+                    title="Delete"
+                  >
+                    ♜
+                  </button>
+
+                  <button
+                    type="button"
+                    class="row-action"
+                    title="More"
+                  >
+                    ⋯
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          </ng-container>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- ========================================================= -->
+      <!-- PAGINATION -->
+      <!-- ========================================================= -->
+
+      <div class="flex items-center justify-between border-t border-slate-200 px-5 py-3">
+
+        <div class="text-xs text-slate-500">
+
+          Showing
+          <span class="font-medium text-slate-700">1–25</span>
+          of
+          <span class="font-medium text-slate-700">1,250</span>
+          results
+
+        </div>
+
+
+        <div class="flex items-center gap-1">
+
+          <button
+            type="button"
+            class="pagination-button text-slate-300"
+          >
+            «
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button text-slate-300"
+          >
+            ‹
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button pagination-active"
+          >
+            1
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            2
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            3
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            4
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            5
+          </button>
+
+          <span class="px-1 text-xs text-slate-400">
+            ...
+          </span>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            50
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            ›
+          </button>
+
+          <button
+            type="button"
+            class="pagination-button"
+          >
+            »
+          </button>
+
+        </div>
+
+
+        <div class="flex items-center gap-2">
+
+          <span class="text-xs text-slate-500">
+            Rows per page
+          </span>
+
+          <button
+            type="button"
+            class="flex h-8 items-center gap-4 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-600"
+          >
+            25
+            <span>⌄</span>
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  `,
+
+  styles: [`
+    .toolbar-action {
+      display: inline-flex;
+      height: 34px;
+      align-items: center;
+      gap: 6px;
+      border-radius: 6px;
+      padding: 0 9px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #334155;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+
+    .toolbar-action:hover {
+      background: #eef4ff;
+      color: #436CF3;
+    }
+
+    .icon-button {
+      display: inline-flex;
+      height: 32px;
+      width: 32px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      border: 1px solid #d9dfea;
+      background: white;
+      color: #436CF3;
+      font-size: 14px;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      background: #f7f9fc;
+    }
+
+    .icon-button:disabled {
+      cursor: not-allowed;
+      color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .view-button {
+      display: inline-flex;
+      height: 34px;
+      align-items: center;
+      gap: 8px;
+      border-radius: 7px;
+      border: 1px solid #d9dfea;
+      background: white;
+      padding: 0 11px;
+      font-size: 11px;
+      color: #334155;
+    }
+
+    .filter-select,
+    .filter-date {
+      display: flex;
+      height: 32px;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      border: 1px solid #d9dfea;
+      border-radius: 6px;
+      background: white;
+      padding: 0 9px;
+      font-size: 11px;
+      color: #64748b;
+      text-align: left;
+    }
+
+    .filter-select:hover,
+    .filter-date:hover {
+      border-color: #b8c6df;
+    }
+
+    .filter-date {
+      justify-content: flex-start;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #dff8ef;
+      color: #07885f;
+    }
+
+    .status-pending {
+      background: #fff3d9;
+      color: #a86d00;
+    }
+
+    .status-disabled {
+      background: #ffe4e8;
+      color: #c62845;
+    }
+
+    .status-suspended {
+      background: #ede9fe;
+      color: #6d4bc3;
+    }
+
+    .row-action {
+      display: inline-flex;
+      height: 29px;
+      width: 29px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .row-action:hover:not(:disabled) {
+      background: #eef4ff;
+      color: #436CF3;
+    }
+
+    .row-action:disabled {
+      cursor: not-allowed;
+      opacity: 0.3;
+    }
+
+    .pagination-button {
+      display: inline-flex;
+      height: 32px;
+      min-width: 32px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      padding: 0 8px;
+      font-size: 11px;
+      color: #475569;
+    }
+
+    .pagination-button:hover {
+      background: #f1f5f9;
+    }
+
+    .pagination-active {
+      background: #436CF3;
+      color: white;
+    }
+
+    .pagination-active:hover {
+      background: #436CF3;
+    }
+
+    .dropdown-item {
+      display: flex;
+      width: 100%;
+      height: 34px;
+      align-items: center;
+      gap: 9px;
+      border-radius: 6px;
+      padding: 0 9px;
+      font-size: 11px;
+      color: #334155;
+      text-align: left;
+    }
+
+    .dropdown-item:hover {
+      background: #f7f9fc;
+      color: #436CF3;
+    }
+  `]
+})
+
+export class DataTableTest {
+
+  columns: NexoraColumn[] = [
+    {
+      key: 'customerName',
+      label: 'Customer Name',
+      width: '220px',
+      sortable: true,
+      editable: true,
+      filterType: 'text'
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      width: '240px',
+      sortable: true,
+      editable: true,
+      filterType: 'text'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '140px',
+      sortable: true,
+      editable: true,
+      filterType: 'select'
+    },
+    {
+      key: 'industry',
+      label: 'Industry',
+      width: '160px',
+      sortable: true,
+      editable: false,
+      filterType: 'select'
+    },
+    {
+      key: 'country',
+      label: 'Country',
+      width: '160px',
+      sortable: true,
+      editable: false,
+      filterType: 'select'
+    },
+    {
+      key: 'createdDate',
+      label: 'Created Date',
+      width: '160px',
+      sortable: true,
+      editable: false,
+      filterType: 'date-range'
+    },
+    {
+      key: 'revenue',
+      label: 'Revenue',
+      width: '150px',
+      sortable: true,
+      editable: false,
+      filterType: 'number-range'
+    },
+    {
+      key: 'owner',
+      label: 'Owner',
+      width: '170px',
+      sortable: true,
+      editable: true,
+      filterType: 'select'
+    }
+  ];
+
+  // columns: NexoraColumn[] = [
+  //   {
+  //     key: 'customerName',
+  //     label: 'Customer Name',
+  //     width: '185px',
+  //     sortable: true,
+  //     filterType: 'text'
+  //   },
+  //   {
+  //     key: 'status',
+  //     label: 'Status',
+  //     width: '145px',
+  //     sortable: true,
+  //     filterType: 'multi-select'
+  //   },
+  //   {
+  //     key: 'industry',
+  //     label: 'Industry',
+  //     width: '150px',
+  //     sortable: true,
+  //     filterType: 'select'
+  //   },
+  //   {
+  //     key: 'country',
+  //     label: 'Country',
+  //     width: '150px',
+  //     sortable: true,
+  //     filterType: 'select'
+  //   },
+  //   {
+  //     key: 'createdDate',
+  //     label: 'Created Date',
+  //     width: '165px',
+  //     sortable: true,
+  //     filterType: 'date-range'
+  //   },
+  //   {
+  //     key: 'revenue',
+  //     label: 'Annual Revenue',
+  //     width: '170px',
+  //     sortable: true,
+  //     filterType: 'number-range'
+  //   },
+  //   {
+  //     key: 'owner',
+  //     label: 'Owner',
+  //     width: '170px',
+  //     sortable: true,
+  //     filterType: 'select'
+  //   }
+  // ];
+
+  rows: NexoraRow[] = [
+    {
+      id: 'C001',
+      customerName: 'Acme Corp',
+      email: 'acme@corp.com',
+      status: 'Active',
+      industry: 'Fintech',
+      country: 'India',
+      flag: '🇮🇳',
+      createdDate: '12 Sep 2026',
+      revenue: '₹50,000,000',
+      owner: 'John Doe',
+      ownerInitials: 'JD',
+      ownerColor: 'bg-indigo-100 text-indigo-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: false,
+      disableable: true
+    },
+    {
+      id: 'C002',
+      customerName: 'Globex',
+      email: 'info@globex.com',
+      status: 'Pending',
+      industry: 'SaaS',
+      country: 'Germany',
+      flag: '🇩🇪',
+      createdDate: '14 Sep 2026',
+      revenue: '€2,300,000',
+      owner: 'Sarah Connor',
+      ownerInitials: 'SC',
+      ownerColor: 'bg-violet-100 text-violet-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: true,
+      disableable: false
+    },
+    {
+      id: 'C003',
+      customerName: 'Umbrella Inc',
+      email: 'contact@umbrella.com',
+      status: 'Active',
+      industry: 'Healthcare',
+      country: 'USA',
+      flag: '🇺🇸',
+      createdDate: '16 Sep 2026',
+      revenue: '$1,200,000',
+      owner: 'Michael Kim',
+      ownerInitials: 'MK',
+      ownerColor: 'bg-blue-100 text-blue-700',
+      selectable: true,
+      editable: false,
+      deletable: false,
+      enableable: false,
+      disableable: true
+    },
+    {
+      id: 'C004',
+      customerName: 'Stark Industries',
+      email: 'admin@stark.com',
+      status: 'Pending',
+      industry: 'Manufacturing',
+      country: 'USA',
+      flag: '🇺🇸',
+      createdDate: '10 Sep 2026',
+      revenue: '$5,600,000',
+      owner: 'Tony Stark',
+      ownerInitials: 'TS',
+      ownerColor: 'bg-pink-100 text-pink-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: true,
+      disableable: false
+    },
+    {
+      id: 'C005',
+      customerName: 'Wayne Corp',
+      email: 'wayne@corp.com',
+      status: 'Active',
+      industry: 'Energy',
+      country: 'UK',
+      flag: '🇬🇧',
+      createdDate: '08 Sep 2026',
+      revenue: '£3,400,000',
+      owner: 'Bruce Wayne',
+      ownerInitials: 'BW',
+      ownerColor: 'bg-blue-100 text-blue-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: false,
+      disableable: true
+    },
+    {
+      id: 'C006',
+      customerName: 'Oscorp',
+      email: 'contact@oscorp.com',
+      status: 'Disabled',
+      industry: 'Biotech',
+      country: 'USA',
+      flag: '🇺🇸',
+      createdDate: '05 Sep 2026',
+      revenue: '$980,000',
+      owner: 'Norman Osborn',
+      ownerInitials: 'NO',
+      ownerColor: 'bg-purple-100 text-purple-700',
+      selectable: true,
+      editable: false,
+      deletable: false,
+      enableable: true,
+      disableable: false
+    },
+    {
+      id: 'C007',
+      customerName: 'Initech',
+      email: 'hello@initech.com',
+      status: 'Active',
+      industry: 'IT Services',
+      country: 'Canada',
+      flag: '🇨🇦',
+      createdDate: '01 Sep 2026',
+      revenue: '$2,100,000',
+      owner: 'Peter Gibbons',
+      ownerInitials: 'PG',
+      ownerColor: 'bg-emerald-100 text-emerald-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: false,
+      disableable: true
+    },
+    {
+      id: 'C008',
+      customerName: 'Hooli',
+      email: 'info@hooli.com',
+      status: 'Active',
+      industry: 'Software',
+      country: 'USA',
+      flag: '🇺🇸',
+      createdDate: '28 Aug 2026',
+      revenue: '$7,500,000',
+      owner: 'Richard Hendricks',
+      ownerInitials: 'RH',
+      ownerColor: 'bg-pink-100 text-pink-700',
+      selectable: true,
+      editable: true,
+      deletable: true,
+      enableable: false,
+      disableable: true
+    }
+  ];
+}

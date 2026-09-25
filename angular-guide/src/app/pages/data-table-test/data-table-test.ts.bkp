@@ -1,0 +1,219 @@
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+
+import {
+  NexoraDataTableComponent,
+  NexoraTableColumn,
+  NexoraTableDataResponse,
+  NexoraTableRow
+} from '../../shared/components/nexora-data-table/nexora-data-table.component';
+
+@Component({
+  selector: 'app-data-table-test',
+  standalone: true,
+  imports: [
+    CommonModule,
+    NexoraDataTableComponent
+  ],
+  template: `
+    <div class="min-h-screen bg-slate-50 p-8">
+
+      <div class="mx-auto max-w-7xl">
+
+        <div class="mb-6">
+          <h1 class="text-xl font-semibold text-slate-900">
+            Nexora Data Table Test
+          </h1>
+
+          <p class="mt-1 text-sm text-slate-500">
+            Component development and behavior testing
+          </p>
+        </div>
+
+        <nexora-data-table
+          title="Customers"
+          [columns]="columns"
+          [data]="data"
+          [loading]="false"
+          (selectionChange)="onSelectionChange($event)"
+          (pageChange)="onPageChange($event)"
+        />
+
+        <div
+          *ngIf="selectedRows.length > 0"
+          class="mt-4 rounded-lg border border-slate-200 bg-white p-4"
+        >
+          <div class="mb-3 text-sm font-semibold text-slate-900">
+            Selection State
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+            <div>
+              <div class="text-xs text-slate-500">Selected</div>
+              <div class="font-medium text-slate-900">
+                {{ selectedRows.length }}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-500">Editable</div>
+              <div class="font-medium text-slate-900">
+                {{ editableSelectedCount }}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-500">Read Only</div>
+              <div class="font-medium text-slate-900">
+                {{ readOnlySelectedCount }}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs text-slate-500">Mode</div>
+              <div class="font-medium text-slate-900">
+                {{ selectedRows.length === 1 ? 'Individual' : 'Selection' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Debug -->
+        <div class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+
+          <h2 class="mb-3 text-sm font-semibold text-slate-900">
+            Selected Rows
+          </h2>
+
+          <pre class="overflow-auto text-xs text-slate-600">{{ selectedRows | json }}</pre>
+
+        </div>
+
+      </div>
+
+    </div>
+  `
+})
+export class DataTableTest {
+
+  columns: NexoraTableColumn[] = [
+    {
+      key: 'customer_name',
+      label: 'Customer Name'
+    },
+    {
+      key: 'status',
+      label: 'Status'
+    },
+    {
+      key: 'country',
+      label: 'Country'
+    }
+  ];
+
+  data: NexoraTableDataResponse = {
+    data: [
+      {
+        id: 'C001',
+        customer_name: 'Acme Corp',
+        status: 'Active',
+        country: 'Germany',
+
+        state: {
+          selectable: true,
+          editable: true,
+          deletable: true,
+          enableable: false,
+          disableable: true
+        }
+      },
+      {
+        id: 'C002',
+        customer_name: 'Globex',
+        status: 'Pending',
+        country: 'France',
+
+        state: {
+          selectable: true,
+          editable: true,
+          deletable: true,
+          enableable: true,
+          disableable: false
+        }
+      },
+      {
+        id: 'C003',
+        customer_name: 'Initech',
+        status: 'Disabled',
+        country: 'United Kingdom',
+
+        state: {
+          selectable: true,
+          editable: false,
+          deletable: false,
+          enableable: true,
+          disableable: false
+        }
+      },
+      {
+        id: 'C004',
+        customer_name: 'Umbrella Corp',
+        status: 'Active',
+        country: 'United States',
+
+        state: {
+          selectable: false,
+          editable: false,
+          deletable: false,
+          enableable: false,
+          disableable: false
+        }
+      },
+      {
+        id: 'C005',
+        customer_name: 'Stark Industries',
+        status: 'Pending',
+        country: 'United States',
+
+        state: {
+          selectable: true,
+          editable: true,
+          deletable: true,
+          enableable: true,
+          disableable: true
+        }
+      }
+    ],
+
+    pagination: {
+      page: 1,
+      pageSize: 5,
+      total: 12
+    }
+  };
+
+  selectedRows: NexoraTableRow[] = [];
+
+  onSelectionChange(rows: NexoraTableRow[]): void {
+    this.selectedRows = rows;
+
+    console.log('Selection changed:', rows);
+  }
+
+  onPageChange(page: number): void {
+    console.log('Page requested:', page);
+  }
+
+  get editableSelectedCount(): number {
+    return this.selectedRows.filter(
+      row => row.state?.editable === true
+    ).length;
+  }
+
+  get readOnlySelectedCount(): number {
+    return this.selectedRows.filter(
+      row => row.state?.editable !== true
+    ).length;
+  }
+
+}

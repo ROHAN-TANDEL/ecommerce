@@ -1,0 +1,102 @@
+services:
+  backend:
+    build:
+      context: ./ECOMM
+      dockerfile: .docker/Dockerfile
+    container_name: ecomm-backend
+    environment:
+      - NODE_ENV=development
+      - APP_ENV=local
+      - APP_NAME=ECOMMERCE
+      - APP_KEY=sha256:base64:OGI4ZjNmZDYzYTA1OGI0YmU1YjRiZjg5NzIzZjIxOTZmZTUzMzc2ODdlMjk3ZTJhNTFiOTBiNzUxMTllNTMzYg==
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:3000
+      - PORT=3000
+      - APP_PORT=3000
+      - SALT=10
+      - SERVICE_NAME=ECOMMERCE
+      - PG_MASTER_HOST=docker_postgres
+      - PG_MASTER_PORT=5432
+      - PG_MASTER_DATABASE=ecommerce
+      - PG_MASTER_SCHEMA=master
+      - PG_MASTER_USERNAME=root
+      - PG_MASTER_PASSWORD=root123
+      - REDIS_HOST=docker_redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=admin
+      - REDIS_PASSWORD=adminpass
+      - REDIS_CLIENT=
+      - REDIS_CLUSTER=
+      - JWT_SECRET=cEVlQkliNFVpRHo5d1RqenJOV1V5NVhkY3ludEpadVg4dVorYWJBN3krQT0=
+      - JWT_TTL=1800000
+      - JWT_REFRESH_SECRET=PWSs/bgjvT1ZTvo+/NNwuX5josjnz4i3EPm0zYmvs18=
+      - JWT_REFRESH_TTL=1800000
+      - CORS_ORIGIN=*
+      - REQUEST_BODY_LIMIT=10000
+      - RATE_LIMIT_WINDOW_MS=600000
+      - RATE_LIMIT_MAX=100000000000
+      - LOG_LEVEL=trace
+      - LOG_LEVEL_INFO=trace
+      - LOG_LEVEL_ERROR=error
+      - LOG_LEVEL_DEBUG=debug
+      - AWS_ENDPOINT=http://docker_localstack:4566                 # Fixed hostname
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=eu-west-1
+      - AWS_REGION=eu-west-1
+      - AWS_BUCKET=profiles
+      - AWS_USE_PATH_STYLE_ENDPOINT=true
+      - AWS_PRESIGNED_ENDPOINT=http://docker_localstack:4566       # Fixed hostname
+      - AWS_S3_PRESIGNED_URL_SALT=saltsecret
+      - SQS_ENDPOINT=http://docker_localstack:4566                 # Fixed hostname
+      - SQS_PREFIX=http://docker_localstack:4566/000000000000      # Fixed hostname
+      - SQS_KEY_ID=test
+      - SQS_SECRET_ACCESS_KEY=test
+      - SQS_DEFAULT_REGION=eu-west-1
+      - SQS_SUFFIX=
+      - CLEANUP_DELETE_FILES=http://docker_localstack:4566/000000000000/clean-up-delete-files.fifo # Fixed hostname
+      - AUTH_TOKEN_BLOCKLIST_REDIS_KEY=auth-token-black-list
+      - REDIS_SCHEME=
+      - REDIS_PREFIX=
+      - DB_RETRY_MAX_ATTEMPTS=5
+      - DB_RETRY_BASE_DELAY_MS=100
+      - DB_RETRY_MAX_DELAY_MS=5000
+      - DB_RETRY_JITTER_MS=100
+      - DB_RETRY_EXPONENTIAL_BASE=2
+      - DB_LOCK_CHUNK_SIZE=1000
+    ports:
+      - "3000:3000"
+    networks:
+      - primary-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./ECOMM-CLIENT
+      dockerfile: .docker/Dockerfile
+      args:
+        - VITE_API_URL=
+    container_name: ecomm-frontend
+    environment:
+      - BACKEND_HOST=backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    networks:
+      - primary-network
+    restart: unless-stopped
+
+networks:
+  primary-network:
+    driver: bridge
+    name: primary-network

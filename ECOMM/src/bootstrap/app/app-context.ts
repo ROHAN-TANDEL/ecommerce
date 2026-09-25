@@ -18,6 +18,7 @@ export class KernelContext {
             logger: log.connect(),
             env: env,
             server: server,
+            scripts : kernel.scripts(),
             appMiddleware: { before: middleware.before, after: {
                     routeNotFoundCheckMiddleware: RouteNotFoundCheckMiddleware,
                     globalErrorHandlerMiddleware: middleware.after.globalErrorHandlerMiddleware

@@ -46,7 +46,7 @@ export class StopServer {
                 this.shutdown(server);
             });
             process.once('uncaughtException', (error) => {
-                context.logger.fatal({ err: error }, 'uncaught exception');
+                context.logger.info({ err: error }, 'uncaught exception');
                 this.shutdown(server);
             });
         };
