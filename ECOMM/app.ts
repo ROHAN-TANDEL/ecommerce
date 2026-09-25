@@ -8,6 +8,8 @@ import ProductRoute from "./src/modules/product/ProductRoute.js";
 import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
 import OrderRoute from "./src/modules/order/OrderRoute.js";
 import AuditRoute from "./src/modules/audit/AuditRoute.js";
+import TenantRoute from "./src/modules/tenant/TenantRoute.js";
+import {Database} from "./src/infra/database/database.js";
 
 
 
@@ -44,6 +46,9 @@ class Application {
         app.use((new context.appMiddleware.before.cookieMiddleware(context)).startMiddleware());
 
         app.use((new context.appMiddleware.before.expressStaticMiddleware(context)).startMiddleware());
+
+        app.use((new context.appMiddleware.before.tenantContextMiddleware(context)).startMiddleware());
+
     }
 
     appAfterMiddleware(app:any) {
@@ -154,6 +159,8 @@ app.use((new CheckoutRoute(context)).route());
 app.use((new AuditRoute(context)).route());
 
 app.use((new OrderRoute(context)).route());
+
+app.use((new TenantRoute(context)).route(context));
 
 application.appAfterMiddleware(app);
 
