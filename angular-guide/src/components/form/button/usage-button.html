@@ -1,0 +1,136 @@
+The important part here is:
+
+<ng-content></ng-content>
+
+So the button doesn't need a label input.
+
+You can put whatever content you want inside it:
+
+<nexora-button>
+  Save
+</nexora-button>
+
+or:
+
+<nexora-button>
+  Create Customer
+</nexora-button>
+
+Later we can also put icons inside it.
+
+3. Basic usage
+<nexora-button>
+  Save
+</nexora-button>
+
+<nexora-button variant="secondary">
+  Cancel
+</nexora-button>
+
+<nexora-button variant="danger">
+  Delete
+</nexora-button>
+
+<nexora-button variant="ghost">
+  Edit
+</nexora-button>
+4. Sizes
+<nexora-button size="sm">
+  Small
+</nexora-button>
+
+<nexora-button size="md">
+  Medium
+</nexora-button>
+
+<nexora-button size="lg">
+  Large
+</nexora-button>
+
+md is the default, so this:
+
+<nexora-button>
+  Save
+</nexora-button>
+
+is equivalent to:
+
+<nexora-button size="md">
+  Save
+</nexora-button>
+5. Disabled
+<nexora-button [disabled]="true">
+  Save
+</nexora-button>
+
+Or dynamically:
+
+isSaving = false;
+<nexora-button [disabled]="isSaving">
+  Save
+</nexora-button>
+6. Loading
+<nexora-button [loading]="true">
+  Save
+</nexora-button>
+
+
+The button will show the spinner and will also prevent the click event.
+
+That is why we have:
+
+if (this.disabled || this.loading) {
+return;
+}
+7. Full width
+<nexora-button [fullWidth]="true">
+  Continue
+</nexora-button>
+
+Useful inside forms:
+
+<nexora-form-field label="Email">
+
+  <nexora-input
+    type="email"
+    placeholder="name@example.com"
+  />
+
+</nexora-form-field>
+
+<nexora-button [fullWidth]="true">
+  Continue
+</nexora-button>
+8. Handling the click
+
+The component exposes:
+
+@Output() clicked = new EventEmitter<void>();
+
+  So:
+
+  <nexora-button (clicked)="saveCustomer()">
+    Save
+  </nexora-button>
+
+  and in the parent:
+
+  saveCustomer(): void {
+  console.log('Saving customer...');
+  }
+
+  The flow is:
+
+  User clicks button
+  ↓
+  button.component.html
+  ↓
+  onClick()
+  ↓
+  check disabled/loading
+  ↓
+  clicked.emit()
+  ↓
+  parent's saveCustomer()
+
+  One deliberate choice here: I'm using clicked rather than exposing the native (click) event directly. That gives the Nexora component control over behavior such as loading and disabled.

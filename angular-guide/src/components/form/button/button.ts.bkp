@@ -1,0 +1,59 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+@Component({
+  selector: 'nexora-button',
+  imports: [],
+  templateUrl: './button.html',
+  styleUrl: './button.css',
+})
+export class ButtonComponent {
+
+  @Input() variant: 'primary' | 'secondary' | 'danger' | 'ghost' = 'primary';
+  @Input() size: 'sm' | 'md' | 'lg' = 'md';
+
+  @Input() disabled = false;
+  @Input() loading = false;
+  @Input() fullWidth = false;
+
+  @Output() clicked = new EventEmitter<void>();
+
+  get variantClass(): string {
+    const variants = {
+      primary:
+        'bg-[#436CF3] text-white hover:bg-[#365EDB] focus:ring-[#EAF1FF]',
+
+      secondary:
+        'border border-[#D9DFEA] bg-white text-[#101828] hover:bg-[#F7F9FC] focus:ring-[#EAF1FF]',
+
+      danger:
+        'bg-red-600 text-white hover:bg-red-700 focus:ring-red-100',
+
+      ghost:
+        'bg-transparent text-[#436CF3] hover:bg-[#EAF1FF] focus:ring-[#EAF1FF]'
+    };
+
+    return variants[this.variant];
+  }
+
+  get sizeClass(): string {
+    const sizes = {
+      sm: 'h-9 px-3 text-sm',
+      md: 'h-11 px-4 text-sm',
+      lg: 'h-12 px-5 text-base'
+    };
+
+    return sizes[this.size];
+  }
+
+  get widthClass(): string {
+    return this.fullWidth ? 'w-full' : '';
+  }
+
+  onClick(): void {
+    if (this.disabled || this.loading) {
+      return;
+    }
+
+    this.clicked.emit();
+  }
+
+}

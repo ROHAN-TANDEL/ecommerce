@@ -1,0 +1,6 @@
+<div
+  class="grid w-full min-h-[400px]"
+  [class]="rowClass + ' ' + gapClass + ' ' + alignmentClass"
+>
+  <ng-content></ng-content>
+</div>

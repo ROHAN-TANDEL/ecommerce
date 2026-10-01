@@ -1,0 +1,14 @@
+<nexora-form-field
+  label="Customer Type"
+  [required]="true"
+>
+
+  <nexora-radio
+    name="customerType"
+    [options]="[
+      { value: 'business', label: 'Business' },
+      { value: 'individual', label: 'Individual' }
+    ]"
+  />
+
+</nexora-form-field>

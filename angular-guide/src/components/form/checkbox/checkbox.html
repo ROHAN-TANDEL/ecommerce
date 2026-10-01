@@ -1,0 +1,15 @@
+<label class="flex cursor-pointer items-center gap-2.5">
+
+  <input
+    type="checkbox"
+    [checked]="checked"
+    [disabled]="disabled"
+    (change)="toggle($event)"
+    class="h-4 w-4 rounded border-[#D9DFEA] text-[#436CF3] focus:ring-[#EAF1FF] disabled:cursor-not-allowed"
+  />
+
+  <span class="text-sm text-[#101828]">
+    {{ label }}
+  </span>
+
+</label>

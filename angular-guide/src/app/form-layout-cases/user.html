@@ -1,0 +1,407 @@
+<!-- vertical sections -->
+<br>
+<h1>vertical section with 8 columns</h1>
+<br>
+<nexora-vertical-section [columns]="8">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-vertical-section>
+<br>
+<h1>vertical section with 4 columns</h1>
+<br>
+<nexora-vertical-section [columns]="4">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-vertical-section>
+<br>
+<h1>vertical section with 2 columns</h1>
+<br>
+<nexora-vertical-section [columns]="2">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-vertical-section>
+<br>
+<h1>vertical section with 3 columns</h1>
+<br>
+<nexora-vertical-section [columns]="3">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-vertical-section>
+
+<!-- horizontal sections -->
+<br>
+<h1>horizontal section with 8 columns</h1>
+<br>
+<nexora-horizontal-section [rows]="8">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-horizontal-section>
+<br>
+<h1>horizontal section with 4 columns</h1>
+<br>
+<nexora-horizontal-section [rows]="4">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-horizontal-section>
+<br>
+<h1>horizontal section with 2 columns</h1>
+<br>
+<nexora-horizontal-section [rows]="2">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-horizontal-section>
+<br>
+<h1>horizontal section with 3 columns</h1>
+<br>
+<nexora-horizontal-section [rows]="3">
+  <h1>one section</h1>
+  <h1>two section</h1>
+  <h1>three section</h1>
+  <h1>four section</h1>
+  <h1>five section</h1>
+  <h1>six section</h1>
+  <h1>seven section</h1>
+  <h1>eight section</h1>
+</nexora-horizontal-section>
+
+<!-- zone sections -->
+
+<!-- form inputs fields -->
+<!--  horizontal inside vertical -->
+<!-- vertical inside horizontal -->
+
+<!-- sections -->
+<nexora-sections>
+<h1>Hello Rohan</h1>
+</nexora-sections>
+<!--<div class="min-h-screen bg-[#F7F9FC] p-8">-->
+
+<!--  <div class="mx-auto max-w-6xl">-->
+
+<!--    <div class="mb-8">-->
+
+<!--&lt;!&ndash;      <h1>Main section titgle</h1>&ndash;&gt;-->
+
+<!--    </div>-->
+
+
+<!--    <div class="rounded-xl border border-[#D9DFEA] bg-white p-8">-->
+
+
+<!--      &lt;!&ndash; TEXT INPUTS &ndash;&gt;-->
+
+<!--      <h2 class="mb-5 text-lg font-semibold">-->
+<!--        Text Inputs-->
+<!--      </h2>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->
+
+<div class="min-h-screen bg-[#F7F9FC] p-8">
+
+  <div class="mx-auto max-w-6xl">
+
+    <div class="mb-8">
+
+      <h1 class="text-2xl font-semibold text-[#101828]">
+        Nexora Form Controls
+      </h1>
+
+      <p class="mt-1 text-[#667085]">
+        Development showcase for reusable form components.
+      </p>
+
+    </div>
+
+
+    <div class="rounded-xl border border-[#D9DFEA] bg-white p-8">
+
+
+      <!-- TEXT INPUTS -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Text Inputs
+      </h2>
+
+      <nexora-vertical-section [columns]="2">
+
+        <nexora-form-field
+          label="Customer Name"
+          [required]="true"
+        >
+          <nexora-input
+            placeholder="Enter customer name"
+          />
+        </nexora-form-field>
+
+
+        <nexora-form-field
+          label="Email"
+          [required]="true"
+        >
+          <nexora-input
+            type="email"
+            placeholder="name@example.com"
+          />
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Phone">
+
+          <nexora-input
+            type="tel"
+            placeholder="+1 555 000 0000"
+          />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Website">
+
+          <nexora-input
+            type="url"
+            placeholder="https://example.com"
+          />
+
+        </nexora-form-field>
+
+      </nexora-vertical-section>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- TEXTAREA -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Textarea
+      </h2>
+
+      <nexora-form-field
+        label="Description"
+        helpText="Maximum 500 characters."
+      >
+
+        <nexora-textarea
+          placeholder="Enter description"
+          [rows]="4"
+        />
+
+      </nexora-form-field>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- SELECT / DATE -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Selection & Date
+      </h2>
+
+      <nexora-vertical-section [columns]="3">
+
+        <nexora-form-field label="Country">
+
+          <nexora-select
+            [options]="[
+      { value: 'business', label: 'Business' },
+      { value: 'individual', label: 'Individual' }
+    ]"
+            placeholder="Select country"
+          />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Registration Date">
+
+          <nexora-date />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Employees">
+
+          <nexora-input
+            type="number"
+            placeholder="0"
+          />
+
+        </nexora-form-field>
+
+      </nexora-vertical-section>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- RADIO -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Radio
+      </h2>
+
+      <nexora-form-field label="Customer Type">
+
+        <nexora-radio
+          name="customerType"
+          [options]="[
+            { value: 'business', label: 'Business' },
+            { value: 'individual', label: 'Individual' }
+          ]"
+        />
+
+      </nexora-form-field>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- CHECKBOX / TOGGLE -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Boolean Controls
+      </h2>
+
+      <nexora-vertical-section [columns]="2">
+
+        <nexora-form-field label="Marketing">
+
+          <nexora-checkbox
+            label="Accept marketing communications"
+          />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Status">
+
+          <nexora-toggle
+            label="Customer is active"
+            [checked]="true"
+          />
+
+        </nexora-form-field>
+
+      </nexora-vertical-section>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- ERROR -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Validation State
+      </h2>
+
+      <nexora-vertical-section [columns]="2">
+
+        <nexora-form-field
+          label="Customer Name"
+          [required]="true"
+          errorText="Customer name is required."
+        >
+
+          <nexora-input
+            placeholder="Enter customer name"
+          />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field
+          label="Email"
+          helpText="We'll use this email for notifications."
+        >
+
+          <nexora-input
+            type="email"
+            placeholder="name@example.com"
+          />
+
+        </nexora-form-field>
+
+      </nexora-vertical-section>
+
+
+      <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+
+      <!-- DISABLED -->
+
+      <h2 class="mb-5 text-lg font-semibold">
+        Disabled / Readonly
+      </h2>
+
+      <nexora-vertical-section [columns]="2">
+
+        <nexora-form-field label="Disabled">
+
+          <nexora-input
+            value="Disabled value"
+            [disabled]="true"
+          />
+
+        </nexora-form-field>
+
+
+        <nexora-form-field label="Readonly">
+
+          <nexora-input
+            value="Readonly value"
+            [readonly]="true"
+          />
+
+        </nexora-form-field>
+
+      </nexora-vertical-section>
+
+    </div>
+
+  </div>
+
+</div>

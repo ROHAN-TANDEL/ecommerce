@@ -1,0 +1,205 @@
+<nexora-zones>
+
+  <div left>
+    <button>Back</button>
+  </div>
+
+  <div center>
+    <span class="font-semibold">
+      Customer Information
+    </span>
+  </div>
+
+  <div right>
+    <button>Save</button>
+  </div>
+
+</nexora-zones>
+
+<nexora-vertical-section [columns]="2">
+
+  <!-- LEFT SIDE -->
+  <div>
+
+    <h3 class="mb-4 font-semibold">
+      Basic Information
+    </h3>
+
+    <nexora-horizontal-section [rows]="3">
+
+      <input
+        placeholder="Customer Name"
+        class="w-full rounded-lg border px-4 py-2.5"
+      >
+
+      <input
+        placeholder="Email"
+        class="w-full rounded-lg border px-4 py-2.5"
+      >
+
+      <input
+        placeholder="Phone"
+        class="w-full rounded-lg border px-4 py-2.5"
+      >
+
+    </nexora-horizontal-section>
+
+  </div>
+
+
+  <!-- RIGHT SIDE -->
+  <div>
+
+    <h3 class="mb-4 font-semibold">
+      Business Information
+    </h3>
+
+    <nexora-horizontal-section [rows]="3">
+
+      <select class="w-full rounded-lg border px-4 py-2.5">
+        <option>Country</option>
+      </select>
+
+      <select class="w-full rounded-lg border px-4 py-2.5">
+        <option>Industry</option>
+      </select>
+
+      <input
+        placeholder="Employees"
+        class="w-full rounded-lg border px-4 py-2.5"
+      >
+
+    </nexora-horizontal-section>
+
+  </div>
+
+</nexora-vertical-section>
+
+
+<div class="rounded-xl border border-[#D9DFEA] bg-white">
+
+  <!-- Header -->
+  <div class="border-b border-[#D9DFEA] p-6">
+
+    <h2 class="text-lg font-semibold text-[#101828]">
+      Create Customer
+    </h2>
+
+    <p class="mt-1 text-sm text-[#667085]">
+      Add customer information.
+    </p>
+
+  </div>
+
+
+  <!-- Form -->
+  <div class="p-6">
+
+    <!-- Section 1 -->
+    <div class="mb-8">
+
+      <h3 class="mb-4 font-semibold">
+        Basic Information
+      </h3>
+
+      <nexora-vertical-section [columns]="2">
+
+        <input
+          placeholder="Customer Name"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+        <input
+          placeholder="Email"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+        <input
+          placeholder="Phone"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+        <select class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5">
+          <option>Country</option>
+        </select>
+
+      </nexora-vertical-section>
+
+    </div>
+
+
+    <!-- Section 2 -->
+    <div class="mb-8">
+
+      <h3 class="mb-4 font-semibold">
+        Business Information
+      </h3>
+
+      <nexora-vertical-section [columns]="3">
+
+        <input
+          placeholder="Industry"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+        <input
+          placeholder="Employees"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+        <input
+          placeholder="Annual Revenue"
+          class="w-full rounded-lg border border-[#D9DFEA] px-4 py-2.5"
+        >
+
+      </nexora-vertical-section>
+
+    </div>
+
+  </div>
+
+
+  <!-- Footer -->
+  <div class="border-t border-[#D9DFEA] p-4">
+
+    <nexora-zones>
+
+      <div left>
+        <button
+          class="rounded-lg border px-4 py-2"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <div center>
+        <span class="text-sm text-[#667085]">
+          * Required fields
+        </span>
+      </div>
+
+      <div right>
+        <button
+          class="rounded-lg bg-[#436CF3] px-5 py-2 text-white"
+        >
+          Save Customer
+        </button>
+      </div>
+
+    </nexora-zones>
+
+  </div>
+
+</div>
+
+<nexora-input>
+  <nexora-select>
+    <nexora-date-picker>
+      <nexora-checkbox>
+        <nexora-file-upload>
+        </nexora-file-upload>
+      </nexora-checkbox>
+    </nexora-date-picker>
+  </nexora-select>
+</nexora-input>
+

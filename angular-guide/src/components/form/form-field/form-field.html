@@ -1,0 +1,35 @@
+<div class="w-full">
+
+  @if (label) {
+
+    <label class="mb-1.5 block text-sm font-medium text-[#101828]">
+
+      {{ label }}
+
+      @if (required) {
+        <span class="ml-1 text-red-500">*</span>
+      }
+
+    </label>
+
+  }
+
+  <div>
+    <ng-content></ng-content>
+  </div>
+
+  @if (errorText) {
+
+    <p class="mt-1.5 text-sm text-red-600">
+      {{ errorText }}
+    </p>
+
+  } @else if (helpText) {
+
+    <p class="mt-1.5 text-sm text-[#667085]">
+      {{ helpText }}
+    </p>
+
+  }
+
+</div>

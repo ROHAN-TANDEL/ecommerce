@@ -571,7 +571,7 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   editingRows: string[] = [];
   expandedRows: string[] = [];
   pendingChanges: Record<string, Record<string, any>> = {};
-  
+
   lockedRows: Record<string, number> = {};
   private lockTimers: Record<string, any> = {};
 
@@ -926,10 +926,10 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
       { key: 'pin_top', label: 'Pin on top', icon: '⇡' },
       { key: 'pin_bottom', label: 'Pin on bottom', icon: '⇣' },
       { key: 'unpin_row', label: 'Unpin row', icon: 'x' },
-      { 
-        key: 'lock_update', 
-        label: this.lockedRows[this.pk(row)] ? `Unlock update (${this.lockedRows[this.pk(row)]}s)` : 'Lock update (1m)', 
-        icon: this.lockedRows[this.pk(row)] ? '🔒' : '🔓' 
+      {
+        key: 'lock_update',
+        label: this.lockedRows[this.pk(row)] ? `Unlock update (${this.lockedRows[this.pk(row)]}s)` : 'Lock update (1m)',
+        icon: this.lockedRows[this.pk(row)] ? '🔒' : '🔓'
       },
     ];
   }

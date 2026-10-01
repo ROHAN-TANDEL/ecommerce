@@ -1,0 +1,59 @@
+@if(outerSection && !innerSection) {
+<!--  @if(outerSectionPadding) {-->
+<!--    <div class="min-h-screen bg-[#F7F9FC] p-" + outerSectionPadding>-->
+<!--  } @else {-->
+<!--    <div class="bg-[#F7F9FC] p-" + outerSectionPadding>-->
+<!--  }-->
+
+<!--  @if(sectionMainMaxWidth) {-->
+<!--    <div class="mx-auto max-w-" + sectionMainMaxWidth>-->
+<!--  } @else {-->
+<!--    <div class="mx-auto">-->
+<!--  }-->
+<!--  <ng-content/>-->
+
+<!--  </div>-->
+<!--  </div>-->
+}
+
+@if(innerSection && !outerSection) {
+<!--  <div class="rounded-xl border border-[#D9DFEA] bg-white p-" + innerSectionPadding><ng-content/></div>-->
+}
+
+
+@if(innerSection && outerSection) {
+  <div [class]="` bg-[#F7F9FC] ${outerSectionPadding}`">
+
+    <div class="">
+
+      <div [class]="`rounded-xl border border-[#D9DFEA] bg-white ${innerSectionPadding}`">
+        <ng-content/>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- reference -->
+<!--<div class="min-h-screen bg-[#F7F9FC] p-8">-->
+
+<!--  <div class="mx-auto max-w-6xl">-->
+
+<!--    <div class="mb-8">-->
+
+<!--&lt;!&ndash;      <h1>Main section titgle</h1>&ndash;&gt;-->
+
+<!--    </div>-->
+
+
+<!--    <div class="rounded-xl border border-[#D9DFEA] bg-white p-8">-->
+
+
+<!--      &lt;!&ndash; TEXT INPUTS &ndash;&gt;-->
+
+<!--      <h2 class="mb-5 text-lg font-semibold">-->
+<!--        Text Inputs-->
+<!--      </h2>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->

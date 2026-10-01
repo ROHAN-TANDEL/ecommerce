@@ -1,0 +1,121 @@
+<nexora-form #userForm name="user">
+
+  <nexora-vertical-section [columns]="3">
+
+    <div>
+      <nexora-sections>
+
+        <!-- form headers -->
+        <div class="py-4">
+          <h1 class="text-2xl font-semibold text-[#101828]">Create User</h1>
+          <p class="mt-1 text-[#667085]">Create a user account</p>
+        </div>
+        <!-- form headers ends -->
+
+      <!-- form inputs -->
+        <div>
+          <nexora-form-field label="First Name" [required]="true" [errorText]="userForm.errors['firstName']">
+            <nexora-input type="text" placeholder="Enter customer first name"
+
+                [value]="userForm.getValue('firstName')"
+                [disabled]="userForm.isActionLoading('save')"
+
+                (valueChange)="userForm.setValue('firstName', $event)"/>
+          </nexora-form-field>
+
+          <nexora-form-field label="Last Name" [required]="true" [errorText]="userForm.errors['lastName']">
+            <nexora-input type="text" placeholder="Enter customer last name"
+
+              [value]="userForm.getValue('lastName')"
+              [disabled]="userForm.isActionLoading('save')"
+
+              (valueChange)="userForm.setValue('lastName', $event)"/>
+          </nexora-form-field>
+
+          <nexora-form-field label="Email" [required]="true"  [errorText]="userForm.errors['email']">
+            <nexora-input type="email" placeholder="name@example.com"
+
+              [value]="userForm.getValue('email')"
+              [disabled]="userForm.isActionLoading('save')"
+
+              (valueChange)="userForm.setValue('email', $event)"/>
+          </nexora-form-field>
+
+          <nexora-form-field label="Password" [required]="true" [errorText]="userForm.errors['password']">
+            <nexora-input type="password" placeholder="Enter password"
+
+              [value]="userForm.getValue('password')"
+              [disabled]="userForm.isActionLoading('save')"
+
+              (valueChange)="userForm.setValue('password', $event)"/>
+          </nexora-form-field>
+
+          <nexora-form-field label="Confirm Password" [required]="true" [errorText]="userForm.errors['confirmPassword']">
+            <nexora-input type="password" placeholder="Confirm password"
+              [value]="userForm.getValue('confirmPassword')"
+              [disabled]="userForm.isActionLoading('save')"
+
+              (valueChange)="userForm.setValue('confirmPassword', $event)"/>
+
+          </nexora-form-field>
+        </div>
+      <!-- form inputs ends -->
+
+      <!-- form buttons -->
+      <div class="py-4">
+
+        <nexora-vertical-section [columns]="2">
+
+          <nexora-button
+            variant="secondary"
+            [fullWidth]="true"
+            [disabled]="userForm.isActionLoading('save')"
+            (clicked)="clearForm()">
+            Clear
+          </nexora-button>
+
+          <nexora-button
+            variant="primary"
+            [fullWidth]="true"
+            [loading]="userForm.isActionLoading('save')"
+            [disabled]="userForm.isActionLoading('save')"
+            (clicked)="saveUser()"
+          >
+            Create
+          </nexora-button>
+
+        </nexora-vertical-section>
+
+      </div>
+      <!-- form buttons ends-->
+
+    </nexora-sections>
+    </div>
+  </nexora-vertical-section>
+
+
+  <div class="my-8 border-t border-[#D9DFEA]"></div>
+
+  <div class="px-2">
+    <nexora-vertical-section [columns]="1" align="right">
+      <!-- form buttons -->
+      <div class="py-4">
+
+        <nexora-vertical-section [columns]="2">
+
+          <nexora-button variant="secondary" [fullWidth]="true" [disabled]="false" (clicked)="clearForm()">
+            Clear
+          </nexora-button>
+
+          <nexora-button variant="primary" [fullWidth]="true" [loading]="false" [disabled]="false" (clicked)="saveUser()">
+            Save
+          </nexora-button>
+
+        </nexora-vertical-section>
+
+      </div>
+      <!-- form buttons ends-->
+    </nexora-vertical-section>
+  </div>
+</nexora-form>
+
