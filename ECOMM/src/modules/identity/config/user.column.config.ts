@@ -10,7 +10,7 @@ export const UserColumnConfig = {
         active: true,
         show: true,
         master_edit_allow: true,
-        freez : { freez_side : "left", order : 1 },
+        // freez : { freez_side : "left", order : 1 },
         filter_data: []
     },
     last_name: {
@@ -24,7 +24,7 @@ export const UserColumnConfig = {
         active: true,
         show: true,
         master_edit_allow: true,
-        freez : { freez_side : "left", order : 2 },
+        // freez : { freez_side : "left", order : 2 },
         filter_data: []
     },
     email: {

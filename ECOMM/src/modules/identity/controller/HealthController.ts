@@ -228,10 +228,10 @@ export class HealthController {
                 // null - no freez allowed
                 // freez_side - left side of the table the freez should happen
                 // order - the order of columns to freez to set from left
-                freez : {
-                 freez_side : "left",
-                 order : 1
-                },
+                // freez : {
+                //  freez_side : "left",
+                //  order : 1
+                // },
                 // data if if filter type is list
                 filter_data: []
             },
@@ -566,17 +566,17 @@ export class HealthController {
                 "column_freeze": {
                     // true - allow freezing the columns via option
                     // false - dont show this option and also not for each row
-                    "enabled": true,
+                    "enabled": false,
                     // 2 - allow freezing the 2 columns at left side of table - which columns to feez will be taken from column config
-                    "start": 2,
+                    "start": 0,
                     // 1 - allow freezing the 1 column at right side of table - which columns to feez will be taken from column config
-                    "end": 1
+                    "end": 0
                 },
 
                 "row_freeze": {
-                    "enabled": true,
+                    "enabled": false,
                     // 2 - allow freezing the 2 rows at top table - which rows to feez will be taken from row config
-                    "top": 2,
+                    "top": 0,
                     // 0 - allow freezing the 0 rows at bottom of table - which rows to feez will be taken from row config
                     "bottom": 0
                 },

@@ -24,6 +24,5 @@ export class HealthRoute {
         router.get("/customers/table-config", controller.getCustomerTableConfig.bind(controller));
 
         return router;
-
     }
 }
