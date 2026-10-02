@@ -1,4 +1,6 @@
-<nexora-form #userForm name="user">
+<nexora-form  #userForm
+             name="createUser"
+             [initialValues]="initialValues">
 
   <nexora-vertical-section [columns]="3">
 
@@ -17,7 +19,7 @@
           <nexora-form-field label="First Name" [required]="true" [errorText]="userForm.errors['firstName']">
             <nexora-input type="text" placeholder="Enter customer first name"
 
-                [value]="userForm.getValue('firstName')"
+                [value]="userForm.getValue('firstName')?? ''"
                 [disabled]="userForm.isActionLoading('save')"
 
                 (valueChange)="userForm.setValue('firstName', $event)"/>
@@ -26,7 +28,7 @@
           <nexora-form-field label="Last Name" [required]="true" [errorText]="userForm.errors['lastName']">
             <nexora-input type="text" placeholder="Enter customer last name"
 
-              [value]="userForm.getValue('lastName')"
+              [value]="userForm.getValue('lastName')?? ''"
               [disabled]="userForm.isActionLoading('save')"
 
               (valueChange)="userForm.setValue('lastName', $event)"/>
@@ -35,7 +37,7 @@
           <nexora-form-field label="Email" [required]="true"  [errorText]="userForm.errors['email']">
             <nexora-input type="email" placeholder="name@example.com"
 
-              [value]="userForm.getValue('email')"
+              [value]="userForm.getValue('email')?? ''"
               [disabled]="userForm.isActionLoading('save')"
 
               (valueChange)="userForm.setValue('email', $event)"/>
@@ -44,7 +46,7 @@
           <nexora-form-field label="Password" [required]="true" [errorText]="userForm.errors['password']">
             <nexora-input type="password" placeholder="Enter password"
 
-              [value]="userForm.getValue('password')"
+              [value]="userForm.getValue('password')?? ''"
               [disabled]="userForm.isActionLoading('save')"
 
               (valueChange)="userForm.setValue('password', $event)"/>
@@ -52,7 +54,7 @@
 
           <nexora-form-field label="Confirm Password" [required]="true" [errorText]="userForm.errors['confirmPassword']">
             <nexora-input type="password" placeholder="Confirm password"
-              [value]="userForm.getValue('confirmPassword')"
+              [value]="userForm.getValue('confirmPassword')?? ''"
               [disabled]="userForm.isActionLoading('save')"
 
               (valueChange)="userForm.setValue('confirmPassword', $event)"/>
@@ -77,8 +79,8 @@
           <nexora-button
             variant="primary"
             [fullWidth]="true"
+            [disabled]="!userForm.dirty || userForm.isActionLoading('save')"
             [loading]="userForm.isActionLoading('save')"
-            [disabled]="userForm.isActionLoading('save')"
             (clicked)="saveUser()"
           >
             Create
