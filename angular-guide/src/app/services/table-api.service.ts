@@ -34,7 +34,7 @@ export interface SaveResult {
 // ──────────────────────────────────────────────────────────────────────
 
 /** Fields that should render with the avatar+text format (primary + secondary) */
-const AVATAR_KEYS = new Set(['customer_name', 'owner_name', 'name', 'contact_name']);
+const AVATAR_KEYS = new Set(['customer_name', 'owner_name', 'name', 'contact_name', 'first_name']);
 
 /** Fields that use the flag+text format */
 const FLAG_KEYS = new Set(['country', 'country_name']);
@@ -49,13 +49,14 @@ const NUMBER_KEYS = new Set(['annual_revenue', 'employee_count', 'revenue', 'amo
 const BOOL_KEYS = new Set(['is_active', 'editable', 'active']);
 
 /** Fields that are dates */
-const DATE_KEYS = new Set(['onboarding_date', 'created_at', 'updated_at', 'last_activity_at', 'date']);
+const DATE_KEYS = new Set(['onboarding_date', 'created_at', 'updated_at', 'last_activity_at', 'date', 'last_login_at']);
 
 /** Secondary key map — what field shows under the primary in avatar format */
 const SECONDARY_KEY_MAP: Record<string, string> = {
   customer_name: 'email',
   owner_name: 'owner_email',
   name: 'email',
+  first_name: 'email',
 };
 
 /** Default widths per field key */
@@ -134,10 +135,9 @@ export class TableApiService {
 
   /**
    * Load a page of row data.
-   *
-   * Sort params:    ?sort=customer_name&order=asc
-   * Pagination:     ?page=1&limit=25
-   * Filters:        ?customer_name=foo&status=Active  (flat params per column key)
+   * dataKey — the property in the response that holds the rows array (default: 'data').
+   *           Some APIs return { user: [...] } instead of { data: [...] }.
+   * httpMethod — 'GET' (default). Some filter endpoints use POST.
    */
   loadData(
     baseUrl: string,
@@ -146,17 +146,16 @@ export class TableApiService {
     limit: number,
     sorts: SortState[],
     filters: FilterValues,
+    dataKey = 'data',
   ): Observable<DataPage> {
     let params = new HttpParams()
       .set('page', page)
       .set('limit', limit);
 
-    // Single-column sort (primary sort wins)
     if (sorts.length > 0) {
       params = params.set('sort', sorts[0].key).set('order', sorts[0].direction);
     }
 
-    // Filters — each column key becomes a query param
     for (const [key, value] of Object.entries(filters)) {
       if (value === null || value === undefined || value === '') continue;
       if (Array.isArray(value)) {
@@ -166,27 +165,49 @@ export class TableApiService {
       }
     }
 
-    return this.http.get<DataPage>(`${baseUrl}${dataPath}`, { params }).pipe(
-      catchError(() => of({ data: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } }))
+    console.log(`${baseUrl}${dataPath}`);
+    return this.http.get<any>(`${baseUrl}${dataPath}`, { params }).pipe(
+      map(res => ({
+        data: res[dataKey] ?? res['data'] ?? [],
+        pagination: res['pagination'] ?? { page, limit, total: 0, totalPages: 0 },
+      })),
+      catchError(() => of({ data: [], pagination: { page, limit, total: 0, totalPages: 0 } }))
     );
   }
 
   // ── Save ───────────────────────────────────────────────────────────
 
   /**
-   * PATCH changed fields for a single row.
-   * updateApiTemplate e.g. '/customers/:id'  → replaces :id with rowId.
+   * Save a single row — uses PUT or PATCH depending on the API.
+   * updateApiTemplate e.g. '/users/update/:id'
    */
   saveRow(
     baseUrl: string,
     updateApiTemplate: string,
     rowId: string,
     changes: Record<string, any>,
+    method: 'PATCH' | 'PUT' = 'PATCH',
   ): Observable<SaveResult> {
     const path = updateApiTemplate.replace(':id', rowId);
-    return this.http.patch<any>(`${baseUrl}${path}`, changes).pipe(
+    const url = `${baseUrl}${path}`;
+    const req$ = method === 'PUT'
+      ? this.http.put<any>(url, changes)
+      : this.http.patch<any>(url, changes);
+    return req$.pipe(
       map(data => ({ success: true, data })),
       catchError(err => of({ success: false, error: err?.message ?? 'Save failed' }))
+    );
+  }
+
+  /** POST a new resource */
+  createRow(
+    baseUrl: string,
+    createPath: string,
+    body: Record<string, any>,
+  ): Observable<SaveResult> {
+    return this.http.post<any>(`${baseUrl}${createPath}`, body).pipe(
+      map(data => ({ success: true, data })),
+      catchError(err => of({ success: false, error: err?.message ?? 'Create failed' }))
     );
   }
 

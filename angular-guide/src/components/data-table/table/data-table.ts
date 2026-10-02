@@ -119,7 +119,10 @@ export type { ActionBarState };
         </div>
         <p *ngIf="subtitle" class="mt-0.5 text-xs text-slate-400">{{ subtitle }}</p>
       </div>
-      <div class="flex items-center gap-1 text-xs text-slate-400">
+      <!-- Right side: projected action button OR default breadcrumb -->
+      <ng-content select="[tableHeaderAction]">
+      </ng-content>
+      <div *ngIf="!hasHeaderAction" class="flex items-center gap-1 text-xs text-slate-400">
         <span>Home</span>
         <span class="mx-1">›</span>
         <span class="text-slate-600">{{ displayName }}</span>
@@ -517,6 +520,8 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   @Input() title: string = 'Table';
   /** Optional subtitle shown below the title */
   @Input() subtitle: string = '';
+  /** Set true when projecting content into [tableHeaderAction] to hide the breadcrumb */
+  @Input() hasHeaderAction: boolean = false;
   /** Typed column definitions (produced by TableApiService.buildColumnDefs) */
   @Input() columns: ColumnDef[] = [];
   /** Current page of row data */

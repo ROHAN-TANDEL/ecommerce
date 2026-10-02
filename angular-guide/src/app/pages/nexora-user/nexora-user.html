@@ -1,0 +1,78 @@
+<div class="min-h-screen bg-[#F3F6FC]">
+
+  <!-- ── Bootstrapping spinner ─────────────────────────────────── -->
+  <div *ngIf="bootstrapping" class="flex h-screen items-center justify-center">
+    <div class="flex flex-col items-center gap-4">
+      <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#436CF3]"></div>
+      <p class="text-sm text-slate-400">Loading Users…</p>
+    </div>
+  </div>
+
+  <!-- ── Error state ───────────────────────────────────────────── -->
+  <div *ngIf="!bootstrapping && error"
+    class="flex h-screen items-center justify-center px-6">
+    <div class="rounded-xl border border-red-200 bg-red-50 px-8 py-10 text-center max-w-md">
+      <span class="text-4xl">⚠</span>
+      <p class="mt-3 text-sm font-medium text-red-700">{{ error }}</p>
+      <button type="button"
+        class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
+        (click)="bootstrap()">Retry</button>
+    </div>
+  </div>
+
+  <!-- ── Main ──────────────────────────────────────────────────── -->
+  <div *ngIf="!bootstrapping && !error" class="px-6 py-8">
+
+    <dt-table
+      title="Users"
+      subtitle="Manage user accounts across the platform."
+      [columns]="columns"
+      [rows]="rows"
+      [tableConfig]="tableConfig"
+      [pagination]="pagination"
+      [sorts]="sorts"
+      [filterValues]="filterValues"
+      [loading]="loading"
+      [collabUsers]="collabUsers"
+      [hasHeaderAction]="true"
+      primaryKey="id"
+      tableMinWidth="900px"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+      (sortChange)="onSortChange($event)"
+      (filterChange)="onFilterChange($event)"
+      (cellChanged)="onCellChanged($event)"
+      (saveRowRequested)="onSaveRow($event)"
+      (bulkActionFired)="onBulkAction($event)"
+      (rowActionFired)="onRowAction($event)"
+      (exportRequested)="onExport($event)"
+      (generateRequested)="onGenerate()"
+      (downloadRequested)="onDownload($event)"
+      (columnsChanged)="onColumnsChanged($event)"
+      (selectionChange)="onSelectionChange($event)"
+    >
+      <!-- "Add User +" button projected into the header right slot -->
+      <button tableHeaderAction
+        type="button"
+        class="inline-flex items-center gap-2 rounded-lg bg-[#436CF3] px-4 py-2
+               text-[12px] font-semibold text-white shadow-sm transition-colors
+               hover:bg-[#3557d4] active:scale-95"
+        (click)="showAddModal = true">
+        <span class="text-base font-bold leading-none">＋</span>
+        Add User
+      </button>
+    </dt-table>
+
+  </div>
+
+  <!-- ── Add User modal ────────────────────────────────────────── -->
+  <app-add-user-modal
+    *ngIf="showAddModal"
+    (save)="onAddUser($event)"
+    (cancel)="showAddModal = false"
+  />
+
+  <!-- ── Toast notifications ───────────────────────────────────── -->
+  <app-toast [toasts]="toasts" (dismiss)="removeToast($event)" />
+
+</div>
