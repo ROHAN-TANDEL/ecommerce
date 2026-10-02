@@ -1,12 +1,15 @@
 import { register } from "./app.js";
+
 import { HealthRepository } from "../modules/identity/repository/HealthRepository.js";
 import { HealthService } from "../modules/identity/service/HealthService.js";
 import { HealthValidator } from "../modules/identity/validator/HealthValidator.js";
 import { HealthResponse } from "../modules/identity/response/HealthResponse.js";
 import { HealthController } from "../modules/identity/controller/HealthController.js";
 
+import { UserRepository } from "../modules/identity/repository/UserRepository.js";
+
 import { ClientRepository } from "../modules/tenant/repository/ClientRepository.js";
-import {ClientService } from "../modules/tenant/service/ClientService.js";
+import { ClientService } from "../modules/tenant/service/ClientService.js";
 import { ClientValidator } from "../modules/tenant/validator/ClientValidator.js";
 import { ClientResponse } from "../modules/tenant/response/ClientResponse.js";
 import { ClientController } from "../modules/tenant/controller/ClientController.js";
@@ -23,6 +26,9 @@ import { BusinessProductRepository } from "../modules/tenant/repository/Business
 import { BusinessProductService } from "../modules/tenant/service/BusinessProductService.js";
 import { BusinessProductController } from "../modules/tenant/controller/BusinessProductController.js";
 import {SchemaController} from "../modules/tenant/controller/SchemaController.js";
+import {UserServiceImpl} from "../modules/identity/service/UserService/UserServiceImpl.js";
+import {UserController} from "../modules/identity/controller/UserController.js";
+import {UserValidator} from "../modules/identity/validator/UserValidator.js";
 
 register("schemaController", SchemaController);
 
@@ -49,5 +55,11 @@ register("clientService", ClientService);
 register("clientValidator", ClientValidator);
 register("clientResponse", ClientResponse);
 register("clientController", ClientController);
+
+register("userController", UserController);
+register("userValidator", UserValidator);
+register("userService", UserServiceImpl);
+register("userRepository", UserRepository);
+
 
 export default register;

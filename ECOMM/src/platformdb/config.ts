@@ -4,7 +4,7 @@ export default class Config {
     public config(): any {
         return {
             identity_management: {
-                routes: ["HealthRoute", "UserRoute",  "AuthRoute"],
+                routes: ["HealthRoute", "AuthRoute", "UserRoute"],
                 identification: '/identity/management',
                 database: {
                     master: {
@@ -25,7 +25,7 @@ export default class Config {
                         credentials: {
                             host: "localhost",
                             port: 5432,
-                            database: "identity_access_management_master",
+                            database: "nexora_identities_master",
                             schema: "master",
                             user: "root",
                             password: "root123"
@@ -67,7 +67,7 @@ export default class Config {
                                 credentials: {
                                     host: "localhost",
                                     port: 5432,
-                                    database: "identity_access_management_client",
+                                    database: "nexora_identities_client",
                                     user: "root",
                                     password: "root123",
                                 },
@@ -94,7 +94,7 @@ export default class Config {
                         credentials: {
                             host: "localhost",
                             port: 5432,
-                            database: "identity_access_management_client",
+                            database: "nexora_identities_client",
                             user: "root",
                             password: "root123",
                         }

@@ -62,6 +62,8 @@ export default class RouteRegister {
                 if (routerData !== undefined) {
                     const registerRoute = (new routerData()).route(dbs);
 
+                    // router.use(productDetail.identification, clientContext, facadeMiddleware(dbs), registerRoute);
+
                     router.use(productDetail.identification, facadeMiddleware(dbs), registerRoute);
 
                     console.log( {route_found : "route defined " + routeName } );

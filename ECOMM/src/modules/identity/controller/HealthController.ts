@@ -425,30 +425,32 @@ export class HealthController {
 
                 // true - show headers section for the table
                 // false - dont show headers, filters, master editor for the table just data rows
-                show_headers : true,
+                "show_headers" : true,
 
                 // true - show live count panel
                 // false - hide live count panel
-                live_count_panel : true,
+                "live_count_panel" : true,
 
                 // true - show main action panel
                 // false - dont show main action panel
-                main_action_panel : true,
+                "main_action_panel" : true,
                 // true - show checkes for the table
                 // false - dont show check boxes for the table
-                show_checkboxes : true,
+                "show_checkboxes" : true,
 
                 // true - check boxes section should be fixed
                 // false - move check boxes horizontally along with columns
-                fixed_checkboxes : true,
+                "fixed_checkboxes" : true,
 
                 // true  - action should be fixed to the utmost right of the table
                 // false - action button can float move along horizontal with other columns
-                fixed_actions : true,
+                "fixed_actions" : true,
 
                 // true - show action items
                 // false - hide action column
-                show_actions : true,
+                "show_actions" : true,
+
+                "row_expansion" : true,
 
                 // use following API instead of hardcoded on, table should be replied on this
                 // and always

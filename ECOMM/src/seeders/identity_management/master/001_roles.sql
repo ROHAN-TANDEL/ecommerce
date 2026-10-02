@@ -1,6 +1,10 @@
-INSERT INTO master.roles (name, description)
+INSERT INTO master.roles (name, code, description)
 VALUES
-    ('ADMIN', 'System administrator'),
-    ('CUSTOMER', 'Customer user'),
-    ('STAFF', 'Staff user')
+    ('Super Admin','SUPER_ADMIN', 'System super administrator'),
+    ('Admin','ADMIN', 'System administrator'),
+    ('Customer','CUSTOMER', 'Customer user'),
+    ('Client','CLIENT', 'Client user'),
+    ('Partner','PARTNER', 'Partner user'),
+    ('Staff','STAFF', 'Staff user'),
+    ('System','SYSTEM', 'System bot')
     ON CONFLICT (name) DO NOTHING;
