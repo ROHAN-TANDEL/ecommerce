@@ -101,11 +101,11 @@ app.use((new OrderRoute(context)).route());
 application.appAfterMiddleware(app);
 
 const connection:any = new SchemaConnect().connect(
-    "1000001",
+    "master",
     {
         host: "localhost",
         port: 5432,
-        database: "identity_access_management_client",
+        database: "nexora_identities_master",
         user: "root",
         password: "root123"
     }
