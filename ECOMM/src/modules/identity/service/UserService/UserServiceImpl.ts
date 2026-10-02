@@ -79,7 +79,7 @@ export class UserServiceImpl implements UserService {
         }
     }
 
-    updateUserStatus()
+    async updateUserStatus()
     {
         try {
             const deleted = await this.userRepo.updateUserStatus(inputs);
@@ -89,5 +89,23 @@ export class UserServiceImpl implements UserService {
         }
     }
 
+
+    async createBulkUsers(users) {
+        return await this.userRepo.createBulkUsers(users);
+    }
+
+    async updateBulkUsers(updates) {
+        return await this.userRepo.updateBulkUsers(updates);
+    }
+
+    async updateAllUsers(ids, data) {
+        return await this.userRepo.updateAllUsers(ids, data);
+    }
+
+    async deleteAllUsers(ids) {
+        return await this.userRepo.deleteAllUsers(ids);
+    }
+
     importUsers() {}
+
 }

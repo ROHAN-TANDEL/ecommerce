@@ -1,12 +1,17 @@
+import { UserColumnConfig } from "../config/user.column.config.js";
+import {UserResponse} from "../response/UserResponse.js";
+
 export class UserController {
 
     private readonly userService:any;
     private readonly userValidator:any;
+    private readonly userResponse:any;
 
-    constructor({ userService, userValidator })
+    constructor({ userService, userValidator, userResponse })
     {
         this.userService = userService;
         this.userValidator = userValidator;
+        this.userResponse = userResponse;
     }
 
     async createUser(req, res)
@@ -134,7 +139,7 @@ export class UserController {
         }
     }
 
-    updateUserStatus(req, res)
+    async updateUserStatus(req, res)
     {
         try {
             const inputs = this.userValidator.getUser(req);
@@ -154,6 +159,144 @@ export class UserController {
         }
     }
 
-    importUsers() {}
+    async getUserTableConfig(req, res) {
+        return res.json({
+            "users_table_unique_key": {
+                "table_name": "users",
+                "display_name": "Users Management",
+                "show_headers" : true,
+                "live_count_panel" : true,
+                "main_action_panel" : true,
+                "show_checkboxes" : true,
+                "fixed_checkboxes" : true,
+                "fixed_actions" : true,
+                "show_actions" : true,
+                "row_expansion" : true,
+                "data_api": "/identity/management/users",
+                "update_api": "/identity/management/users/update/:id",
+                "config_api": "/identity/management/users/config/columns",
+                "table_config_api": "/identity/management/users/config/table",
+                "primary_key": "id",
+                "selection": {
+                    "enabled": true,
+                    "multiple": true
+                },
+                "pagination": {
+                    "enabled": true,
+                    "default_page_size": 25,
+                    "page_size_options": [10, 25, 50, 100]
+                },
+                "sorting": {
+                    "enabled": true,
+                    "multiple": true
+                },
+                "filtering": {
+                    "enabled": true
+                },
+                "editing": {
+                    "enabled": true,
+                    "row_editable": true
+                },
+                "actions": {
+                    "edit": true,
+                    "delete": true,
+                    "enable": true,
+                    "disable": true,
+                    "revert": true,
+                    "more": true
+                },
+                "export": {
+                    "enabled": true,
+                    "formats": ["excel", "csv"]
+                },
+                "download": {
+                    "enabled": true,
+                    "formats": ["excel", "csv"]
+                },
+                "column_management": {
+                    "enabled": true,
+                    "reorder": true,
+                    "show_hide": false
+                },
+                "column_freeze": {
+                    "enabled": true,
+                    "start": 2,
+                    "end": 1
+                },
+                "row_freeze": {
+                    "enabled": true,
+                    "top": 2,
+                    "bottom": 0
+                },
+                "column_resize": {
+                    "enabled": true
+                },
+                "view": {
+                    "fullscreen": true,
+                    "density": true,
+                    "default_density": "comfortable"
+                },
+                "live_collaboration": {
+                    "enabled": true
+                },
+                "features": {
+                    "column_navigation": true,
+                    "column_count_indicator": true,
+                    "save_view": true,
+                    "reset_view": true
+                }
+            }
+        });
+    }
 
+    async getUserColumnsConfig(req, res) {
+        return res.json(UserColumnConfig);
+    }
+
+    async createBulkUsers(req, res) {
+        try {
+            const users = this.userValidator.createBulkUsers(req);
+            const result = await this.userService.createBulkUsers(users);
+            return res.status(200).json({ data: result, message: "bulk users created", status: "success", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: errors?.message ?? "bulk users not created", status: "failed", code: 400 });
+        }
+    }
+
+    async updateBulkUsers(req, res) {
+        try {
+            const updates = this.userValidator.updateBulkUsers(req);
+            const result = await this.userService.updateBulkUsers(updates);
+            return res.status(200).json({ data: result, message: "bulk users updated", status: "success", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: errors?.message ?? "bulk users not updated", status: "failed", code: 400 });
+        }
+    }
+
+    async updateAllUsers(req, res) {
+        try {
+            const { ids, data } = this.userValidator.updateAllUsers(req);
+            const result = await this.userService.updateAllUsers(ids, data);
+            return res.status(200).json({ data: result, message: "all users updated", status: "success", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: errors?.message ?? "all users not updated", status: "failed", code: 400 });
+        }
+    }
+
+    async deleteAllUsers(req, res) {
+        try {
+            const ids = this.userValidator.deleteAllUsers(req);
+            const result = await this.userService.deleteAllUsers(ids);
+            return res.status(200).json({ data: result, message: "users deleted", status: "success", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: errors?.message ?? "users not deleted", status: "failed", code: 400 });
+        }
+    }
+
+    async importCreateUsers(req, res) {}
+    async importUpdateUsers(req, res) {}
 }

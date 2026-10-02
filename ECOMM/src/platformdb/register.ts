@@ -7,6 +7,7 @@ import { HealthResponse } from "../modules/identity/response/HealthResponse.js";
 import { HealthController } from "../modules/identity/controller/HealthController.js";
 
 import { UserRepository } from "../modules/identity/repository/UserRepository.js";
+import { UserResponse } from "../modules/identity/response/UserResponse.js";
 
 import { ClientRepository } from "../modules/tenant/repository/ClientRepository.js";
 import { ClientService } from "../modules/tenant/service/ClientService.js";
@@ -60,6 +61,7 @@ register("userController", UserController);
 register("userValidator", UserValidator);
 register("userService", UserServiceImpl);
 register("userRepository", UserRepository);
+register("userResponse", UserResponse);
 
 
 export default register;

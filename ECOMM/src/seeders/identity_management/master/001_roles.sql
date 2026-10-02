@@ -7,4 +7,4 @@ VALUES
     ('Partner','PARTNER', 'Partner user'),
     ('Staff','STAFF', 'Staff user'),
     ('System','SYSTEM', 'System bot')
-    ON CONFLICT (name) DO NOTHING;
+    ON CONFLICT (code) DO NOTHING;

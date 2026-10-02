@@ -103,4 +103,67 @@ export class UserValidator {
             body : validatedBody.data
         };
     }
+createBulkUsers(req) {
+        const userSchema = z.object({
+            first_name: z.string().min(1, "First name is required"),
+            last_name: z.string().min(1, "Last name is required"),
+            email: z.string().email("Invalid email address"),
+            password_hash: z.string().min(2, "Password must be at least 6 characters"),
+            status: z.enum(["active", "inactive", "pending"]).default("active"),
+        });
+        const validator = z.array(userSchema);
+        const result = validator.safeParse(req.body);
+
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+
+        return result.data.map(u => [u.first_name, u.last_name, u.email, u.password_hash, u.status.toUpperCase()]);
+    }
+
+    updateBulkUsers(req) {
+        const updateSchema = z.object({
+            id: z.coerce.number().int(),
+            data: z.object({
+                first_name: z.string().min(1).optional(),
+                last_name: z.string().min(1).optional(),
+                email: z.string().email().optional(),
+                password_hash: z.string().min(6).optional(),
+                status: z.enum(['active', 'inactive', 'pending']).optional()
+            })
+        });
+        const validator = z.array(updateSchema);
+        const result = validator.safeParse(req.body);
+
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+
+        return result.data;
+    }
+
+    updateAllUsers(req) {
+        const validator = z.object({
+            ids: z.array(z.coerce.number().int()),
+            data: z.object({
+                first_name: z.string().min(1).optional(),
+                last_name: z.string().min(1).optional(),
+                email: z.string().email().optional(),
+                password_hash: z.string().min(6).optional(),
+                status: z.enum(['active', 'inactive', 'pending']).optional()
+            })
+        });
+        const result = validator.safeParse(req.body);
+
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+
+        return result.data;
+    }
+
+    deleteAllUsers(req) {
+        const validator = z.object({
+            ids: z.array(z.coerce.number().int())
+        });
+        const result = validator.safeParse(req.body);
+
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+
+        return result.data.ids;
+    }
 }

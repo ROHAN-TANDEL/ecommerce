@@ -162,5 +162,66 @@ export class UserRepository {
         }
     }
 
+
+    async createBulkUsers(users) {
+        try {
+            if (!users || users.length === 0) return [];
+            let query = 'INSERT INTO master.users (first_name, last_name, email, password_hash, status) VALUES ';
+            const values = [];
+            const valueStrings = [];
+            let i = 1;
+            users.forEach(user => {
+                valueStrings.push(`(${i++}, ${i++}, ${i++}, ${i++}, ${i++})`);
+                values.push(...user);
+            });
+            query += valueStrings.join(', ') + ' RETURNING id';
+            const result = await db.master.query(query, values);
+            return result?.rows;
+        } catch (error) {
+            console.log({error});
+            throw error;
+        }
+    }
+
+    async updateBulkUsers(updates) {
+        try {
+            const results = [];
+            for (const update of updates) {
+                const res = await this.updateUser(update.id, update.data);
+                results.push(res);
+            }
+            return results;
+        } catch (error) {
+            console.log({error});
+            throw error;
+        }
+    }
+
+    async updateAllUsers(ids, data) {
+        try {
+            const clauseInfo = this.queryBuilder.binding(data);
+            if (!clauseInfo) throw new Error("fields not provided for update");
+            const { setClause, values, nextIndex } = clauseInfo;
+            const query = `UPDATE users SET ${setClause} WHERE id = ANY(${nextIndex}) RETURNING id, first_name, last_name, email, status;`;
+            const result = await db.master.query(query, [...values, ids]);
+            return result.rows;
+        } catch (error) {
+            console.log({error});
+            throw error;
+        }
+    }
+
+    async deleteAllUsers(ids) {
+        try {
+            const query = `UPDATE users SET deleted_at = NOW(), status = 'INACTIVE' WHERE id = ANY($1) AND deleted_at IS NULL RETURNING id, first_name, last_name, email, deleted_at;`;
+            const result = await db.master.query(query, [ids]);
+            return result.rows;
+        } catch (error) {
+            console.log({error});
+            throw error;
+        }
+    }
+
     importUsers() {}
+
 }
