@@ -182,10 +182,10 @@ export interface GenerateInfo {
         </div>
       </ng-container>
 
-    </div>
+    <!-- /div -->
 
     <!-- ───────────────────────── RIGHT: controls ────────────────────────────── -->
-    <div class="flex items-center gap-1.5">
+    <!-- div class="flex items-center gap-1.5" -->
 
       <!-- Export -->
       <ng-container *ngIf="exportConfig.enabled">
