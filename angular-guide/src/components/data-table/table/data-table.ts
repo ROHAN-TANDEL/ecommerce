@@ -37,6 +37,19 @@ import type { ActionBarState, ActionKey, GenerateInfo } from './toolbar-actions'
 
 export type { ActionBarState };
 
+export type TableSaveRequest =
+  | { mode: 'bulk'; data: Record<string, any>; filters: FilterValues; sorts: SortState[]; excluded: string[] }
+  | { mode: 'individual'; rows: Array<Record<string, any>> };
+
+export interface TableBulkActionRequest {
+  action: string;
+  mode: 'bulk' | 'individual';
+  rowIds: string[];
+  filters: FilterValues;
+  sorts: SortState[];
+  excluded: string[];
+}
+
 /**
  * DataTable — Master table orchestrator.
  *
@@ -50,7 +63,7 @@ export type { ActionBarState };
  * ─── ROW RESOLUTION PRIORITY (strongest first) ───────────────────────
  *   row.disabled = true                             → DisabledRow
  *   row.rowState = 'error' | 'warning'              → UnavailableRow
- *   selectedIds.includes(pk) AND tableConfig.editing.row_editable
+ *   editModeActive AND selected row is editable
  *                                                   → EditableRow  (col.editable gates each cell)
  *   default                                         → ReadonlyRow
  *
@@ -59,9 +72,8 @@ export type { ActionBarState };
  *     unchecked → all unchecked
  *     indeterminate → some checked
  *     checked → all selectable rows selected AND those with editable=true enter edit mode
- *   Individual checkbox checked → that row enters edit mode (if editable)
- *   Individual checkbox unchecked → discards unsaved changes
- *   Master checked + individual unchecked → indeterminate on that row checkbox
+ *   Checkbox selection never enters edit mode.
+ *   The Edit toolbar action enters edit mode for selected editable rows.
  *   Readonly rows: checkbox selectable but never enters edit mode
  *
  * ─── MASTER EDIT FIELD ────────────────────────────────────────────────
@@ -151,7 +163,7 @@ export type { ActionBarState };
         [downloadConfig]="tableConfig?.download ?? defaultDownload"
         [columnMgmt]="tableConfig?.column_management ?? defaultColMgmt"
         [features]="tableConfig?.features ?? defaultFeatures"
-        [selectionCount]="selectedIds.length"
+        [selectionCount]="selectedRowCount"
         [actionState]="computedActionState"
         [columns]="columns"
         [fullscreen]="fullscreen"
@@ -218,7 +230,7 @@ export type { ActionBarState };
             <dt-col-selection
               class="contents"
               [visible]="showCheckboxes"
-              [selectedCount]="selectedIds.length"
+              [selectedCount]="selectedCountOnCurrentPage"
               [totalCount]="selectableRowCount"
               [fixed]="fixedCheckboxes"
               [density]="density"
@@ -281,7 +293,7 @@ export type { ActionBarState };
           </tr>
 
           <!-- Row 3: Master-edit input row (shown when rows selected) -->
-          <tr *ngIf="hasData && selectedIds.length > 0 && tableConfig?.editing?.enabled && !tableReadonly && !tableDisabled"
+          <tr *ngIf="hasData && editModeActive && selectedRowCount > 0 && tableConfig?.editing?.enabled && !tableReadonly && !tableDisabled"
             class="border-b border-[#436CF3]/20 bg-blue-50">
 
             <!-- Checkbox cell — sticky if fixedCheckboxes -->
@@ -561,7 +573,8 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   @Output() rowActionFired  = new EventEmitter<{ action: string; row: any }>();
   @Output() cellChanged     = new EventEmitter<{ rowId: string; key: string; value: any }>();
   @Output() saveRowRequested = new EventEmitter<{ rowId: string; changes: Record<string, any> }>();
-  @Output() bulkActionFired  = new EventEmitter<{ action: string; rowIds: string[] }>();
+  @Output() saveRequested = new EventEmitter<TableSaveRequest>();
+  @Output() bulkActionFired  = new EventEmitter<TableBulkActionRequest>();
   @Output() exportRequested  = new EventEmitter<{ format: 'excel' | 'csv'; rowIds: string[] }>();
   @Output() generateRequested = new EventEmitter<void>();
   @Output() downloadRequested = new EventEmitter<'excel' | 'csv'>();
@@ -573,7 +586,11 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
 
   selectedIds: string[] = [];
+  private selectedEditableIds: string[] = [];
+  selectionMode: 'explicit' | 'allMatching' = 'explicit';
+  unselectedIds: string[] = [];
   editingRows: string[] = [];
+  editModeActive = false;
   expandedRows: string[] = [];
   pendingChanges: Record<string, Record<string, any>> = {};
 
@@ -582,6 +599,7 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
 
   masterAllSelected = false;
   masterEditValues: Record<string, any> = {};
+  masterChanges: Record<string, any> = {};
 
   activeView = '';
   savedViews: string[] = [];
@@ -619,7 +637,7 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
     if (changes['tableConfig'] && this.tableConfig) {
       this.density = this.tableConfig.view?.default_density ?? 'comfortable';
     }
-    if (changes['rows'] && !this.hasData && this.selectedIds.length > 0) {
+    if (changes['rows'] && !this.hasData && this.selectedRowCount > 0) {
       this.clearSelection();
     }
     this.cdr.markForCheck();
@@ -697,6 +715,16 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
     return this.rows.filter(r => !r.disabled && r.selectable !== false).length;
   }
 
+  get selectedCountOnCurrentPage(): number {
+    return this.rows.filter(row => !row.disabled && row.selectable !== false && this.isSelected(this.pk(row))).length;
+  }
+
+  get selectedRowCount(): number {
+    return this.selectionMode === 'allMatching'
+      ? Math.max(0, this.pagination.total - this.unselectedIds.length)
+      : this.selectedIds.length;
+  }
+
   get emptyStateColspan(): number {
     return this.pagedColumns.length + Number(this.showCheckboxes) + Number(this.showActions);
   }
@@ -711,16 +739,16 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   }
 
   get computedActionState(): ActionBarState {
-    const hasSelection = this.selectedIds.length > 0;
-    const hasEditable = this.selectedIds.some(id => {
-      const row = this.rows.find(r => this.pk(r) === id);
-      return row?.editable;
-    });
-    const hasPending = Object.keys(this.pendingChanges).length > 0;
+    const hasSelection = this.selectedRowCount > 0;
+    const hasEditable = this.selectionMode === 'allMatching'
+      ? this.rows.some(row => this.isSelected(this.pk(row)) && this.isRowEditable(row))
+      : this.selectedEditableIds.length > 0;
+    const hasPending = Object.keys(this.pendingChanges).length > 0 || Object.keys(this.masterChanges).length > 0;
     const editing = this.tableConfig?.editing?.enabled !== false && !this.tableReadonly && !this.tableDisabled;
 
     return {
       edit:    !editing ? 'not_available' : hasSelection && hasEditable ? 'enabled' : 'disabled',
+      save:    editing && this.editModeActive && hasPending ? 'enabled' : 'disabled',
       delete:  !(this.tableConfig?.actions?.delete ?? true) ? 'not_available' : hasSelection ? 'enabled' : 'disabled',
       enable:  !(this.tableConfig?.actions?.enable ?? true) ? 'not_available' : hasSelection ? 'enabled' : 'disabled',
       disable: !(this.tableConfig?.actions?.disable ?? true) ? 'not_available' : hasSelection ? 'enabled' : 'disabled',
@@ -739,13 +767,30 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   resolveRowState(row: any): 'disabled' | 'unavailable' | 'editing' | 'default' {
     if (row.disabled) return 'disabled';
     if (row.rowState === 'error' || row.rowState === 'warning') return 'unavailable';
-    const id = this.pk(row);
-    if (this.editingRows.includes(id)) return 'editing';
+    if (this.isRowEditing(row)) return 'editing';
     return 'default';
   }
 
   isSelected(id: string): boolean {
-    return this.selectedIds.includes(id);
+    return this.selectionMode === 'allMatching'
+      ? !this.unselectedIds.includes(id)
+      : this.selectedIds.includes(id);
+  }
+
+  isRowEditable(row: any): boolean {
+    // Column configuration decides which fields can be changed. A row only opts
+    // out when the API explicitly marks it readonly (or disabled).
+    return row?.readonly !== true && row?.readOnly !== true && !row?.disabled;
+  }
+
+  isRowEditing(row: any): boolean {
+    const id = this.pk(row);
+    return this.isRowEditable(row) && (
+      // Selecting every matching row uses the master-edit row only. It must
+      // never make the individual cells editable.
+      (this.editModeActive && this.selectionMode === 'explicit' && this.isSelected(id)) ||
+      this.editingRows.includes(id)
+    );
   }
 
   isFilterActive(key: string): boolean {
@@ -765,49 +810,57 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   // ═══════════════════════════════════════════════════════════════════
 
   toggleSelection(id: string, checked: boolean): void {
-    if (checked) {
+    if (this.selectionMode === 'allMatching') {
+      this.unselectedIds = checked
+        ? this.unselectedIds.filter(existing => existing !== id)
+        : [...new Set([...this.unselectedIds, id])];
+    } else if (checked) {
       if (!this.selectedIds.includes(id)) this.selectedIds = [...this.selectedIds, id];
-      // Row checked → enter edit mode if editable
-      const row = this.rows.find(r => this.pk(r) === id);
-      if (row?.editable && !row.disabled && this.tableConfig?.editing?.enabled !== false && !this.tableReadonly) {
-        if (!this.editingRows.includes(id)) this.editingRows = [...this.editingRows, id];
+      const row = this.rows.find(current => this.pk(current) === id);
+      if (row && this.isRowEditable(row) && !this.selectedEditableIds.includes(id)) {
+        this.selectedEditableIds = [...this.selectedEditableIds, id];
       }
     } else {
       this.selectedIds = this.selectedIds.filter(s => s !== id);
-      // Row unchecked → discard unsaved changes
-      this.editingRows = this.editingRows.filter(e => e !== id);
+      this.selectedEditableIds = this.selectedEditableIds.filter(selectedId => selectedId !== id);
+    }
+    if (!checked) {
+      this.editingRows = this.editingRows.filter(editingId => editingId !== id);
       delete this.pendingChanges[id];
     }
-    this.masterAllSelected = this.selectedIds.length === this.selectableRowCount && this.selectableRowCount > 0;
+    this.masterAllSelected = this.selectionMode === 'allMatching';
     this.selectionChange.emit(this.selectedIds);
   }
 
   onMasterSelect(selectAll: boolean): void {
     this.masterAllSelected = selectAll;
     if (selectAll) {
-      this.selectedIds = this.rows
-        .filter(r => !r.disabled && r.selectable !== false)
-        .map(r => this.pk(r));
-      // Put all editable, non-disabled rows into edit mode
-      if (this.tableConfig?.editing?.enabled !== false && !this.tableReadonly && !this.tableDisabled) {
-        this.editingRows = this.rows
-          .filter(r => this.selectedIds.includes(this.pk(r)) && r.editable && !r.disabled)
-          .map(r => this.pk(r));
-      }
-    } else {
+      this.selectionMode = 'allMatching';
       this.selectedIds = [];
+      this.selectedEditableIds = [];
+      this.unselectedIds = [];
       this.editingRows = [];
+      this.editModeActive = false;
       this.pendingChanges = {};
       this.masterEditValues = {};
+      this.masterChanges = {};
+    } else {
+      this.clearSelection();
+      return;
     }
     this.selectionChange.emit(this.selectedIds);
   }
 
   clearSelection(): void {
     this.selectedIds = [];
+    this.selectedEditableIds = [];
+    this.selectionMode = 'explicit';
+    this.unselectedIds = [];
     this.editingRows = [];
+    this.editModeActive = false;
     this.pendingChanges = {};
     this.masterEditValues = {};
+    this.masterChanges = {};
     this.masterAllSelected = false;
     this.selectionChange.emit([]);
   }
@@ -830,19 +883,20 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   onMasterEditChange(key: string, value: any): void {
     // Propagate to all selected editing rows that allow master edit for this column
     const col = this.columns.find(c => c.key === key);
-    if (!col?.masterEditAllow) return;
-    for (const id of this.editingRows) {
-      const row = this.rows.find(r => this.pk(r) === id);
-      if (row && row.editable) {
-        row[key] = value;
-        if (!this.pendingChanges[id]) this.pendingChanges[id] = {};
-        this.pendingChanges[id][key] = value;
-      }
+    if (!col?.editable || !col.masterEditAllow) return;
+    this.masterChanges = { ...this.masterChanges, [key]: value };
+    // Show the change immediately; authoritative values reload after success.
+    for (const row of this.rows.filter(current => this.isSelected(this.pk(current)) && this.isRowEditable(current))) {
+      const id = this.pk(row);
+      row[key] = value;
+      if (!this.pendingChanges[id]) this.pendingChanges[id] = {};
+      this.pendingChanges[id][key] = value;
     }
   }
 
   clearMasterEdit(): void {
     this.masterEditValues = {};
+    this.masterChanges = {};
   }
 
   onColumnPin(key: string, action: 'left' | 'right' | 'unpin') {
@@ -870,36 +924,67 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
       case 'edit':
         this.startEditing();
         break;
+      case 'save':
+        this.requestSave();
+        break;
       case 'delete':
       case 'enable':
       case 'disable':
-        this.bulkActionFired.emit({ action, rowIds: [...this.selectedIds] });
+        this.emitBulkAction(action);
         break;
       case 'revert':
         this.revertAll();
         break;
       default:
-        this.bulkActionFired.emit({ action, rowIds: [...this.selectedIds] });
+        this.emitBulkAction(action);
     }
+  }
+
+  private emitBulkAction(action: string): void {
+    this.bulkActionFired.emit({
+      action,
+      mode: this.selectionMode === 'allMatching' ? 'bulk' : 'individual',
+      rowIds: [...this.selectedIds],
+      filters: { ...this.filterValues },
+      sorts: [...this.sorts],
+      excluded: [...this.unselectedIds],
+    });
   }
 
   startEditing(): void {
     if (this.tableDisabled || this.tableReadonly) return;
-    const newEditing = this.rows
-      .filter(r => this.selectedIds.includes(this.pk(r)) && r.editable && !r.disabled)
-      .map(r => this.pk(r));
-    this.editingRows = [...new Set([...this.editingRows, ...newEditing])];
+    const hasEditableSelection = this.selectionMode === 'allMatching'
+      ? this.rows.some(row => this.isSelected(this.pk(row)) && this.isRowEditable(row))
+      : this.selectedEditableIds.length > 0;
+    if (hasEditableSelection) this.editModeActive = true;
   }
 
-  stopEditing(): void {
-    // Save pending changes before stopping
-    for (const [rowId, changes] of Object.entries(this.pendingChanges)) {
-      if (Object.keys(changes).length > 0) {
-        this.saveRowRequested.emit({ rowId, changes });
-      }
+  requestSave(): void {
+    if (this.computedActionState.save !== 'enabled') return;
+    if (this.selectionMode === 'allMatching') {
+      this.saveRequested.emit({
+        mode: 'bulk',
+        data: { ...this.masterChanges },
+        filters: { ...this.filterValues },
+        sorts: [...this.sorts],
+        excluded: [...this.unselectedIds],
+      });
+      return;
     }
+
+    const rows = Object.entries(this.pendingChanges)
+      .filter(([rowId, changes]) => this.isSelected(rowId) && Object.keys(changes).length > 0)
+      .map(([rowId, changes]) => ({ [this.primaryKey]: rowId, ...changes }));
+    if (rows.length > 0) this.saveRequested.emit({ mode: 'individual', rows });
+  }
+
+  /** Call only after the API reports a successful save. */
+  completeSave(): void { this.clearSelection(); }
+
+  stopEditing(): void {
+    // Persistence is handled only by the explicit Save action.
     this.editingRows = [];
-    this.pendingChanges = {};
+    this.editModeActive = false;
   }
 
   revertAll(): void {
@@ -920,7 +1005,7 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
 
   buildRowActions(row: any) {
     const cfg = this.tableConfig?.actions ?? this.defaultActions;
-    const isEditing = this.editingRows.includes(this.pk(row));
+    const isEditing = this.isRowEditing(row);
     const isRowExpanded = this.isExpanded(this.pk(row));
     return [
       ...(this.tableConfig?.row_expansion ? [{ key: 'expand', label: isRowExpanded ? 'Collapse row' : 'Expand row', icon: isRowExpanded ? '▼' : '▶' }] : []),
@@ -943,17 +1028,15 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
     const id = this.pk(event.row);
     switch (event.action) {
       case 'edit':
-        if (this.editingRows.includes(id)) {
-          // Lock: stop editing this row, save its changes
-          const changes = this.pendingChanges[id] ?? {};
-          if (Object.keys(changes).length > 0) {
-            this.saveRowRequested.emit({ rowId: id, changes });
-          }
+        // A master selection has one editing surface: the master-edit row.
+        if (this.selectionMode === 'allMatching') return;
+        if (this.isRowEditing(event.row)) {
+          // Lock: leave edit mode without persisting. Save remains explicit.
           this.editingRows = this.editingRows.filter(e => e !== id);
-          delete this.pendingChanges[id];
+          if (this.editModeActive) this.toggleSelection(id, false);
         } else {
           // Start editing this row
-          if (!event.row.disabled && event.row.editable && !this.tableReadonly && !this.tableDisabled) {
+          if (this.isRowEditable(event.row) && !this.tableReadonly && !this.tableDisabled) {
             this.editingRows = [...this.editingRows, id];
             if (!this.selectedIds.includes(id)) {
               this.selectedIds = [...this.selectedIds, id];

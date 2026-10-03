@@ -29,6 +29,12 @@ export interface SaveResult {
   error?: string;
 }
 
+export interface UpdateResponse {
+  data?: any;
+  message: string;
+  code: number;
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // Column format hints — map API field names to visual formats
 // ──────────────────────────────────────────────────────────────────────
@@ -196,6 +202,30 @@ export class TableApiService {
     return req$.pipe(
       map(data => ({ success: true, data })),
       catchError(err => of({ success: false, error: err?.message ?? 'Save failed' }))
+    );
+  }
+
+  /** Submit either a selected-row update or a filter-scoped bulk update. */
+  updateRows(baseUrl: string, path: string, body: unknown): Observable<UpdateResponse> {
+    return this.http.post<UpdateResponse>(`${baseUrl}${path}`, body).pipe(
+      map(response => ({ ...response, code: response.code ?? 200 })),
+      catchError(error => of({
+        message: error?.error?.message ?? error?.message ?? 'Request failed',
+        code: error?.status ?? 503,
+      }))
+    );
+  }
+
+  mutateRows(baseUrl: string, path: string, method: 'POST' | 'DELETE', body: unknown): Observable<UpdateResponse> {
+    const request = method === 'POST'
+      ? this.http.post<UpdateResponse>(`${baseUrl}${path}`, body)
+      : this.http.request<UpdateResponse>('DELETE', `${baseUrl}${path}`, { body });
+    return request.pipe(
+      map(response => ({ ...response, code: response.code ?? 200 })),
+      catchError(error => of({
+        message: error?.error?.message ?? error?.message ?? 'Request failed',
+        code: error?.status ?? 503,
+      }))
     );
   }
 

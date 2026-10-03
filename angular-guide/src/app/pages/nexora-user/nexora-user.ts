@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { DataTable }     from '../../../components/data-table/table/data-table';
+import { DataTable, TableSaveRequest, TableBulkActionRequest } from '../../../components/data-table/table/data-table';
 import { Toast, pushToast, ToastMessage } from '../../../components/toast/toast';
 import { AddUserModal, AddUserPayload } from '../../../components/modals/add-user-modal';
 import { TableApiService } from '../../services/table-api.service';
@@ -28,6 +28,8 @@ export class NexoraUser implements OnInit {
   private TABLE_CFG_PATH        = '/identity/management/users/config/table';
   private DATA_PATH             = '/identity/management/users';
   private UPDATE_PATH           = '/identity/management/users/update/:id';
+  private readonly UPDATE_ALL_PATH = '/identity/management/users/update/all';
+  private readonly UPDATE_BULK_PATH = '/identity/management/users/update/bulk';
   private CREATE_PATH           = '/identity/management/users/create';
 
   // ── Table 1 state ──────────────────────────────────────────────────
@@ -43,6 +45,8 @@ export class NexoraUser implements OnInit {
 
   // ── Modal ──────────────────────────────────────────────────────────
   showAddModal = false;
+
+  @ViewChild(DataTable) private table?: DataTable;
 
   // ── Toast ──────────────────────────────────────────────────────────
   toasts: ToastMessage[] = [];
@@ -124,17 +128,49 @@ export class NexoraUser implements OnInit {
     if (row) row[e.key] = e.value;
   }
 
-  onSaveRow(e: { rowId: string; changes: Record<string, any> }): void {
-    this.api.saveRow(this.BASE_URL, this.UPDATE_PATH, e.rowId, e.changes, 'PUT').subscribe({
-      next: r => {
-        this.toast(r.success ? 'success' : 'error', r.success ? 'User updated' : (r.error ?? 'Update failed'));
+  onSave(request: TableSaveRequest): void {
+    const path = request.mode === 'bulk' ? this.UPDATE_BULK_PATH : this.UPDATE_ALL_PATH;
+    const body = request.mode === 'bulk' ? request : request.rows;
+
+    this.api.updateRows(this.BASE_URL, path, body).subscribe({
+      next: response => {
+        if (response.code === 200) {
+          this.table?.completeSave();
+          this.toast('success', response.message);
+          this.fetchData();
+        } else {
+          this.toast('error', response.message);
+        }
         this.cdr.markForCheck();
       },
     });
   }
 
-  onBulkAction(e: { action: string; rowIds: string[] }): void {
-    this.toast('info', `${e.action} applied to ${e.rowIds.length} user${e.rowIds.length !== 1 ? 's' : ''}`);
+  onBulkAction(request: TableBulkActionRequest): void {
+    const isBulk = request.mode === 'bulk';
+    const status = request.action === 'enable' ? 'active' : 'inactive';
+    const path = request.action === 'delete'
+      ? `/identity/management/users/delete/${isBulk ? 'bulk' : 'all'}`
+      : `/identity/management/users/update/status/${isBulk ? 'bulk' : 'all'}`;
+    const body = isBulk
+      ? { filters: request.filters, sorts: request.sorts, excluded: request.excluded, ...(request.action === 'delete' ? {} : { status }) }
+      : request.action === 'delete'
+        ? { ids: request.rowIds }
+        : { ids: request.rowIds, status };
+    const method = request.action === 'delete' ? 'DELETE' : 'POST';
+
+    this.api.mutateRows(this.BASE_URL, path, method, body).subscribe({
+      next: response => {
+        if (response.code === 200) {
+          this.table?.completeSave();
+          this.toast('success', response.message);
+          this.fetchData();
+        } else {
+          this.toast('error', response.message);
+        }
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   onRowAction(e: { action: string; row: any }): void {

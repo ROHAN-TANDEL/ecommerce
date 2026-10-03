@@ -57,7 +57,7 @@ import { ReadonlyCell }              from '../cell/readonly';
             [style.left]="col.frozen && col.frozenSide !== 'right' ? frozenOffset(col) : null"
             [style.right]="col.frozen && col.frozenSide === 'right' ? frozenOffset(col) : null">
 
-          <ng-container *ngIf="col.editable && row.editable; else roCell">
+          <ng-container *ngIf="col.editable && row.readonly !== true && row.readOnly !== true && !row.disabled; else roCell">
             <dt-cell-editable
               [value]="effectiveValue(col)"
               [placeholder]="'Enter ' + col.label"

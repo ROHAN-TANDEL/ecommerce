@@ -10,11 +10,12 @@ import { LockUpdateComponent } from './lock-update';
 import type { ColumnDef } from '../models/column-def.model';
 import type { ActionsConfig, ExportConfig, DownloadConfig, ColumnManagementConfig, FeaturesConfig } from '../models/table-config.model';
 
-export type ActionKey = 'edit' | 'delete' | 'enable' | 'disable' | 'revert' | 'refresh' | 'lock_update';
+export type ActionKey = 'edit' | 'save' | 'delete' | 'enable' | 'disable' | 'revert' | 'refresh' | 'lock_update';
 export type ActionState = 'enabled' | 'disabled' | 'not_available';
 
 export interface ActionBarState {
   edit: ActionState;
+  save: ActionState;
   delete: ActionState;
   enable: ActionState;
   disable: ActionState;
@@ -111,6 +112,14 @@ export interface GenerateInfo {
           <span>✎</span> Edit
         </button>
       </ng-container>
+
+      <!-- Save — enabled only after an editable row has a real change -->
+      <button type="button" class="tb-btn"
+        [disabled]="actionState.save !== 'enabled'"
+        [title]="saveTooltip"
+        (click)="actionState.save === 'enabled' && actionClicked.emit('save')">
+        <span>✓</span> Save
+      </button>
 
       <!-- Delete -->
       <ng-container *ngIf="actions.delete && actionState.delete !== 'not_available'">
@@ -398,7 +407,7 @@ export class ToolbarActions {
   // ── State inputs ────────────────────────────────────────────────────
   @Input() selectionCount: number = 0;
   @Input() actionState: ActionBarState = {
-    edit: 'disabled', delete: 'disabled', enable: 'disabled',
+    edit: 'disabled', save: 'disabled', delete: 'disabled', enable: 'disabled',
     disable: 'disabled', revert: 'disabled',
   };
   @Input() columns: ColumnDef[] = [];
@@ -450,6 +459,12 @@ export class ToolbarActions {
         : 'Edit is not allowed for selected rows';
     }
     return 'Edit selected rows';
+  }
+
+  get saveTooltip(): string {
+    return this.actionState.save === 'enabled'
+      ? 'Save changes'
+      : 'Make a change in an editable selected row before saving';
   }
 
   get generateTooltip(): string {

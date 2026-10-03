@@ -30,7 +30,7 @@ import { ReadonlyCell }              from '../cell/readonly';
         <div class="flex items-center gap-1.5">
           <input type="checkbox" class="h-4 w-4 rounded border-slate-300 accent-[#436CF3]"
             [checked]="selected" (change)="selectedChange.emit(!selected)" />
-          <svg *ngIf="row.editable === false"
+          <svg *ngIf="row.readonly === true || row.readOnly === true || row.disabled"
             class="h-3.5 w-3.5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
             title="This row cannot be edited">
