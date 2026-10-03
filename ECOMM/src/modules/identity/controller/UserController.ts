@@ -266,23 +266,47 @@ export class UserController {
 
     async updateBulkUsers(req, res) {
         try {
-            const updates = this.userValidator.updateBulkUsers(req);
-            const result = await this.userService.updateBulkUsers(updates);
-            return res.status(200).json({ data: result, message: "bulk users updated", status: "success", code: 200 });
+            const { data, filters, excluded } = this.userValidator.updateBulkUsers(req);
+            const result = await this.userService.updateMatchingUsers(data, filters, excluded);
+            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
         } catch (errors) {
             console.log({error: errors});
-            return res.status(400).json({ data: null, message: errors?.message ?? "bulk users not updated", status: "failed", code: 400 });
+            return res.status(400).json({ data: null, message: "row update failed", code: 400 });
         }
     }
 
     async updateAllUsers(req, res) {
         try {
-            const { ids, data } = this.userValidator.updateAllUsers(req);
-            const result = await this.userService.updateAllUsers(ids, data);
-            return res.status(200).json({ data: result, message: "all users updated", status: "success", code: 200 });
+            const updates = this.userValidator.updateAllUsers(req);
+            const result = await this.userService.updateBulkUsers(
+                updates.map(({ id, ...data }) => ({ id, data }))
+            );
+            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
         } catch (errors) {
             console.log({error: errors});
-            return res.status(400).json({ data: null, message: errors?.message ?? "all users not updated", status: "failed", code: 400 });
+            return res.status(400).json({ data: null, message: "row update failed", code: 400 });
+        }
+    }
+
+    async updateAllUserStatus(req, res) {
+        try {
+            const { ids, status } = this.userValidator.updateStatus(req);
+            const result = await this.userService.updateAllUsers(ids, { status: status.toUpperCase() });
+            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: "row update failed", code: 400 });
+        }
+    }
+
+    async updateBulkUserStatus(req, res) {
+        try {
+            const { status, filters, excluded } = this.userValidator.updateBulkStatus(req);
+            const result = await this.userService.updateMatchingUsers({ status: status.toUpperCase() }, filters, excluded);
+            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: "row update failed", code: 400 });
         }
     }
 
@@ -294,6 +318,17 @@ export class UserController {
         } catch (errors) {
             console.log({error: errors});
             return res.status(400).json({ data: null, message: errors?.message ?? "users not deleted", status: "failed", code: 400 });
+        }
+    }
+
+    async deleteBulkUsers(req, res) {
+        try {
+            const { filters, excluded } = this.userValidator.bulkSelection(req);
+            const result = await this.userService.deleteMatchingUsers(filters, excluded);
+            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
+        } catch (errors) {
+            console.log({error: errors});
+            return res.status(400).json({ data: null, message: "row update failed", code: 400 });
         }
     }
 

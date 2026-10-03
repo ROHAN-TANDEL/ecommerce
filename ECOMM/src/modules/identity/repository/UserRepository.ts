@@ -202,13 +202,72 @@ export class UserRepository {
             const clauseInfo = this.queryBuilder.binding(data);
             if (!clauseInfo) throw new Error("fields not provided for update");
             const { setClause, values, nextIndex } = clauseInfo;
-            const query = `UPDATE users SET ${setClause} WHERE id = ANY(${nextIndex}) RETURNING id, first_name, last_name, email, status;`;
+            const query = `UPDATE users SET ${setClause} WHERE id = ANY($${nextIndex}) RETURNING id, first_name, last_name, email, status;`;
             const result = await db.master.query(query, [...values, ids]);
             return result.rows;
         } catch (error) {
             console.log({error});
             throw error;
         }
+    }
+
+    async updateMatchingUsers(data, filters, excluded) {
+        const clauseInfo = this.queryBuilder.binding(data);
+        if (!clauseInfo) throw new Error("fields not provided for update");
+
+        const allowedFilterKeys = new Set(['first_name', 'last_name', 'email', 'status']);
+        const where = ['deleted_at IS NULL'];
+        const values = [...clauseInfo.values];
+        let parameterIndex = clauseInfo.nextIndex;
+
+        for (const [key, rawFilter] of Object.entries(filters ?? {})) {
+            if (!allowedFilterKeys.has(key)) continue;
+            const filterValue = rawFilter && typeof rawFilter === 'object' && !Array.isArray(rawFilter)
+                ? (rawFilter as Record<string, any>).filter_value ?? (rawFilter as Record<string, any>).value
+                : rawFilter;
+            const filterValues = (Array.isArray(filterValue) ? filterValue : [filterValue])
+                .filter(value => value !== null && value !== undefined && value !== '');
+            if (filterValues.length === 0) continue;
+            where.push(`"${key}"::text = ANY($${parameterIndex++})`);
+            values.push(filterValues.map(String));
+        }
+
+        if (excluded?.length) {
+            where.push(`id <> ALL($${parameterIndex++})`);
+            values.push(excluded);
+        }
+
+        const query = `UPDATE users SET ${clauseInfo.setClause} WHERE ${where.join(' AND ')} RETURNING id, first_name, last_name, email, status;`;
+        const result = await db.master.query(query, values);
+        return result.rows;
+    }
+
+    async deleteMatchingUsers(filters, excluded) {
+        const allowedFilterKeys = new Set(['first_name', 'last_name', 'email', 'status']);
+        const where = ['deleted_at IS NULL'];
+        const values = [];
+        let parameterIndex = 1;
+
+        for (const [key, rawFilter] of Object.entries(filters ?? {})) {
+            if (!allowedFilterKeys.has(key)) continue;
+            const filterValue = rawFilter && typeof rawFilter === 'object' && !Array.isArray(rawFilter)
+                ? (rawFilter as Record<string, any>).filter_value ?? (rawFilter as Record<string, any>).value
+                : rawFilter;
+            const filterValues = (Array.isArray(filterValue) ? filterValue : [filterValue])
+                .filter(value => value !== null && value !== undefined && value !== '');
+            if (filterValues.length === 0) continue;
+            where.push(`"${key}"::text = ANY($${parameterIndex++})`);
+            values.push(filterValues.map(String));
+        }
+
+        if (excluded?.length) {
+            where.push(`id <> ALL($${parameterIndex++})`);
+            values.push(excluded);
+        }
+
+        const query = `UPDATE users SET deleted_at = NOW(), status = 'INACTIVE' WHERE ${where.join(' AND ')} RETURNING id, first_name, last_name, email, status;`;
+        const result = await db.master.query(query, values);
+        return result.rows;
     }
 
     async deleteAllUsers(ids) {

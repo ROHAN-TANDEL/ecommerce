@@ -30,10 +30,17 @@ export class UserRoute {
         router.put('/users/update/:id', user.updateUser.bind(user));
         /** deactivate one user **/
         router.post('/users/update/status', user.updateUserStatus.bind(user));
+
+        /** TODO deactivate one user **/
+        router.post('/users/update/status/all', user.updateAllUserStatus.bind(user));
+
+        /** TODO deactivate one user **/
+        router.post('/users/update/status/bulk', user.updateBulkUserStatus.bind(user));
+
         /** update more users (bulk) **/
-            router.post('/users/update/bulk', user.updateBulkUsers.bind(user));
+        router.post('/users/update/bulk', user.updateBulkUsers.bind(user));
         /** update more users with same data **/
-            router.post('/users/update/all', user.updateAllUsers.bind(user));
+        router.post('/users/update/all', user.updateAllUsers.bind(user));
         /** TODO - update more users via import **/
             router.post('/users/update/import', user.importUpdateUsers.bind(user));
 
@@ -43,6 +50,9 @@ export class UserRoute {
 
         /** delete more users **/
             router.delete('/users/delete/all', user.deleteAllUsers.bind(user));
+
+        /** TODO delete more users **/
+        router.delete('/users/delete/bulk', user.deleteBulkUsers.bind(user));
 
         return router;
     }

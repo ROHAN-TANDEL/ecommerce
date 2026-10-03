@@ -98,6 +98,14 @@ export class UserServiceImpl implements UserService {
         return await this.userRepo.updateBulkUsers(updates);
     }
 
+    async updateMatchingUsers(data, filters, excluded) {
+        return await this.userRepo.updateMatchingUsers(data, filters, excluded);
+    }
+
+    async deleteMatchingUsers(filters, excluded) {
+        return await this.userRepo.deleteMatchingUsers(filters, excluded);
+    }
+
     async updateAllUsers(ids, data) {
         return await this.userRepo.updateAllUsers(ids, data);
     }

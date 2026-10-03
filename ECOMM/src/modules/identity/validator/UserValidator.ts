@@ -120,17 +120,19 @@ createBulkUsers(req) {
     }
 
     updateBulkUsers(req) {
-        const updateSchema = z.object({
-            id: z.coerce.number().int(),
-            data: z.object({
-                first_name: z.string().min(1).optional(),
-                last_name: z.string().min(1).optional(),
-                email: z.string().email().optional(),
-                password_hash: z.string().min(6).optional(),
-                status: z.enum(['active', 'inactive', 'pending']).optional()
-            })
+        const updateData = z.object({
+            first_name: z.string().min(1).optional(),
+            last_name: z.string().min(1).optional(),
+            email: z.string().email().optional(),
+            password_hash: z.string().min(6).optional(),
+            status: z.enum(['active', 'inactive', 'pending']).optional()
+        }).refine(data => Object.keys(data).length > 0, 'fields not provided for update');
+        const validator = z.object({
+            data: updateData,
+            filters: z.record(z.string(), z.unknown()).default({}),
+            sorts: z.array(z.object({ key: z.string(), direction: z.enum(['asc', 'desc']) })).default([]),
+            excluded: z.array(z.coerce.number().int().positive()).default([])
         });
-        const validator = z.array(updateSchema);
         const result = validator.safeParse(req.body);
 
         if (!result.success) throw new Error(JSON.stringify(result.error.format()));
@@ -139,16 +141,15 @@ createBulkUsers(req) {
     }
 
     updateAllUsers(req) {
-        const validator = z.object({
-            ids: z.array(z.coerce.number().int()),
-            data: z.object({
-                first_name: z.string().min(1).optional(),
-                last_name: z.string().min(1).optional(),
-                email: z.string().email().optional(),
-                password_hash: z.string().min(6).optional(),
-                status: z.enum(['active', 'inactive', 'pending']).optional()
-            })
-        });
+        const updateSchema = z.object({
+            id: z.coerce.number().int().positive(),
+            first_name: z.string().min(1).optional(),
+            last_name: z.string().min(1).optional(),
+            email: z.string().email().optional(),
+            password_hash: z.string().min(6).optional(),
+            status: z.enum(['active', 'inactive', 'pending']).optional()
+        }).refine(({ id, ...data }) => Object.keys(data).length > 0, 'fields not provided for update');
+        const validator = z.array(updateSchema).min(1);
         const result = validator.safeParse(req.body);
 
         if (!result.success) throw new Error(JSON.stringify(result.error.format()));
@@ -165,5 +166,33 @@ createBulkUsers(req) {
         if (!result.success) throw new Error(JSON.stringify(result.error.format()));
 
         return result.data.ids;
+    }
+
+    bulkSelection(req) {
+        const validator = z.object({
+            filters: z.record(z.string(), z.unknown()).default({}),
+            sorts: z.array(z.object({ key: z.string(), direction: z.enum(['asc', 'desc']) })).default([]),
+            excluded: z.array(z.coerce.number().int().positive()).default([])
+        });
+        const result = validator.safeParse(req.body);
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+        return result.data;
+    }
+
+    updateStatus(req) {
+        const validator = z.object({
+            ids: z.array(z.coerce.number().int().positive()).min(1),
+            status: z.enum(['active', 'inactive'])
+        });
+        const result = validator.safeParse(req.body);
+        if (!result.success) throw new Error(JSON.stringify(result.error.format()));
+        return result.data;
+    }
+
+    updateBulkStatus(req) {
+        const selection = this.bulkSelection(req);
+        const status = z.enum(['active', 'inactive']).safeParse(req.body?.status);
+        if (!status.success) throw new Error(JSON.stringify(status.error.format()));
+        return { ...selection, status: status.data };
     }
 }
