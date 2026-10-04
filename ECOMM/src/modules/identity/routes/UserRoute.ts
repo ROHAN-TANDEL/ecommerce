@@ -14,6 +14,10 @@ export class UserRoute {
         router.post('/users/create', user.createUser.bind(user));
         /** create bulk users **/
             router.post('/users/create/bulk', user.createBulkUsers.bind(user));
+
+        /** TODO create bulk users **/
+        router.post('/users/create/all', user.createAllUsers.bind(user));
+
         /** TODO - import users **/
             router.post('/users/create/import', user.importCreateUsers.bind(user));
         /** read user **/

@@ -63,6 +63,11 @@ export class UserController {
         }
     }
 
+    async createAllUsers(req, res)
+    {
+        return res.status(200).json({message: "Working!"});
+    }
+
     async getUsers(req, res)
     {
         try {
