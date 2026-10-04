@@ -176,6 +176,8 @@ export interface TableBulkActionRequest {
         [canScrollNext]="canScrollNext"
         [columnScrollLabel]="columnScrollLabel"
         [actionsOpen]="toolbarActionsOpen"
+        [dropTop]="toolbarActionsDropTop"
+        [dropRight]="toolbarActionsDropRight"
         (actionsOpenChange)="toolbarActionsOpen = $event; toolbarActionsOpenChange.emit($event)"
         (actionClicked)="onToolbarAction($event)"
         (exportClicked)="onExport($event)"
@@ -551,8 +553,8 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   /** Drives the Actions dropdown open state — parent owns the trigger button */
   @Input() toolbarActionsOpen: boolean = false;
   @Output() toolbarActionsOpenChange = new EventEmitter<boolean>();
-  // @Input() toolbarActionsDropTop: number = 0;
-  // @Input() toolbarActionsDropRight: number = 0;
+  @Input() toolbarActionsDropTop: number = 0;
+  @Input() toolbarActionsDropRight: number = 0;
   @Input() zebra: boolean = true;
   @Input() stickyHeader: boolean = true;
   @Input() selectable: boolean = true;

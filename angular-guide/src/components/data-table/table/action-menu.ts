@@ -45,8 +45,11 @@ export interface ActionMenuItem {
       </div>
 
       <div
-        class="fixed z-[401] min-w-[220px] rounded-xl border
+        #menuPanel
+        class="fixed z-[401] w-[220px] max-w-[calc(100vw-16px)]
+               overflow-y-auto overscroll-contain rounded-xl border
                border-slate-200 bg-white p-1.5 shadow-2xl"
+        style="max-height: calc(100vh - 16px)"
         [style.top.px]="menuTop"
         [style.left.px]="menuLeft"
         (click)="$event.stopPropagation()">
@@ -71,8 +74,11 @@ export interface ActionMenuItem {
 
             <div
               *ngIf="activeSubmenu === item.key"
-              class="fixed z-[402] min-w-[210px] rounded-xl border
+              #submenuPanel
+              class="fixed z-[402] w-[210px] max-w-[calc(100vw-16px)]
+                     overflow-y-auto overscroll-contain rounded-xl border
                      border-slate-200 bg-white p-1.5 shadow-2xl"
+              style="max-height: calc(100vh - 16px)"
               [style.top.px]="submenuTop"
               [style.left.px]="submenuLeft"
               (click)="$event.stopPropagation()">
@@ -103,6 +109,8 @@ export class ActionMenuComponent implements OnDestroy {
   @Output() itemSelected = new EventEmitter<ActionMenuItem>();
 
   @ViewChild('trigger') trigger?: ElementRef<HTMLButtonElement>;
+  @ViewChild('menuPanel') menuPanel?: ElementRef<HTMLDivElement>;
+  @ViewChild('submenuPanel') submenuPanel?: ElementRef<HTMLDivElement>;
 
   isOpen = false;
   activeSubmenu: string | null = null;
@@ -167,8 +175,11 @@ export class ActionMenuComponent implements OnDestroy {
     this.close();
   }
 
-  @HostListener('document:click')
-  onDocumentClick(): void {
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+    if (target && this.trigger?.nativeElement.contains(target)) return;
+    // Clicks inside the fixed menu stop propagation in the template.
     this.close();
   }
 
@@ -178,23 +189,27 @@ export class ActionMenuComponent implements OnDestroy {
 
   private positionMenu(): void {
     const trigger = this.trigger?.nativeElement;
-    if (!trigger || !this.isOpen) return;
+    const panel = this.menuPanel?.nativeElement;
+    if (!trigger || !panel || !this.isOpen) return;
 
     const rect = trigger.getBoundingClientRect();
-    const menuWidth = 220;
-    const estimatedMenuHeight = Math.min(
-      this.items.length * 40 + 12,
-      window.innerHeight - 16,
-    );
+    const margin = 8;
+    const gap = 6;
+    const menuWidth = Math.min(220, window.innerWidth - margin * 2);
+    const menuHeight = Math.min(panel.scrollHeight, window.innerHeight - margin * 2);
 
-    this.menuTop = Math.max(
-      8,
-      Math.min(rect.bottom + 6, window.innerHeight - estimatedMenuHeight - 8),
-    );
+    const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+    const spaceAbove = rect.top - gap - margin;
+    const openAbove = spaceBelow < Math.min(panel.scrollHeight, 240)
+      && spaceAbove > spaceBelow;
+
+    this.menuTop = openAbove
+      ? Math.max(margin, rect.top - menuHeight - gap)
+      : Math.max(margin, Math.min(rect.bottom + gap, window.innerHeight - menuHeight - margin));
 
     this.menuLeft = Math.max(
-      8,
-      Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8),
+      margin,
+      Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - margin),
     );
 
     this.positionSubmenu();
@@ -204,22 +219,26 @@ export class ActionMenuComponent implements OnDestroy {
     if (!this.activeRow || !this.isOpen) return;
 
     const rect = this.activeRow.getBoundingClientRect();
-    const submenuWidth = 210;
+    const panel = this.submenuPanel?.nativeElement;
+    const margin = 8;
+    const gap = 4;
+    const submenuWidth = Math.min(210, window.innerWidth - margin * 2);
     const submenuHeight = Math.min(
-      (this.items.find(i => i.key === this.activeSubmenu)?.children?.length ?? 0)
-      * 40 + 12,
-      window.innerHeight - 16,
+      panel?.scrollHeight ?? 240,
+      window.innerHeight - margin * 2,
     );
 
-    const openLeft = rect.left >= submenuWidth + 8;
+    const spaceRight = window.innerWidth - rect.right - gap - margin;
+    const spaceLeft = rect.left - gap - margin;
+    const openLeft = spaceRight < submenuWidth && spaceLeft > spaceRight;
 
     this.submenuLeft = openLeft
-      ? rect.left - submenuWidth - 4
-      : Math.min(rect.right + 4, window.innerWidth - submenuWidth - 8);
+      ? Math.max(margin, rect.left - submenuWidth - gap)
+      : Math.max(margin, Math.min(rect.right + gap, window.innerWidth - submenuWidth - margin));
 
     this.submenuTop = Math.max(
-      8,
-      Math.min(rect.top, window.innerHeight - submenuHeight - 8),
+      margin,
+      Math.min(rect.top, window.innerHeight - submenuHeight - margin),
     );
   }
 }

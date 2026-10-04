@@ -47,35 +47,24 @@ export class NexoraUser implements OnInit {
 
   // ── Modal ──────────────────────────────────────────────────────────
   showAddModal   = false;
-  actionsOpen    = false;
-  // actionsDropTop   = 0;
-  // actionsDropRight = 0;
+  actionsOpen      = false;
+  actionsDropTop   = 0;
+  actionsDropRight = 0;
 
   toggleActionsMenu(e: MouseEvent): void {
-    // Defer so the document:click that fires on the same event
-    // (HostListener fires synchronously) has already run and closed
-    // any existing open state before we toggle.
+    const btn  = e.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
     const wasOpen = this.actionsOpen;
     this.actionsOpen = false;
     this.cdr.markForCheck();
     if (!wasOpen) {
+      this.actionsDropTop   = rect.bottom + 6;
+      this.actionsDropRight = window.innerWidth - rect.right;
       setTimeout(() => {
         this.actionsOpen = true;
         this.cdr.markForCheck();
       }, 0);
     }
-  }
-  toggleActions(e: MouseEvent, trigger: HTMLButtonElement): void {
-    e.stopPropagation();
-
-    if (!this.actionsOpen) {
-      const rect = trigger.getBoundingClientRect();
-      // this.actionsDropTop = rect.bottom + 6;
-      // this.actionsDropRight = window.innerWidth - rect.right;
-    }
-
-    this.actionsOpen = !this.actionsOpen;
-    this.cdr.markForCheck();
   }
 
   @HostListener('document:click')

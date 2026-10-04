@@ -65,9 +65,8 @@ export interface ActionItem {
 
     /* ── main dropdown (fixed, anchored by JS from trigger bounding rect) ── */
     .actions-drop {
-      @apply absolute right-0 top-full z-[200] mt-1.5 w-72 rounded-xl
-             border border-slate-200 bg-white p-1.5 shadow-2xl
-             max-h-[min(520px,80vh)] overflow-y-auto;
+      @apply fixed z-[200] w-64 rounded-xl
+             border border-slate-200 bg-white p-1.5 shadow-2xl;
     }
     /* ── child submenu: opens LEFT of the dropdown row ─────────── */
     .child-drop {
@@ -118,6 +117,7 @@ export interface ActionItem {
   <!-- Parent wraps its Actions button + this component in a relative div -->
   <div *ngIf="actionsOpen"
        class="actions-drop"
+       [style.top.px]="dropTop" [style.right.px]="dropRight"
        (click)="$event.stopPropagation()">
 
     <ng-container *ngFor="let action of actionItems">
@@ -611,8 +611,8 @@ export class ToolbarActions implements OnDestroy {
   @Input() actionsOpen = false;
   @Output() actionsOpenChange = new EventEmitter<boolean>();
   /** Fixed-position coordinates computed from the trigger button's bounding rect */
-    // @Input() dropTop   = 0;
-    // @Input() dropRight = 0;
+  @Input() dropTop   = 0;
+  @Input() dropRight = 0;
 
     // ── Outputs ───────────────────────────────────────────────────────
   @Output() actionClicked          = new EventEmitter<ActionKey | string>();
