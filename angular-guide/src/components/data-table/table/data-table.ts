@@ -156,7 +156,7 @@ export interface TableBulkActionRequest {
     </div>
 
     <!-- ── TOOLBAR ACTIONS ──────────────────────────────────────── -->
-    <div *ngIf="showMainActionPanel" class="border-b border-slate-200 px-3 py-2">
+    <div *ngIf="showMainActionPanel" class="border-b border-slate-200">
       <dt-toolbar-actions
         [actions]="tableConfig?.actions ?? defaultActions"
         [exportConfig]="tableConfig?.export ?? defaultExport"
@@ -175,9 +175,10 @@ export interface TableBulkActionRequest {
         [canScrollPrevious]="canScrollPrevious"
         [canScrollNext]="canScrollNext"
         [columnScrollLabel]="columnScrollLabel"
+        [actionsOpen]="toolbarActionsOpen"
+        (actionsOpenChange)="toolbarActionsOpen = $event; toolbarActionsOpenChange.emit($event)"
         (actionClicked)="onToolbarAction($event)"
         (exportClicked)="onExport($event)"
-        (generateClicked)="onGenerate()"
         (downloadClicked)="onDownload($event)"
         (fullscreenChange)="fullscreen = $event"
         (minimizedChange)="minimized = $event"
@@ -547,6 +548,11 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   @Input() loading: boolean = false;
   @Input() tableDisabled: boolean = false;
   @Input() tableReadonly: boolean = false;
+  /** Drives the Actions dropdown open state — parent owns the trigger button */
+  @Input() toolbarActionsOpen: boolean = false;
+  @Output() toolbarActionsOpenChange = new EventEmitter<boolean>();
+  // @Input() toolbarActionsDropTop: number = 0;
+  // @Input() toolbarActionsDropRight: number = 0;
   @Input() zebra: boolean = true;
   @Input() stickyHeader: boolean = true;
   @Input() selectable: boolean = true;
@@ -579,6 +585,10 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
   @Output() generateRequested = new EventEmitter<void>();
   @Output() downloadRequested = new EventEmitter<'excel' | 'csv'>();
   @Output() columnsChanged   = new EventEmitter<ColumnDef[]>();
+  /** Emitted when the user triggers Copy — carries the rows to duplicate (IDs already stripped) */
+  @Output() copyRequested    = new EventEmitter<Record<string, any>[]>();
+  /** Emitted when the user triggers Reset — parent should refetch to restore original values */
+  @Output() resetRequested   = new EventEmitter<void>();
 
   // ── Internal UI state ─────────────────────────────────────────────
   fullscreen = false;
@@ -650,8 +660,8 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
 
   get showCheckboxes(): boolean {
     return this.hasData && this.tableConfig?.show_checkboxes !== false &&
-           (this.tableConfig?.selection?.enabled !== false) &&
-           this.selectable;
+      (this.tableConfig?.selection?.enabled !== false) &&
+      this.selectable;
   }
 
   get showActions(): boolean {
@@ -935,6 +945,12 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
       case 'revert':
         this.revertAll();
         break;
+      case 'copy':
+        this.requestCopy();
+        break;
+      case 'reset':
+        this.requestReset();
+        break;
       default:
         this.emitBulkAction(action);
     }
@@ -993,6 +1009,39 @@ export class DataTable implements OnInit, OnChanges, AfterViewInit {
       this.cellChanged.emit({ rowId: id, key: '__revert__', value: {} });
     }
     this.pendingChanges = {};
+  }
+
+  /**
+   * Copy — collects the currently-selected rows, strips the primary key so
+   * they become brand-new records, and emits them via copyRequested.
+   * The parent wires this to POST /users/create/bulk.
+   * Master-checkbox "select all" mode is intentionally excluded (too dangerous
+   * for a bulk-create); the action is only enabled for explicit row selections.
+   */
+  requestCopy(): void {
+    if (this.selectionMode !== 'explicit' || this.selectedIds.length === 0) return;
+    const copies = this.rows
+      .filter(row => this.selectedIds.includes(this.pk(row)))
+      .map(row => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [this.primaryKey]: _id, id: _id2, ...rest } = row as any;
+        return { ...rest };
+      });
+    if (copies.length > 0) this.copyRequested.emit(copies);
+  }
+
+  /**
+   * Reset — discards all local pending/edit state and asks the parent to
+   * reload fresh data from the API so every field returns to its server value.
+   */
+  requestReset(): void {
+    // Discard any local edits / pending changes first
+    this.revertAll();
+    this.editingRows    = [];
+    this.editModeActive = false;
+    this.masterEditValues = {};
+    this.masterChanges    = {};
+    this.resetRequested.emit();
   }
 
   // ═══════════════════════════════════════════════════════════════════

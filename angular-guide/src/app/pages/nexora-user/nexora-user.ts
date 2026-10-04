@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DataTable, TableSaveRequest, TableBulkActionRequest } from '../../../components/data-table/table/data-table';
@@ -9,11 +9,13 @@ import { TableApiService } from '../../services/table-api.service';
 import type { ColumnDef, PaginationState, SortState, FilterValues, CollabUser } from '../../../components/data-table/models/column-def.model';
 import type { TableConfigEntry } from '../../../components/data-table/models/table-config.model';
 
+import {ActionMenuItem, ActionMenuComponent} from '../../../components/data-table/table/action-menu';
+
 @Component({
   selector: 'app-nexora-user',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, DataTable, Toast, AddUserModal],
+  imports: [CommonModule, DataTable, Toast, AddUserModal, ActionMenuComponent],
   templateUrl: './nexora-user.html',
   styleUrl: './nexora-user.css',
 })
@@ -44,7 +46,45 @@ export class NexoraUser implements OnInit {
   error: string | null          = null;
 
   // ── Modal ──────────────────────────────────────────────────────────
-  showAddModal = false;
+  showAddModal   = false;
+  actionsOpen    = false;
+  // actionsDropTop   = 0;
+  // actionsDropRight = 0;
+
+  toggleActionsMenu(e: MouseEvent): void {
+    // Defer so the document:click that fires on the same event
+    // (HostListener fires synchronously) has already run and closed
+    // any existing open state before we toggle.
+    const wasOpen = this.actionsOpen;
+    this.actionsOpen = false;
+    this.cdr.markForCheck();
+    if (!wasOpen) {
+      setTimeout(() => {
+        this.actionsOpen = true;
+        this.cdr.markForCheck();
+      }, 0);
+    }
+  }
+  toggleActions(e: MouseEvent, trigger: HTMLButtonElement): void {
+    e.stopPropagation();
+
+    if (!this.actionsOpen) {
+      const rect = trigger.getBoundingClientRect();
+      // this.actionsDropTop = rect.bottom + 6;
+      // this.actionsDropRight = window.innerWidth - rect.right;
+    }
+
+    this.actionsOpen = !this.actionsOpen;
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:click')
+  onDocClick(): void {
+    if (this.actionsOpen) {
+      this.actionsOpen = false;
+      this.cdr.markForCheck();
+    }
+  }
 
   @ViewChild(DataTable) private table?: DataTable;
 
@@ -189,6 +229,31 @@ export class NexoraUser implements OnInit {
 
   onDownload(f: 'excel' | 'csv'): void { this.toast('info', `Downloading ${f.toUpperCase()}…`); }
 
+  /**
+   * Copy — POSTs the stripped-down row copies to /users/create/bulk.
+   * These are brand-new records; existing rows and their edit state are untouched.
+   */
+  onCopyRows(copies: Record<string, any>[]): void {
+    if (!copies.length) return;
+    this.api.mutateRows(this.BASE_URL, '/identity/management/users/create/bulk', 'POST', copies).subscribe({
+      next: r => {
+        if (r.code === 200) {
+          this.toast('success', `${copies.length} row${copies.length > 1 ? 's' : ''} duplicated successfully`);
+          this.fetchData();
+        } else {
+          this.toast('error', r.message ?? 'Failed to duplicate rows');
+        }
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Reset — reload fresh data from the API; discards any client-side edits */
+  onReset(): void {
+    this.fetchData();
+    this.toast('info', 'Table reset — data reloaded from server');
+  }
+
   // ── Add User modal ─────────────────────────────────────────────────
 
   onAddUser(payload: AddUserPayload): void {
@@ -217,4 +282,34 @@ export class NexoraUser implements OnInit {
     this.toasts = pushToast(this.toasts, type, message, this.removeToast);
     this.cdr.markForCheck();
   }
+
+
+  demoMenuItems: ActionMenuItem[] = [
+    { key: 'edit', label: 'Edit', icon: '✎' },
+    { key: 'refresh', label: 'Refresh', icon: '⟳' },
+    {
+      key: 'export',
+      label: 'Export',
+      icon: '⇧',
+      children: [
+        { key: 'excel', label: 'Excel (.xlsx)' },
+        { key: 'csv', label: 'CSV (.csv)' },
+      ],
+    },
+    {
+      key: 'download',
+      label: 'Download',
+      icon: '↓',
+      children: [
+        { key: 'current', label: 'Current page' },
+        { key: 'all', label: 'All rows' },
+      ],
+    },
+  ];
+
+  onDemoMenuItemSelected(item: ActionMenuItem): void {
+    console.log('Selected demo item:', item.key);
+  }
+
+
 }

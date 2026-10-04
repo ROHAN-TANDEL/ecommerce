@@ -10,18 +10,26 @@
 
   <!-- ── Error state ───────────────────────────────────────────── -->
   <div *ngIf="!bootstrapping && error"
-    class="flex h-screen items-center justify-center px-6">
+       class="flex h-screen items-center justify-center px-6">
     <div class="rounded-xl border border-red-200 bg-red-50 px-8 py-10 text-center max-w-md">
       <span class="text-4xl">⚠</span>
       <p class="mt-3 text-sm font-medium text-red-700">{{ error }}</p>
       <button type="button"
-        class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
-        (click)="bootstrap()">Retry</button>
+              class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
+              (click)="bootstrap()">Retry</button>
     </div>
   </div>
 
   <!-- ── Main ──────────────────────────────────────────────────── -->
   <div *ngIf="!bootstrapping && !error" class="px-6 py-8">
+
+    <div class="mt-4">
+      <dt-action-menu
+        triggerLabel="Test action menu"
+        [items]="demoMenuItems"
+        (itemSelected)="onDemoMenuItemSelected($event)">
+      </dt-action-menu>
+    </div>
 
     <dt-table
       title="Users"
@@ -35,6 +43,7 @@
       [loading]="loading"
       [collabUsers]="collabUsers"
       [hasHeaderAction]="true"
+      [toolbarActionsOpen]="actionsOpen"
       primaryKey="id"
       tableMinWidth="900px"
       (pageChange)="onPageChange($event)"
@@ -50,19 +59,46 @@
       (downloadRequested)="onDownload($event)"
       (columnsChanged)="onColumnsChanged($event)"
       (selectionChange)="onSelectionChange($event)"
+      (copyRequested)="onCopyRows($event)"
+      (resetRequested)="onReset()"
+      (toolbarActionsOpenChange)="actionsOpen = $event"
     >
-      <!-- "Add User +" button projected into the header right slot -->
-      <button tableHeaderAction
-        type="button"
-        class="inline-flex items-center gap-2 rounded-lg bg-[#436CF3] px-4 py-2
-               text-[12px] font-semibold text-white shadow-sm transition-colors
-               hover:bg-[#3557d4] active:scale-95"
-        (click)="showAddModal = true">
-        <span class="text-base font-bold leading-none">＋</span>
-        Add User
-      </button>
-    </dt-table>
+      <!-- Page-header right slot: Add User + Actions trigger + panel wrapper -->
+      <div tableHeaderAction
+           class="flex items-center gap-2"
+           (click)="$event.stopPropagation()">
 
+        <!-- ── Add User ─────────────────────────────────────── -->
+        <button type="button"
+                class="inline-flex items-center gap-2 rounded-lg bg-[#436CF3] px-4 py-2
+                 text-[12px] font-semibold text-white shadow-sm transition-colors
+                 hover:bg-[#3557d4] active:scale-95"
+                (click)="showAddModal = true">
+          <span class="text-base font-bold leading-none">＋</span>
+          Add User
+        </button>
+
+        <!-- Actions trigger -->
+        <div class="relative" (click)="$event.stopPropagation()">
+          <button
+            #actionsTrigger
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200
+           bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-600 shadow-sm
+           transition-colors hover:bg-slate-50 hover:border-slate-300"
+            (click)="toggleActionsMenu($event)">
+            ⚙ Actions
+
+            <span
+              class="text-[10px] text-slate-400 inline-block transition-transform"
+              [style.transform]="actionsOpen ? 'rotate(180deg)' : 'rotate(0deg)'">
+      ⌄
+    </span>
+          </button>
+        </div>
+
+      </div>
+    </dt-table>
   </div>
 
   <!-- ── Add User modal ────────────────────────────────────────── -->

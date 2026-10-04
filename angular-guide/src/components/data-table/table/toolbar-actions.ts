@@ -1,70 +1,80 @@
 import {
   Component, Input, Output, EventEmitter,
-  HostListener, ElementRef, ViewChild, ChangeDetectionStrategy,
+  HostListener, ChangeDetectionStrategy, OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
-import { AutoRefreshComponent } from './auto-refresh';
 import { LockUpdateComponent } from './lock-update';
+import { RefreshStateService } from './refresh-state';
+import { LockStateService } from './lock-state';
 import type { ColumnDef } from '../models/column-def.model';
-import type { ActionsConfig, ExportConfig, DownloadConfig, ColumnManagementConfig, FeaturesConfig } from '../models/table-config.model';
+import type {
+  ActionsConfig, ExportConfig, DownloadConfig,
+  ColumnManagementConfig, FeaturesConfig,
+} from '../models/table-config.model';
 
-export type ActionKey = 'edit' | 'save' | 'delete' | 'enable' | 'disable' | 'revert' | 'refresh' | 'lock_update';
+export type ActionKey =
+  | 'edit' | 'save' | 'delete' | 'enable' | 'disable' | 'revert'
+  | 'refresh' | 'lock_update' | 'copy' | 'reset';
 export type ActionState = 'enabled' | 'disabled' | 'not_available';
 
 export interface ActionBarState {
-  edit: ActionState;
-  save: ActionState;
-  delete: ActionState;
-  enable: ActionState;
-  disable: ActionState;
-  revert: ActionState;
+  edit: ActionState; save: ActionState; delete: ActionState;
+  enable: ActionState; disable: ActionState; revert: ActionState;
 }
 
 export interface GenerateInfo {
-  generated: boolean;
-  generatedAt?: string;   // ISO date
-  generatedBy?: string;
-  downloadedAt?: string;
+  generated: boolean; generatedAt?: string; generatedBy?: string; downloadedAt?: string;
+}
+
+export interface ActionItem {
+  key: string; label: string; icon: string;
+  /** true → row opens a child submenu instead of firing the action */
+  hasChildren?: boolean;
 }
 
 /**
- * ToolbarActions — the full action / control bar above the table.
+ * ToolbarActions
  *
- * TABLE level · covers the entire top strip:
- *   Left  — selection count · Edit · Delete · Enable · Disable · Revert · More
- *   Right — Export · Generate · Download · Column nav · Fullscreen · View · Density · Columns
+ * Renders:
+ *   1. Toolbar strip  — [selection badge]  ············  [‹ col nav ›]
+ *   2. Pinned panel   — shown when ≥1 action pinned, chips support drag-reorder
+ *                       Chips with hasChildren open a downward submenu.
  *
- * Every section is flag-driven from TableConfig.
- * Nothing is rendered that the config disables.
- *
- * Action state rules:
- *   enabled       — button shown, normal style, clickable
- *   disabled      — button shown, greyed, not clickable, tooltip on hover
- *   not_available — button not rendered
+ * The "Actions" button trigger is hosted by the PARENT (nexora-user.html,
+ * tableHeaderAction slot) so it sits adjacent to Add User in the page header.
+ * Parent passes [(actionsOpen)] to drive the dropdown panel rendered here.
  */
 @Component({
   selector: 'dt-toolbar-actions',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Default,
-  imports: [CommonModule, FormsModule, AutoRefreshComponent, LockUpdateComponent],
+  imports: [CommonModule, FormsModule],
+  providers: [RefreshStateService, LockStateService],
   styles: [`
     :host { display: block; }
-    .tb-btn {
-      @apply inline-flex h-[34px] items-center gap-1.5 rounded-md px-2.5 text-[11px]
-             font-medium text-slate-600 transition-colors;
-    }
-    .tb-btn:not(:disabled):hover { @apply bg-blue-50 text-[#436CF3]; }
-    .tb-btn:disabled { @apply cursor-not-allowed opacity-40; }
+
     .tb-icon {
       @apply inline-flex h-[30px] w-[30px] items-center justify-center rounded-md
              border border-slate-200 bg-white text-[13px] text-slate-500 transition-colors;
     }
-    .tb-icon:hover { @apply bg-slate-50 text-[#436CF3]; }
+    .tb-icon:hover  { @apply bg-slate-50 text-[#436CF3]; }
     .tb-icon.active { @apply border-[#436CF3] text-[#436CF3]; }
-    .drop { @apply absolute z-50 mt-1 min-w-[200px] rounded-lg border border-slate-200
-                   bg-white p-1.5 shadow-xl; }
+
+    /* ── main dropdown (fixed, anchored by JS from trigger bounding rect) ── */
+    .actions-drop {
+      @apply absolute right-0 top-full z-[200] mt-1.5 w-72 rounded-xl
+             border border-slate-200 bg-white p-1.5 shadow-2xl
+             max-h-[min(520px,80vh)] overflow-y-auto;
+    }
+    /* ── child submenu: opens LEFT of the dropdown row ─────────── */
+    .child-drop {
+      @apply absolute right-full top-0 mr-1 min-w-[210px] rounded-xl
+             border border-slate-200 bg-white p-1.5 shadow-2xl z-[201];
+    }
+
     .drop-item {
       @apply flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left
              text-[11px] text-slate-700 transition-colors;
@@ -74,415 +84,612 @@ export interface GenerateInfo {
       @apply px-2.5 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400;
     }
     .drop-sep { @apply my-1 border-t border-slate-100; }
+
     .col-item {
       @apply flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] text-slate-700;
     }
     .col-item:hover { @apply bg-slate-50; }
+
+    .pin-btn {
+      @apply shrink-0 cursor-pointer text-[11px] transition-colors;
+    }
+
+    /* ── pinned chips ────────────────────────────────────────────── */
+    .pinned-chip {
+      @apply relative inline-flex cursor-pointer items-center gap-1.5 select-none
+             rounded-md px-2.5 py-1.5 text-[11px] font-medium
+             bg-white border border-slate-200 transition-colors;
+    }
+    .pinned-chip.enabled  {
+      @apply text-slate-600 hover:bg-blue-50 hover:text-[#436CF3] hover:border-slate-300;
+    }
+    .pinned-chip.disabled { @apply text-slate-400 cursor-not-allowed; }
+    .pinned-chip.dragging  { @apply opacity-40; }
+    .pinned-chip.drag-over { @apply border-[#436CF3] bg-blue-50; }
+
+    /* child panel on a pinned chip — opens DOWNWARD */
+    .pinned-child-drop {
+      @apply absolute left-0 top-full z-[300] mt-1 min-w-[190px] rounded-xl
+             border border-slate-200 bg-white p-1.5 shadow-2xl;
+    }
   `],
   template: `
-  <div class="flex min-h-[46px] items-center justify-between gap-2 rounded-lg
-              border border-[#436CF3]/25 bg-gradient-to-r from-blue-50/60 to-white px-3 py-1.5">
+  <!-- ── dropdown anchor exposed to parent via #actionsAnchor ── -->
+  <!-- Parent wraps its Actions button + this component in a relative div -->
+  <div *ngIf="actionsOpen"
+       class="actions-drop"
+       (click)="$event.stopPropagation()">
 
-    <!-- ───────────────────────── LEFT: action buttons ───────────────────────── -->
-    <div class="flex items-center gap-0.5">
+    <ng-container *ngFor="let action of actionItems">
+      <div class="relative group/row">
 
-      <!-- Auto Refresh -->
-      <div class="mr-1 pr-1 border-r border-slate-200">
-        <dt-auto-refresh (refresh)="actionClicked.emit('refresh')"></dt-auto-refresh>
-      </div>
+        <!-- row shell — always pointer-events-auto so pin toggle works even when disabled -->
+        <div class="flex items-center rounded-md text-[11px] transition-colors hover:bg-blue-50"
+             [class.opacity-50]="isRowDimmed(action.key)">
 
-      <!-- Lock Update -->
-      <div class="mr-2 border-r border-slate-200 pr-2">
-        <dt-lock-update (lock)="actionClicked.emit('lock_update')"></dt-lock-update>
-      </div>
-
-      <!-- Selection info -->
-      <div *ngIf="selectionCount > 0"
-        class="mr-2 flex items-center gap-2 border-r border-slate-200 pr-3">
-        <span class="text-[11px] font-semibold text-[#436CF3]">{{ selectionCount }}</span>
-        <span class="text-[11px] text-slate-500">selected</span>
-      </div>
-
-      <!-- Edit -->
-      <ng-container *ngIf="actions.edit && actionState.edit !== 'not_available'">
-        <button type="button" class="tb-btn"
-          [disabled]="actionState.edit === 'disabled'"
-          [title]="editTooltip"
-          (click)="actionState.edit === 'enabled' && actionClicked.emit('edit')">
-          <span>✎</span> Edit
-        </button>
-      </ng-container>
-
-      <!-- Save — enabled only after an editable row has a real change -->
-      <button type="button" class="tb-btn"
-        [disabled]="actionState.save !== 'enabled'"
-        [title]="saveTooltip"
-        (click)="actionState.save === 'enabled' && actionClicked.emit('save')">
-        <span>✓</span> Save
-      </button>
-
-      <!-- Delete -->
-      <ng-container *ngIf="actions.delete && actionState.delete !== 'not_available'">
-        <button type="button" class="tb-btn"
-          [disabled]="actionState.delete === 'disabled'"
-          [title]="actionState.delete === 'disabled' ? 'Select rows to delete' : 'Delete selected'"
-          (click)="actionState.delete === 'enabled' && actionClicked.emit('delete')">
-          <span>🗑</span> Delete
-        </button>
-      </ng-container>
-
-      <!-- Enable -->
-      <ng-container *ngIf="actions.enable && actionState.enable !== 'not_available'">
-        <button type="button" class="tb-btn"
-          [disabled]="actionState.enable === 'disabled'"
-          [title]="actionState.enable === 'disabled' ? 'Select rows to enable' : 'Enable selected'"
-          (click)="actionState.enable === 'enabled' && actionClicked.emit('enable')">
-          <span>✓</span> Enable
-        </button>
-      </ng-container>
-
-      <!-- Disable -->
-      <ng-container *ngIf="actions.disable && actionState.disable !== 'not_available'">
-        <button type="button" class="tb-btn"
-          [disabled]="actionState.disable === 'disabled'"
-          [title]="actionState.disable === 'disabled' ? 'Select rows to disable' : 'Disable selected'"
-          (click)="actionState.disable === 'enabled' && actionClicked.emit('disable')">
-          <span>◉</span> Disable
-        </button>
-      </ng-container>
-
-      <!-- Revert -->
-      <ng-container *ngIf="actions.revert && actionState.revert !== 'not_available'">
-        <button type="button" class="tb-btn"
-          [disabled]="actionState.revert === 'disabled'"
-          [title]="actionState.revert === 'disabled' ? 'Select rows to revert' : 'Revert changes'"
-          (click)="actionState.revert === 'enabled' && actionClicked.emit('revert')">
-          <span>↶</span> Revert
-        </button>
-      </ng-container>
-
-      <!-- More (left) -->
-      <ng-container *ngIf="actions.more">
-        <div class="relative" (click)="$event.stopPropagation()">
-          <button type="button" class="tb-btn" (click)="toggle('left-more')">
-            <span>⋮</span> More <span class="text-[9px]">⌄</span>
+          <!-- pin toggle -->
+          <button type="button" class="pin-btn px-2 py-[7px]"
+            [class.text-[#436CF3]]="isPinned(action.key)"
+            [class.text-slate-300]="!isPinned(action.key)"
+            [title]="isPinned(action.key) ? 'Unpin' : 'Pin to toolbar'"
+            (click)="togglePin(action.key, $event)">
+            {{ isPinned(action.key) ? '📌' : '📍' }}
           </button>
-          <div *ngIf="open === 'left-more'" class="drop left-0 top-full">
-            <button type="button" class="drop-item" (click)="emit('view-details')">
-              <span>◉</span> View details
-            </button>
-            <button type="button" class="drop-item" (click)="emit('duplicate')">
-              <span>⧉</span> Duplicate selection
-            </button>
-            <div class="drop-sep"></div>
-            <button type="button" class="drop-item" (click)="emit('reset-all')">
-              <span>↶</span> Reset all changes
-            </button>
-          </div>
-        </div>
-      </ng-container>
 
-    <!-- /div -->
-
-    <!-- ───────────────────────── RIGHT: controls ────────────────────────────── -->
-    <!-- div class="flex items-center gap-1.5" -->
-
-      <!-- Export -->
-      <ng-container *ngIf="exportConfig.enabled">
-        <div class="relative" (click)="$event.stopPropagation()">
-          <button type="button" class="tb-btn" (click)="toggle('export')"
-            title="Export data">
-            <span>⇪</span> Export <span class="text-[9px]">⌄</span>
-          </button>
-          <div *ngIf="open === 'export'" class="drop right-0 top-full w-48">
-            <div class="drop-label">Export format</div>
-            <button *ngFor="let fmt of exportConfig.formats" type="button"
-              class="drop-item"
-              (click)="exportClicked.emit(fmt); close()">
-              <span class="w-6 text-center font-semibold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
-              <span class="flex-1">{{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}</span>
-              <span *ngIf="fmt === 'excel'" class="text-[10px] text-slate-400">max 10k rows</span>
-            </button>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Generate -->
-      <ng-container *ngIf="downloadConfig.enabled">
-        <button type="button" class="tb-btn"
-          [title]="generateTooltip"
-          (click)="generateClicked.emit()">
-          <span>⟳</span> Generate
-        </button>
-
-        <!-- Download -->
-        <div class="relative" (click)="$event.stopPropagation()">
-          <button type="button" class="tb-btn"
-            [title]="downloadTooltip"
-            (click)="downloadConfig.formats.length > 1 ? toggle('download') : downloadClicked.emit(downloadConfig.formats[0])">
-            <span>⇩</span> Download
-            <span *ngIf="downloadConfig.formats.length > 1" class="text-[9px]">⌄</span>
-          </button>
-          <div *ngIf="open === 'download'" class="drop right-0 top-full w-48">
-            <div class="drop-label">Download format</div>
-            <button *ngFor="let fmt of downloadConfig.formats" type="button"
-              class="drop-item"
-              (click)="downloadClicked.emit(fmt); close()">
-              <span class="w-6 text-center font-semibold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
-              {{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}
-            </button>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Divider -->
-      <div class="mx-0.5 h-5 w-px bg-slate-200"></div>
-
-      <!-- Column navigation -->
-      <ng-container *ngIf="features.column_navigation">
-        <span class="text-[11px] text-slate-500">Cols</span>
-        <button type="button" class="tb-icon"
-          [disabled]="!canScrollPrevious"
-          [class.opacity-30]="!canScrollPrevious"
-          title="Previous columns"
-          (click)="canScrollPrevious && columnNavigate.emit('previous')">‹</button>
-        <span class="min-w-[90px] text-center text-[11px] font-medium text-slate-600">
-          {{ columnScrollLabel }}
-        </span>
-        <button type="button" class="tb-icon"
-          [disabled]="!canScrollNext"
-          [class.opacity-30]="!canScrollNext"
-          title="Next columns"
-          (click)="canScrollNext && columnNavigate.emit('next')">›</button>
-      </ng-container>
-
-      <!-- Divider -->
-      <div class="mx-0.5 h-5 w-px bg-slate-200"></div>
-
-      <!-- Fullscreen -->
-      <button type="button" class="tb-icon"
-        [class.active]="fullscreen"
-        [title]="fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
-        (click)="fullscreenChange.emit(!fullscreen)">⛶</button>
-
-      <!-- Minimize / expand table body -->
-      <button type="button" class="tb-icon"
-        [title]="minimized ? 'Expand table' : 'Collapse table'"
-        [class.active]="minimized"
-        (click)="minimizedChange.emit(!minimized)">{{ minimized ? '▽' : '△' }}</button>
-
-      <!-- View preset -->
-      <ng-container *ngIf="features.save_view">
-        <div class="relative" (click)="$event.stopPropagation()">
-          <button type="button"
-            class="inline-flex h-[30px] items-center gap-1.5 rounded-md border
-                   border-slate-200 bg-white px-2.5 text-[11px] text-slate-600
-                   transition-colors hover:bg-slate-50"
-            (click)="toggle('view')">
-            <span>☷</span>
-            {{ activeView || 'Default' }}
-            <span class="text-[9px]">⌄</span>
-          </button>
-          <div *ngIf="open === 'view'" class="drop right-0 top-full w-52">
-            <div class="drop-label">Saved views</div>
-            <button type="button" class="drop-item"
-              (click)="viewChange.emit(''); close()">
-              <span class="w-4" [class.text-blue-500]="!activeView">{{ !activeView ? '✓' : '' }}</span>
-              Default
-            </button>
-            <button *ngFor="let v of savedViews" type="button" class="drop-item"
-              (click)="viewChange.emit(v); close()">
-              <span class="w-4" [class.text-blue-500]="activeView === v">{{ activeView === v ? '✓' : '' }}</span>
-              {{ v }}
-            </button>
-            <div class="drop-sep"></div>
-            <button type="button" class="drop-item text-[#436CF3]"
-              (click)="saveViewClicked.emit(); close()">
-              <span>＋</span> Save current view
-            </button>
-            <button *ngIf="features.reset_view" type="button" class="drop-item"
-              (click)="resetViewClicked.emit(); close()">
-              <span>↶</span> Reset view
-            </button>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Density -->
-      <div class="relative" (click)="$event.stopPropagation()">
-        <button type="button" class="tb-icon" title="Density"
-          (click)="toggle('density')">≋</button>
-        <div *ngIf="open === 'density'" class="drop right-0 top-full w-40">
-          <div class="drop-label">Density</div>
-          <button *ngFor="let d of densityOptions" type="button" class="drop-item"
-            (click)="densityChange.emit(d.value); close()">
-            <span class="w-4" [class.text-[#436CF3]]="density === d.value">
-              {{ density === d.value ? '✓' : '' }}
-            </span>
-            {{ d.label }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Columns panel -->
-      <ng-container *ngIf="columnMgmt.enabled">
-        <div class="relative" (click)="$event.stopPropagation()">
-          <button type="button" class="tb-icon"
-            [class.active]="open === 'columns'"
-            [class.text-[#436CF3]]="hasHiddenColumns"
-            title="Manage columns"
-            (click)="toggle('columns')">▦</button>
-
-          <!-- Columns panel popup -->
-          <div *ngIf="open === 'columns'"
-            class="drop right-0 top-full w-[300px] p-0">
-
-            <div class="border-b border-slate-100 px-3 py-2.5">
-              <p class="text-[11px] font-semibold text-[#0A173D]">Columns</p>
-              <p class="text-[10px] text-slate-400">Manage visible columns</p>
+          <!-- Refresh: inline UI using same child-menu pattern as Export/Density -->
+          <ng-container *ngIf="action.key === 'refresh'; else chkLock">
+            <div class="flex flex-1 cursor-pointer items-center gap-2 px-1 py-[7px] pr-0
+                        text-slate-700 group-hover/row:text-[#436CF3]"
+                 (click)="refreshState.requestRefresh(); actionsOpen = false; actionsOpenChange.emit(false); openChildMenu = null">
+              <span [class.animate-spin]="refreshState.isRefreshing" class="shrink-0 text-[13px]">⟳</span>
+              <span class="flex-1">Refresh</span>
+              <span *ngIf="refreshState.activeInterval !== 'live'"
+                    class="tabular-nums text-[10px] text-slate-400">
+                {{ refreshState.countdown }}s
+              </span>
+              <span *ngIf="refreshState.activeInterval === 'live'"
+                    class="text-[10px] text-[#436CF3]">Live</span>
             </div>
+            <!-- interval picker arrow — same pattern as Density/Export -->
+            <button type="button"
+              class="flex h-[34px] w-7 shrink-0 items-center justify-center rounded-md
+                     text-[9px] text-slate-400 hover:bg-blue-50 hover:text-[#436CF3] transition-colors"
+              title="Change refresh interval"
+              (click)="$event.stopPropagation(); openChildMenu = openChildMenu === 'refresh' ? null : 'refresh'">‹</button>
+          </ng-container>
 
-            <!-- Search -->
-            <div class="border-b border-slate-100 px-2 py-2">
-              <div class="relative">
-                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">⌕</span>
-                <input type="text"
-                  class="h-8 w-full rounded-md border border-slate-200 pl-6 pr-2
-                         text-[11px] outline-none focus:border-[#436CF3]"
-                  placeholder="Search columns…"
-                  [(ngModel)]="colSearch" />
+          <!-- Lock: inline UI — single shared lockState instance -->
+          <ng-template #chkLock>
+            <ng-container *ngIf="action.key === 'lock_update'; else normalRow">
+              <div class="flex flex-1 cursor-pointer items-center gap-2 px-1 py-[7px] pr-2.5
+                          text-slate-700 group-hover/row:text-[#436CF3]"
+                   [class.text-red-600]="lockState.isLocked"
+                   [title]="lockState.isLocked ? 'Click to unlock' : 'Click to lock for update'"
+                   (click)="lockState.toggleLock(); actionsOpen = false; actionsOpenChange.emit(false); openChildMenu = null">
+                <span class="shrink-0 text-[13px]">{{ lockState.isLocked ? '🔒' : '🔓' }}</span>
+                <span class="flex-1">{{ lockState.isLocked ? 'Locked' : 'Lock' }}</span>
+                <span *ngIf="lockState.isLocked"
+                      class="tabular-nums text-[10px] text-red-500">
+                  {{ lockState.countdown }}s
+                </span>
               </div>
-            </div>
+            </ng-container>
+          </ng-template>
 
-            <!-- Column list -->
-            <div class="max-h-60 overflow-y-auto px-1.5 py-1">
-              <div *ngFor="let col of filteredColList" class="col-item">
-                <span class="cursor-grab text-slate-300 select-none" *ngIf="columnMgmt.reorder">⠿</span>
-                <label class="flex flex-1 cursor-pointer items-center gap-2">
-                  <input type="checkbox"
-                    class="h-3.5 w-3.5 rounded accent-[#436CF3]"
-                    [checked]="col.visible"
-                    (change)="toggleColumn(col.key)" />
-                  <span class="text-[11px] text-slate-700">{{ col.label }}</span>
-                </label>
+          <!-- Normal row -->
+          <ng-template #normalRow>
+            <div class="flex flex-1 cursor-pointer items-center gap-2 px-1 py-[7px] pr-2.5
+                        text-slate-700 group-hover/row:text-[#436CF3]"
+                 [class.cursor-not-allowed]="!isActionEnabled(action.key)"
+                 [title]="getActionTooltip(action.key)"
+                 (click)="onRowClick(action, $event)">
+              <span class="shrink-0 text-[13px]">{{ action.icon }}</span>
+              <span class="flex-1">{{ action.label }}</span>
+              <span *ngIf="action.hasChildren" class="ml-auto text-[9px] text-slate-400">‹</span>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- child submenu (LEFT) — shown for hasChildren items AND for refresh interval -->
+        <div *ngIf="(action.hasChildren && openChildMenu === action.key) || (action.key === 'refresh' && openChildMenu === 'refresh')"
+             class="child-drop" (click)="$event.stopPropagation()">
+          <ng-container [ngSwitch]="action.key">
+
+            <!-- Refresh interval picker -->
+            <ng-container *ngSwitchCase="'refresh'">
+              <div class="drop-label">Refresh interval</div>
+              <button type="button" class="drop-item"
+                (click)="refreshState.setInterval('5s'); openChildMenu = null">
+                <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '5s'">
+                  {{ refreshState.activeInterval === '5s' ? '✓' : '' }}</span> 5 sec
+              </button>
+              <div class="drop-sep"></div>
+              <button type="button" class="drop-item"
+                (click)="refreshState.setInterval('15s'); openChildMenu = null">
+                <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '15s'">
+                  {{ refreshState.activeInterval === '15s' ? '✓' : '' }}</span> 15 sec
+              </button>
+              <button type="button" class="drop-item"
+                (click)="refreshState.setInterval('1m'); openChildMenu = null">
+                <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '1m'">
+                  {{ refreshState.activeInterval === '1m' ? '✓' : '' }}</span> 1 min
+              </button>
+              <button type="button" class="drop-item"
+                (click)="refreshState.setInterval('5m'); openChildMenu = null">
+                <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '5m'">
+                  {{ refreshState.activeInterval === '5m' ? '✓' : '' }}</span> 5 min
+              </button>
+              <div class="drop-sep"></div>
+              <button type="button" class="drop-item"
+                (click)="refreshState.setInterval('live'); openChildMenu = null">
+                <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === 'live'">
+                  {{ refreshState.activeInterval === 'live' ? '✓' : '' }}</span> Live
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'export'">
+              <div class="drop-label">Export format</div>
+              <button *ngFor="let fmt of exportConfig.formats" type="button" class="drop-item"
+                (click)="exportClicked.emit(fmt)">
+                <span class="w-6 text-center font-bold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
+                <span class="flex-1">{{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}</span>
+                <span *ngIf="fmt === 'excel'" class="text-[10px] text-slate-400">max 10k</span>
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'download'">
+              <div class="drop-label">Download format</div>
+              <button *ngFor="let fmt of downloadConfig.formats" type="button" class="drop-item"
+                (click)="downloadClicked.emit(fmt)">
+                <span class="w-6 text-center font-bold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
+                {{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'view'">
+              <div class="drop-label">Saved views</div>
+              <button type="button" class="drop-item" (click)="viewChange.emit('')">
+                <span class="w-4" [class.text-blue-500]="!activeView">{{ !activeView ? '✓' : '' }}</span>
+                Default
+              </button>
+              <button *ngFor="let v of savedViews" type="button" class="drop-item"
+                (click)="viewChange.emit(v)">
+                <span class="w-4" [class.text-blue-500]="activeView === v">{{ activeView === v ? '✓' : '' }}</span>
+                {{ v }}
+              </button>
+              <div class="drop-sep"></div>
+              <button type="button" class="drop-item text-[#436CF3]" (click)="saveViewClicked.emit()">
+                <span>＋</span> Save current view
+              </button>
+              <button *ngIf="features.reset_view" type="button" class="drop-item"
+                (click)="resetViewClicked.emit()">↶ Reset view</button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'density'">
+              <div class="drop-label">Density</div>
+              <button *ngFor="let d of densityOptions" type="button" class="drop-item"
+                (click)="densityChange.emit(d.value)">
+                <span class="w-4" [class.text-[#436CF3]]="density === d.value">
+                  {{ density === d.value ? '✓' : '' }}
+                </span>
+                {{ d.label }}
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'columns'">
+              <div class="border-b border-slate-100 px-3 py-2">
+                <p class="text-[11px] font-semibold text-[#0A173D]">Columns</p>
+                <p class="text-[10px] text-slate-400">Show / hide columns</p>
               </div>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-slate-100 px-3 py-2">
-              <button type="button"
-                class="text-[11px] font-medium text-slate-500 hover:text-[#436CF3]"
-                (click)="resetColumnsClicked.emit(); close()">Reset</button>
-              <div class="flex gap-1.5">
+              <div class="border-b border-slate-100 px-2 py-2">
+                <div class="relative">
+                  <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">⌕</span>
+                  <input type="text"
+                    class="h-8 w-full rounded-md border border-slate-200 pl-6 pr-2
+                           text-[11px] outline-none focus:border-[#436CF3]"
+                    placeholder="Search columns…"
+                    [(ngModel)]="colSearch" (click)="$event.stopPropagation()" />
+                </div>
+              </div>
+              <div class="max-h-52 overflow-y-auto px-1.5 py-1">
+                <div *ngFor="let col of filteredColList" class="col-item">
+                  <span *ngIf="columnMgmt.reorder" class="cursor-grab text-slate-300 select-none">⠿</span>
+                  <label class="flex flex-1 cursor-pointer items-center gap-2">
+                    <input type="checkbox" class="h-3.5 w-3.5 rounded accent-[#436CF3]"
+                      [checked]="columnVisibility[col.key] ?? col.visible"
+                      (change)="toggleColumn(col.key)" />
+                    <span class="text-[11px] text-slate-700">{{ col.label }}</span>
+                  </label>
+                </div>
+              </div>
+              <div class="flex items-center justify-between border-t border-slate-100 px-3 py-2">
                 <button type="button"
-                  class="h-7 rounded-md border border-slate-200 bg-white px-3
-                         text-[10px] font-medium text-slate-500"
-                  (click)="close()">Cancel</button>
+                  class="text-[11px] font-medium text-slate-500 hover:text-[#436CF3]"
+                  (click)="resetColumnsClicked.emit()">Reset</button>
+                <div class="flex gap-1.5">
+                  <button type="button"
+                    class="h-7 rounded-md border border-slate-200 bg-white px-3
+                           text-[10px] font-medium text-slate-500"
+                    (click)="closeChildMenu()">Cancel</button>
+                  <button type="button"
+                    class="h-7 rounded-md bg-[#436CF3] px-3 text-[10px] font-medium text-white"
+                    (click)="applyColumnsClicked.emit(columnVisibility); closeChildMenu()">Apply</button>
+                </div>
+              </div>
+            </ng-container>
+
+          </ng-container>
+        </div>
+
+      </div>
+    </ng-container>
+
+    <!-- Column navigation (bottom of dropdown, no pin) -->
+    <ng-container *ngIf="features.column_navigation">
+      <div class="drop-sep"></div>
+      <div class="flex items-center justify-between px-2 py-1.5">
+        <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Columns</span>
+        <div class="flex items-center gap-1">
+          <button type="button" class="tb-icon"
+            [disabled]="!canScrollPrevious" [class.opacity-30]="!canScrollPrevious"
+            title="Previous columns"
+            (click)="$event.stopPropagation(); canScrollPrevious && columnNavigate.emit('previous')">‹</button>
+          <span class="min-w-[56px] text-center text-[11px] font-medium text-slate-600">
+            {{ columnScrollLabel }}
+          </span>
+          <button type="button" class="tb-icon"
+            [disabled]="!canScrollNext" [class.opacity-30]="!canScrollNext"
+            title="Next columns"
+            (click)="$event.stopPropagation(); canScrollNext && columnNavigate.emit('next')">›</button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Live collaboration panel toggle — no pin -->
+    <div class="drop-sep"></div>
+    <div class="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-[7px]
+                text-[11px] text-slate-700 transition-colors
+                hover:bg-blue-50 hover:text-[#436CF3]"
+         (click)="$event.stopPropagation(); liveVisibleChange.emit(!liveVisible)">
+      <span class="w-4" [class.text-[#436CF3]]="liveVisible">{{ liveVisible ? '✓' : '' }}</span>
+      <span class="text-[13px]">🟢</span>
+      <span class="flex-1">Live</span>
+      <span class="text-[10px] text-slate-400">{{ liveVisible ? 'Hide' : 'Show' }}</span>
+    </div>
+
+  </div>
+  <!-- /actions-drop -->
+
+
+  <!-- ══ TOOLBAR STRIP — only shown when rows are selected ═══════════ -->
+  <div *ngIf="selectionCount > 0"
+       class="flex flex-wrap items-center gap-2
+              bg-gradient-to-r from-blue-50/60 to-white px-3 py-1.5">
+    <div class="flex items-center gap-2 rounded-full bg-blue-50 px-2.5 py-0.5">
+      <span class="text-[11px] font-semibold text-[#436CF3]">{{ selectionCount }}</span>
+      <span class="text-[11px] text-slate-500">selected</span>
+    </div>
+  </div><!-- /toolbar strip -->
+
+
+  <!-- ══ PINNED ACTIONS PANEL ══════════════════════════════════════ -->
+  <div *ngIf="pinnedActions.length > 0"
+       class="flex flex-wrap items-center gap-1.5 border-t border-slate-200
+              bg-gradient-to-r from-blue-50/40 to-white px-3 py-1.5 min-h-[44px]">
+
+    <span class="mr-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pinned</span>
+
+    <ng-container *ngFor="let action of pinnedActions; let i = index">
+
+      <!-- Refresh chip — exact same h/padding as Download/Density -->
+      <div *ngIf="action.key === 'refresh'"
+           class="pinned-chip enabled relative"
+           [class.dragging]="dragIndex === i" [class.drag-over]="dropIndex === i"
+           draggable="true"
+           (dragstart)="onDragStart(i,$event)" (dragover)="onDragOver(i,$event)"
+           (drop)="onDrop(i,$event)" (dragend)="onDragEnd()"
+           (click)="$event.stopPropagation(); refreshState.requestRefresh()">
+        <span [class.animate-spin]="refreshState.isRefreshing" class="text-[13px]">⟳</span>
+        <span *ngIf="refreshState.activeInterval !== 'live'" class="tabular-nums">
+          {{ refreshState.countdown }}s
+        </span>
+        <span *ngIf="refreshState.activeInterval === 'live'" class="text-[#436CF3]">Live</span>
+        <span class="ml-0.5 text-[9px] text-slate-400"
+              (click)="$event.stopPropagation(); togglePinnedChild('refresh')">⌄</span>
+
+        <div *ngIf="openPinnedChild === 'refresh'"
+             class="pinned-child-drop" (click)="$event.stopPropagation()">
+          <div class="drop-label">Refresh interval</div>
+          <button type="button" class="drop-item"
+            (click)="refreshState.setInterval('5s'); openPinnedChild = null">
+            <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '5s'">
+              {{ refreshState.activeInterval === '5s' ? '✓' : '' }}</span> 5 sec
+          </button>
+          <div class="drop-sep"></div>
+          <button type="button" class="drop-item"
+            (click)="refreshState.setInterval('15s'); openPinnedChild = null">
+            <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '15s'">
+              {{ refreshState.activeInterval === '15s' ? '✓' : '' }}</span> 15 sec
+          </button>
+          <button type="button" class="drop-item"
+            (click)="refreshState.setInterval('1m'); openPinnedChild = null">
+            <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '1m'">
+              {{ refreshState.activeInterval === '1m' ? '✓' : '' }}</span> 1 min
+          </button>
+          <button type="button" class="drop-item"
+            (click)="refreshState.setInterval('5m'); openPinnedChild = null">
+            <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === '5m'">
+              {{ refreshState.activeInterval === '5m' ? '✓' : '' }}</span> 5 min
+          </button>
+          <div class="drop-sep"></div>
+          <button type="button" class="drop-item"
+            (click)="refreshState.setInterval('live'); openPinnedChild = null">
+            <span class="w-4" [class.text-[#436CF3]]="refreshState.activeInterval === 'live'">
+              {{ refreshState.activeInterval === 'live' ? '✓' : '' }}</span> Live
+          </button>
+        </div>
+      </div>
+
+      <!-- Lock chip — exact same h/padding as Download/Density -->
+      <div *ngIf="action.key === 'lock_update'"
+           class="pinned-chip"
+           [class.enabled]="!lockState.isLocked"
+           [class.bg-red-50]="lockState.isLocked"
+           [class.border-red-200]="lockState.isLocked"
+           [class.text-red-600]="lockState.isLocked"
+           [class.text-slate-600]="!lockState.isLocked"
+           [class.hover:bg-blue-50]="!lockState.isLocked"
+           [class.hover:text-[#436CF3]]="!lockState.isLocked"
+           [class.dragging]="dragIndex === i" [class.drag-over]="dropIndex === i"
+           [title]="lockState.isLocked ? 'Click to unlock' : 'Click to lock for update'"
+           draggable="true"
+           (dragstart)="onDragStart(i,$event)" (dragover)="onDragOver(i,$event)"
+           (drop)="onDrop(i,$event)" (dragend)="onDragEnd()"
+           (click)="lockState.toggleLock()">
+        <span class="text-[13px]">{{ lockState.isLocked ? '🔒' : '🔓' }}</span>
+        <span>{{ lockState.isLocked ? 'Locked' : 'Lock' }}</span>
+        <span *ngIf="lockState.isLocked" class="tabular-nums text-[10px] text-red-500 ml-0.5">
+          {{ lockState.countdown }}s
+        </span>
+      </div>
+
+      <!-- Child-menu chip (export / download / view / density / columns) -->
+      <div *ngIf="action.key !== 'refresh' && action.key !== 'lock_update' && action.hasChildren"
+           class="pinned-chip"
+           [class.enabled]="isActionEnabled(action.key)"
+           [class.disabled]="!isActionEnabled(action.key)"
+           [class.dragging]="dragIndex === i" [class.drag-over]="dropIndex === i"
+           draggable="true"
+           (dragstart)="onDragStart(i,$event)" (dragover)="onDragOver(i,$event)"
+           (drop)="onDrop(i,$event)" (dragend)="onDragEnd()"
+           (click)="$event.stopPropagation(); isActionEnabled(action.key) && togglePinnedChild(action.key)">
+        <span class="text-[13px]">{{ action.icon }}</span>
+        <span>{{ action.label }}</span>
+        <span class="ml-0.5 text-[9px] text-slate-400">⌄</span>
+
+        <!-- child panel opens DOWNWARD below the chip -->
+        <div *ngIf="openPinnedChild === action.key"
+             class="pinned-child-drop" (click)="$event.stopPropagation()">
+          <ng-container [ngSwitch]="action.key">
+
+            <ng-container *ngSwitchCase="'export'">
+              <div class="drop-label">Export format</div>
+              <button *ngFor="let fmt of exportConfig.formats" type="button" class="drop-item"
+                (click)="exportClicked.emit(fmt); openPinnedChild = null">
+                <span class="w-6 text-center font-bold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
+                <span class="flex-1">{{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}</span>
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'download'">
+              <div class="drop-label">Download format</div>
+              <button *ngFor="let fmt of downloadConfig.formats" type="button" class="drop-item"
+                (click)="downloadClicked.emit(fmt); openPinnedChild = null">
+                <span class="w-6 text-center font-bold">{{ fmt === 'excel' ? 'X' : 'CSV' }}</span>
+                {{ fmt === 'excel' ? 'Excel (.xlsx)' : 'CSV (.csv)' }}
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'view'">
+              <div class="drop-label">Saved views</div>
+              <button type="button" class="drop-item" (click)="viewChange.emit(''); openPinnedChild = null">
+                <span class="w-4" [class.text-blue-500]="!activeView">{{ !activeView ? '✓' : '' }}</span>
+                Default
+              </button>
+              <button *ngFor="let v of savedViews" type="button" class="drop-item"
+                (click)="viewChange.emit(v); openPinnedChild = null">
+                <span class="w-4" [class.text-blue-500]="activeView === v">{{ activeView === v ? '✓' : '' }}</span>
+                {{ v }}
+              </button>
+              <div class="drop-sep"></div>
+              <button type="button" class="drop-item text-[#436CF3]"
+                (click)="saveViewClicked.emit(); openPinnedChild = null">＋ Save view</button>
+              <button *ngIf="features.reset_view" type="button" class="drop-item"
+                (click)="resetViewClicked.emit(); openPinnedChild = null">↶ Reset view</button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'density'">
+              <div class="drop-label">Density</div>
+              <button *ngFor="let d of densityOptions" type="button" class="drop-item"
+                (click)="densityChange.emit(d.value); openPinnedChild = null">
+                <span class="w-4" [class.text-[#436CF3]]="density === d.value">
+                  {{ density === d.value ? '✓' : '' }}
+                </span>
+                {{ d.label }}
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'columns'">
+              <div class="border-b border-slate-100 px-3 py-2">
+                <p class="text-[11px] font-semibold text-[#0A173D]">Columns</p>
+              </div>
+              <div class="border-b border-slate-100 px-2 py-1.5">
+                <div class="relative">
+                  <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">⌕</span>
+                  <input type="text"
+                    class="h-7 w-full rounded-md border border-slate-200 pl-6 pr-2
+                           text-[11px] outline-none focus:border-[#436CF3]"
+                    placeholder="Search…"
+                    [(ngModel)]="colSearch" (click)="$event.stopPropagation()" />
+                </div>
+              </div>
+              <div class="max-h-44 overflow-y-auto px-1.5 py-1">
+                <div *ngFor="let col of filteredColList" class="col-item">
+                  <label class="flex flex-1 cursor-pointer items-center gap-2">
+                    <input type="checkbox" class="h-3.5 w-3.5 rounded accent-[#436CF3]"
+                      [checked]="columnVisibility[col.key] ?? col.visible"
+                      (change)="toggleColumn(col.key)" />
+                    <span class="text-[11px] text-slate-700">{{ col.label }}</span>
+                  </label>
+                </div>
+              </div>
+              <div class="flex items-center justify-between border-t border-slate-100 px-3 py-2">
+                <button type="button"
+                  class="text-[11px] font-medium text-slate-500 hover:text-[#436CF3]"
+                  (click)="resetColumnsClicked.emit()">Reset</button>
                 <button type="button"
                   class="h-7 rounded-md bg-[#436CF3] px-3 text-[10px] font-medium text-white"
-                  (click)="applyColumnsClicked.emit(columnVisibility); close()">Apply</button>
+                  (click)="applyColumnsClicked.emit(columnVisibility); openPinnedChild = null">Apply</button>
               </div>
-            </div>
+            </ng-container>
 
-          </div>
-        </div>
-      </ng-container>
+          </ng-container>
+        </div><!-- /pinned-child-drop -->
+      </div><!-- /child-menu chip -->
 
-    </div>
-  </div>
+      <!-- Plain action chip (no children) -->
+      <div *ngIf="action.key !== 'refresh' && action.key !== 'lock_update' && !action.hasChildren"
+           class="pinned-chip"
+           [class.enabled]="isActionEnabled(action.key)"
+           [class.disabled]="!isActionEnabled(action.key)"
+           [class.dragging]="dragIndex === i" [class.drag-over]="dropIndex === i"
+           [title]="getActionTooltip(action.key)"
+           draggable="true"
+           (dragstart)="onDragStart(i,$event)" (dragover)="onDragOver(i,$event)"
+           (drop)="onDrop(i,$event)" (dragend)="onDragEnd()"
+           (click)="isActionEnabled(action.key) && firePinnedAction(action)">
+        <span class="text-[13px]">{{ action.icon }}</span>
+        <span>{{ action.label }}</span>
+      </div>
+
+    </ng-container>
+  </div><!-- /pinned panel -->
   `,
 })
-export class ToolbarActions {
+export class ToolbarActions implements OnDestroy {
 
-  // ── Configuration flags ─────────────────────────────────────────────
+  // ── Config inputs ─────────────────────────────────────────────────
   @Input() actions: ActionsConfig = {
     edit: true, delete: true, enable: true, disable: true, revert: true, more: true,
   };
-  @Input() exportConfig: ExportConfig = { enabled: false, formats: [] };
-  @Input() downloadConfig: DownloadConfig = { enabled: false, formats: [] };
+  @Input() exportConfig: ExportConfig       = { enabled: false, formats: [] };
+  @Input() downloadConfig: DownloadConfig   = { enabled: false, formats: [] };
   @Input() columnMgmt: ColumnManagementConfig = { enabled: true, reorder: true, show_hide: true };
   @Input() features: FeaturesConfig = {
     column_navigation: true, column_count_indicator: true, save_view: true, reset_view: true,
   };
 
-  // ── State inputs ────────────────────────────────────────────────────
-  @Input() selectionCount: number = 0;
+  // ── State inputs ──────────────────────────────────────────────────
+  @Input() selectionCount = 0;
   @Input() actionState: ActionBarState = {
-    edit: 'disabled', save: 'disabled', delete: 'disabled', enable: 'disabled',
-    disable: 'disabled', revert: 'disabled',
+    edit: 'disabled', save: 'disabled', delete: 'disabled',
+    enable: 'disabled', disable: 'disabled', revert: 'disabled',
   };
-  @Input() columns: ColumnDef[] = [];
-  @Input() fullscreen: boolean = false;
-  @Input() minimized: boolean = false;
+  @Input() columns: ColumnDef[]  = [];
+  @Input() fullscreen  = false;
+  @Input() minimized   = false;
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
-  @Input() activeView: string = '';
+  @Input() activeView  = '';
   @Input() savedViews: string[] = [];
   @Input() generateInfo: GenerateInfo = { generated: false };
-
-  // Horizontal column navigation
   @Input() canScrollPrevious = false;
-  @Input() canScrollNext = false;
+  @Input() canScrollNext     = false;
   @Input() columnScrollLabel = 'Columns';
+  @Input() liveVisible = true;
+  @Output() liveVisibleChange = new EventEmitter<boolean>();
+  /** Two-way: parent owns the open/close toggle for the Actions button */
+  @Input() actionsOpen = false;
+  @Output() actionsOpenChange = new EventEmitter<boolean>();
+  /** Fixed-position coordinates computed from the trigger button's bounding rect */
+    // @Input() dropTop   = 0;
+    // @Input() dropRight = 0;
 
-  // ── Outputs ─────────────────────────────────────────────────────────
-  @Output() actionClicked = new EventEmitter<ActionKey | string>();
-  @Output() exportClicked = new EventEmitter<'excel' | 'csv'>();
-  @Output() generateClicked = new EventEmitter<void>();
-  @Output() downloadClicked = new EventEmitter<'excel' | 'csv'>();
-  @Output() fullscreenChange = new EventEmitter<boolean>();
-  @Output() minimizedChange  = new EventEmitter<boolean>();
-  @Output() densityChange = new EventEmitter<'compact' | 'comfortable' | 'spacious'>();
-  @Output() viewChange = new EventEmitter<string>();
-  @Output() saveViewClicked = new EventEmitter<void>();
-  @Output() resetViewClicked = new EventEmitter<void>();
-  @Output() columnNavigate = new EventEmitter<'previous' | 'next'>();
+    // ── Outputs ───────────────────────────────────────────────────────
+  @Output() actionClicked          = new EventEmitter<ActionKey | string>();
+  @Output() exportClicked          = new EventEmitter<'excel' | 'csv'>();
+  @Output() downloadClicked        = new EventEmitter<'excel' | 'csv'>();
+  @Output() fullscreenChange       = new EventEmitter<boolean>();
+  @Output() minimizedChange        = new EventEmitter<boolean>();
+  @Output() densityChange          = new EventEmitter<'compact' | 'comfortable' | 'spacious'>();
+  @Output() viewChange             = new EventEmitter<string>();
+  @Output() saveViewClicked        = new EventEmitter<void>();
+  @Output() resetViewClicked       = new EventEmitter<void>();
+  @Output() columnNavigate         = new EventEmitter<'previous' | 'next'>();
   @Output() columnVisibilityChange = new EventEmitter<Record<string, boolean>>();
-  @Output() applyColumnsClicked = new EventEmitter<Record<string, boolean>>();
-  @Output() resetColumnsClicked = new EventEmitter<void>();
+  @Output() applyColumnsClicked    = new EventEmitter<Record<string, boolean>>();
+  @Output() resetColumnsClicked    = new EventEmitter<void>();
+  @Output() pinnedActionsChange    = new EventEmitter<ActionItem[]>();
 
-  // ── Internal ─────────────────────────────────────────────────────────
-  open: string | null = null;
-  colSearch: string = '';
+  // ── Internal ──────────────────────────────────────────────────────
+  openChildMenu: string | null   = null;
+  openPinnedChild: string | null = null;
+  colSearch = '';
   columnVisibility: Record<string, boolean> = {};
+  private _pinnedKeys: string[] = [];
+  dragIndex = -1;
+  dropIndex = -1;
+
+  private readonly _refreshSub: Subscription;
+  private readonly _lockSub: Subscription;
+
+  constructor(
+    readonly refreshState: RefreshStateService,
+    readonly lockState: LockStateService,
+  ) {
+    this._refreshSub = this.refreshState.refreshRequested
+      .subscribe(() => this.actionClicked.emit('refresh'));
+    this._lockSub = this.lockState.lockChanged
+      .subscribe(locked => this.actionClicked.emit('lock_update'));
+  }
+
+  ngOnDestroy(): void {
+    this._refreshSub.unsubscribe();
+    this._lockSub.unsubscribe();
+  }
 
   readonly densityOptions = [
-    { value: 'compact' as const, label: 'Compact' },
+    { value: 'compact'     as const, label: 'Compact'     },
     { value: 'comfortable' as const, label: 'Comfortable' },
-    { value: 'spacious' as const, label: 'Spacious' },
+    { value: 'spacious'    as const, label: 'Spacious'    },
   ];
 
-  // ── Computed ─────────────────────────────────────────────────────────
+  readonly actionItems: ActionItem[] = [
+    { key: 'refresh',    label: 'Refresh',    icon: '⟳'  },
+    { key: 'lock_update',label: 'Lock',       icon: '🔒' },
+    { key: 'edit',       label: 'Edit',       icon: '✎'  },
+    { key: 'save',       label: 'Save',       icon: '✓'  },
+    { key: 'delete',     label: 'Delete',     icon: '🗑' },
+    { key: 'enable',     label: 'Enable',     icon: '✅' },
+    { key: 'disable',    label: 'Disable',    icon: '⊘'  },
+    { key: 'revert',     label: 'Revert',     icon: '↶'  },
+    { key: 'expand',     label: 'Expand',     icon: '△'  },
+    { key: 'copy',       label: 'Copy',       icon: '⎘'  },
+    { key: 'reset',      label: 'Reset',      icon: '↺'  },
+    { key: 'export',     label: 'Export',     icon: '⇪', hasChildren: true },
+    { key: 'download',   label: 'Download',   icon: '⇩', hasChildren: true },
+    { key: 'fullscreen', label: 'Fullscreen', icon: '⛶'  },
+    { key: 'collapse',   label: 'Collapse',   icon: '▽'  },
+    { key: 'view',       label: 'View',       icon: '☷', hasChildren: true },
+    { key: 'density',    label: 'Density',    icon: '≋', hasChildren: true },
+    { key: 'columns',    label: 'Columns',    icon: '▦', hasChildren: true },
+  ];
 
-  get editTooltip(): string {
-    if (this.actionState.edit === 'disabled') {
-      return this.selectionCount === 0
-        ? 'Select a row to start editing'
-        : 'Edit is not allowed for selected rows';
-    }
-    return 'Edit selected rows';
-  }
+  // ── Derived ───────────────────────────────────────────────────────
 
-  get saveTooltip(): string {
-    return this.actionState.save === 'enabled'
-      ? 'Save changes'
-      : 'Make a change in an editable selected row before saving';
-  }
-
-  get generateTooltip(): string {
-    if (this.generateInfo.generated && this.generateInfo.generatedAt) {
-      return `Last generated: ${this.generateInfo.generatedAt}${this.generateInfo.generatedBy ? ' by ' + this.generateInfo.generatedBy : ''}`;
-    }
-    return 'Generate downloadable file';
-  }
-
-  get downloadTooltip(): string {
-    if (this.generateInfo.generated && this.generateInfo.downloadedAt) {
-      return `Last downloaded: ${this.generateInfo.downloadedAt}`;
-    }
-    return this.generateInfo.generated ? 'Download generated file' : 'Generate file to download first';
-  }
-
-  get hasHiddenColumns(): boolean {
-    return this.columns.some(c => !c.visible);
+  get pinnedActions(): ActionItem[] {
+    return this._pinnedKeys
+      .map(k => this.actionItems.find(a => a.key === k))
+      .filter((a): a is ActionItem => !!a);
   }
 
   get filteredColList(): ColumnDef[] {
@@ -490,23 +697,137 @@ export class ToolbarActions {
     return this.columns.filter(c => !q || c.label.toLowerCase().includes(q));
   }
 
-  // ── Methods ──────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────
 
-  toggle(key: string): void {
-    this.open = this.open === key ? null : key;
-    if (this.open === 'columns') {
+  isPinned(key: string): boolean { return this._pinnedKeys.includes(key); }
+
+  /** Only dim non-interactive rows (not refresh/lock which host live components) */
+  isRowDimmed(key: string): boolean {
+    return key !== 'refresh' && key !== 'lock_update' && !this.isActionEnabled(key);
+  }
+
+  isActionEnabled(key: string): boolean {
+    switch (key) {
+      case 'edit':       return this.actionState.edit    === 'enabled';
+      case 'save':       return this.actionState.save    === 'enabled';
+      case 'delete':     return this.actionState.delete  === 'enabled';
+      case 'enable':     return this.actionState.enable  === 'enabled';
+      case 'disable':    return this.actionState.disable === 'enabled';
+      case 'revert':     return this.actionState.revert  === 'enabled';
+      case 'copy':       return this.selectionCount > 0;
+      case 'refresh':    case 'lock_update': case 'reset': return true;
+      case 'export':     return this.exportConfig.enabled;
+      case 'download':   return this.downloadConfig.enabled;
+      case 'columns':    return this.columnMgmt.enabled;
+      case 'view':       return this.features.save_view;
+      default:           return true;
+    }
+  }
+
+  getActionTooltip(key: string): string {
+    switch (key) {
+      case 'edit':    return this.actionState.edit === 'disabled'
+        ? (this.selectionCount === 0 ? 'Select a row to edit' : 'Edit not allowed') : 'Edit selected';
+      case 'save':    return this.actionState.save === 'enabled' ? 'Save changes' : 'No pending changes';
+      case 'delete':  return this.actionState.delete  === 'disabled' ? 'Select rows to delete'  : 'Delete selected';
+      case 'enable':  return this.actionState.enable  === 'disabled' ? 'Select rows to enable'  : 'Enable selected';
+      case 'disable': return this.actionState.disable === 'disabled' ? 'Select rows to disable' : 'Disable selected';
+      case 'revert':  return this.actionState.revert  === 'disabled' ? 'No changes to revert'   : 'Revert changes';
+      case 'copy':    return this.selectionCount === 0 ? 'Select rows to copy' : 'Duplicate selected rows';
+      case 'reset':   return 'Reset table to original server values';
+      case 'fullscreen': return this.fullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
+      case 'collapse':   return this.minimized   ? 'Expand table'   : 'Collapse table';
+      default:        return '';
+    }
+  }
+
+  togglePin(key: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this._pinnedKeys = this.isPinned(key)
+      ? this._pinnedKeys.filter(k => k !== key)
+      : [...this._pinnedKeys, key];
+    this.pinnedActionsChange.emit(this.pinnedActions);
+  }
+
+  onRowClick(action: ActionItem, event: MouseEvent): void {
+    event.stopPropagation();
+    if (action.hasChildren) {
+      this.openChildMenu = this.openChildMenu === action.key ? null : action.key;
+      if (this.openChildMenu === 'columns') {
+        this.columnVisibility = Object.fromEntries(this.columns.map(c => [c.key, c.visible]));
+      }
+      return;
+    }
+    if (!this.isActionEnabled(action.key)) return;
+    this.dispatchAction(action.key);
+    this.actionsOpen = false;
+    this.actionsOpenChange.emit(false);
+    this.openChildMenu = null;
+  }
+
+  firePinnedAction(action: ActionItem): void {
+    if (!this.isActionEnabled(action.key)) return;
+    this.dispatchAction(action.key);
+  }
+
+  togglePinnedChild(key: string): void {
+    this.openPinnedChild = this.openPinnedChild === key ? null : key;
+    if (this.openPinnedChild === 'columns') {
       this.columnVisibility = Object.fromEntries(this.columns.map(c => [c.key, c.visible]));
     }
   }
 
-  close(): void { this.open = null; }
-
-  emit(action: string): void { this.actionClicked.emit(action); this.close(); }
+  closeChildMenu(): void { this.openChildMenu = null; }
 
   toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.columnVisibility[key] = !(this.columnVisibility[key] ?? true);
+  }
+
+  // ── Drag-and-drop ─────────────────────────────────────────────────
+
+  onDragStart(index: number, event: DragEvent): void {
+    this.dragIndex = index;
+    event.dataTransfer?.setData('text/plain', String(index));
+  }
+
+  onDragOver(index: number, event: DragEvent): void {
+    event.preventDefault();
+    this.dropIndex = index;
+  }
+
+  onDrop(index: number, event: DragEvent): void {
+    event.preventDefault();
+    if (this.dragIndex < 0 || this.dragIndex === index) {
+      this.dragIndex = -1; this.dropIndex = -1; return;
+    }
+    const arr = [...this._pinnedKeys];
+    const [moved] = arr.splice(this.dragIndex, 1);
+    arr.splice(index, 0, moved);
+    this._pinnedKeys = arr;
+    this.dragIndex = -1; this.dropIndex = -1;
+    this.pinnedActionsChange.emit(this.pinnedActions);
+  }
+
+  onDragEnd(): void { this.dragIndex = -1; this.dropIndex = -1; }
+
+  // ── Internal ──────────────────────────────────────────────────────
+
+  private dispatchAction(key: string): void {
+    switch (key) {
+      case 'fullscreen': this.fullscreenChange.emit(!this.fullscreen); break;
+      case 'collapse':   this.minimizedChange.emit(!this.minimized);   break;
+      default:           this.actionClicked.emit(key);
+    }
   }
 
   @HostListener('document:click')
-  onDocumentClick(): void { this.open = null; }
+  onDocumentClick(): void {
+    if (this.actionsOpen) {
+      this.actionsOpen = false;
+      this.actionsOpenChange.emit(false);
+      this.openChildMenu = null;
+    }
+    if (this.openPinnedChild) { this.openPinnedChild = null; }
+  }
 }
+
