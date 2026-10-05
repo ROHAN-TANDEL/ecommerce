@@ -27,6 +27,17 @@
         </button>
         <button
           type="button"
+          (click)="activeTab = 'ui-elements'"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer"
+          [class.bg-white]="activeTab === 'ui-elements'"
+          [class.text-[#1D2939]]="activeTab === 'ui-elements'"
+          [class.shadow-xs]="activeTab === 'ui-elements'"
+          [class.text-[#667085]]="activeTab !== 'ui-elements'"
+        >
+          UI Element Families (5)
+        </button>
+        <button
+          type="button"
           (click)="activeTab = 'actions'"
           class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer"
           [class.bg-white]="activeTab === 'actions'"
@@ -34,7 +45,7 @@
           [class.shadow-xs]="activeTab === 'actions'"
           [class.text-[#667085]]="activeTab !== 'actions'"
         >
-          Table Action Items (15)
+          Table Actions (15)
         </button>
       </div>
     </div>
@@ -596,7 +607,495 @@
 
 
     <!-- ========================================================================= -->
-    <!-- TAB 2: TABLE ACTION ITEMS (15 Action Components) -->
+    <!-- TAB 2: UI ELEMENT FAMILIES (5 Major Component Families) -->
+    <!-- ========================================================================= -->
+    <ng-container *ngIf="activeTab === 'ui-elements'">
+
+      <!-- 1. BUTTONS AND ACTION CONTROLS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">1</span>
+            <h2 class="text-sm font-bold text-[#101828]">Buttons & Action Controls</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Primary, Secondary, Ghost, Split, Dropdown & FAB</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Button Variants -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">Visual Variants</h3>
+            <div class="flex flex-wrap items-center gap-3">
+              <nexora-button label="Primary Button" variant="primary" (clicked)="onActionClick('Primary Clicked')"></nexora-button>
+              <nexora-button label="Secondary Button" variant="secondary" (clicked)="onActionClick('Secondary Clicked')"></nexora-button>
+              <nexora-button label="Ghost Button" variant="ghost" (clicked)="onActionClick('Ghost Clicked')"></nexora-button>
+              <nexora-button label="Text Button" variant="text" (clicked)="onActionClick('Text Clicked')"></nexora-button>
+              <nexora-button label="Link Button" variant="link" (clicked)="onActionClick('Link Clicked')"></nexora-button>
+              <nexora-button label="Success" variant="success" icon="✓" (clicked)="onActionClick('Success Clicked')"></nexora-button>
+              <nexora-button label="Danger" variant="danger" icon="🗑" (clicked)="onActionClick('Danger Clicked')"></nexora-button>
+              <nexora-button label="Disabled" variant="primary" [disabled]="true"></nexora-button>
+            </div>
+          </div>
+
+          <!-- Sizes & States -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">Sizes, Icons & Loading States</h3>
+            <div class="flex flex-wrap items-center gap-3">
+              <nexora-button label="Small Size" size="sm" variant="secondary"></nexora-button>
+              <nexora-button label="Medium Default" size="md" variant="secondary"></nexora-button>
+              <nexora-button label="Large Size" size="lg" variant="secondary"></nexora-button>
+              <nexora-button label="With Leading Icon" icon="✨" variant="primary"></nexora-button>
+              <nexora-button label="With Trailing Icon" trailingIcon="&rarr;" variant="secondary"></nexora-button>
+              <nexora-button
+                [label]="btnLoadingState ? 'Saving Changes...' : 'Click to Load'"
+                [loading]="btnLoadingState"
+                variant="primary"
+                (clicked)="btnLoadingState = true; onActionClick('Simulating API call...'); triggerOverlay();"
+              ></nexora-button>
+            </div>
+          </div>
+
+          <!-- Compound Action Controls -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">Split Button, Dropdowns, Groups & FAB</h3>
+            <div class="flex flex-wrap items-center gap-4">
+              <!-- Split button -->
+              <nexora-split-button
+                label="Save Record"
+                icon="💾"
+                [items]="splitActions"
+                (action)="onActionClick('Saved Record')"
+                (itemSelected)="onActionClick('Split action: ' + $event.label)"
+              ></nexora-split-button>
+
+              <!-- Dropdown button -->
+              <nexora-dropdown-button
+                label="Export / Manage"
+                [items]="dropdownActions"
+                (itemSelected)="onActionClick('Dropdown item: ' + $event.label)"
+              ></nexora-dropdown-button>
+
+              <!-- Button Group -->
+              <nexora-button-group
+                [options]="buttonGroupOptions"
+                [(value)]="buttonGroupVal"
+                (valueChange)="onActionClick('View mode: ' + $event)"
+              ></nexora-button-group>
+
+              <!-- Toggle Button -->
+              <nexora-toggle-button
+                label="Bookmarked"
+                icon="★"
+                [(pressed)]="toggleBtnActive"
+                (pressedChange)="onActionClick('Bookmark: ' + $event)"
+              ></nexora-toggle-button>
+
+              <!-- FAB -->
+              <nexora-fab
+                icon="+"
+                label="Create New"
+                (clicked)="onActionClick('FAB Clicked: Create New')"
+              ></nexora-fab>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 2. NAVIGATION -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">2</span>
+            <h2 class="text-sm font-bold text-[#101828]">Navigation</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Tabs, Segmented Controls, Breadcrumbs, Stepper & Pagination</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Tabs Underline & Boxed -->
+          <div class="space-y-4">
+            <div>
+              <span class="text-[11px] font-semibold text-[#667085] block mb-2">Underline Tabs with Badges:</span>
+              <nexora-tabs
+                [tabs]="navTabs"
+                [(activeId)]="activeTabId"
+                variant="underline"
+                (activeIdChange)="onActionClick('Switched tab to: ' + $event)"
+              ></nexora-tabs>
+            </div>
+
+            <div>
+              <span class="text-[11px] font-semibold text-[#667085] block mb-2">Pill Tabs:</span>
+              <nexora-tabs
+                [tabs]="navTabs"
+                [(activeId)]="activeTabId"
+                variant="pills"
+              ></nexora-tabs>
+            </div>
+          </div>
+
+          <!-- Segmented Control & Breadcrumbs -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-[#EAECF0]">
+            <div>
+              <span class="text-[11px] font-semibold text-[#667085] block mb-2">Segmented Control [ Day | Week | Month | Year ]:</span>
+              <nexora-segmented
+                [options]="segmentedOptions"
+                [(value)]="segmentedVal"
+                (valueChange)="onActionClick('Segment changed to: ' + $event)"
+              ></nexora-segmented>
+            </div>
+
+            <div>
+              <span class="text-[11px] font-semibold text-[#667085] block mb-2">Breadcrumbs Trail:</span>
+              <nexora-breadcrumbs
+                [items]="breadcrumbs"
+                (navigate)="onActionClick('Navigated to: ' + $event.label)"
+              ></nexora-breadcrumbs>
+            </div>
+          </div>
+
+          <!-- Stepper Navigation -->
+          <div class="pt-2 border-t border-[#EAECF0]">
+            <span class="text-[11px] font-semibold text-[#667085] block mb-2">Step Navigation / Wizard:</span>
+            <nexora-stepper
+              [steps]="wizardSteps"
+              [(currentStep)]="currStep"
+              (currentStepChange)="onActionClick('Current Wizard Step: ' + $event)"
+            ></nexora-stepper>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pt-2 border-t border-[#EAECF0]">
+            <nexora-pagination
+              [(page)]="currPage"
+              [pageSize]="10"
+              [totalItems]="100"
+              (pageChange)="onActionClick('Switched to page ' + $event)"
+            ></nexora-pagination>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 3. FEEDBACK AND STATUS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">3</span>
+            <h2 class="text-sm font-bold text-[#101828]">Feedback & Status</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Alerts, Banners, Toast, Spinners, Skeletons & Overlays</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Top Announcement Banner -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-2">Announcement Banner</h3>
+            <nexora-banner
+              badge="Maintenance"
+              message="Scheduled telemetry maintenance window on Sunday 02:00 UTC."
+              actionLabel="View Status"
+              (actionClicked)="onActionClick('Clicked Banner Action')"
+            ></nexora-banner>
+          </div>
+
+          <!-- Alerts (Success, Warning, Error, Info) -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">Alert Messages</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <nexora-alert
+                variant="success"
+                title="User created successfully"
+                message="Invitation link sent to sarah.j@acme.io with Admin credentials."
+              ></nexora-alert>
+
+              <nexora-alert
+                variant="warning"
+                title="Some fields need attention"
+                message="Your billing credit card expires in 14 days. Please update payment method."
+              ></nexora-alert>
+
+              <nexora-alert
+                variant="error"
+                title="Unable to save changes"
+                message="Gateway timeout (504): Cluster worker node did not acknowledge lock."
+              ></nexora-alert>
+
+              <nexora-alert
+                variant="info"
+                title="Cluster Auto-scaling Active"
+                message="2 additional replica nodes were provisioned to absorb current traffic load."
+              ></nexora-alert>
+            </div>
+          </div>
+
+          <!-- Toast Card & Spinners & Skeletons -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#EAECF0]">
+            <!-- Toast notification -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Toast Notification</h3>
+              <nexora-toast
+                type="success"
+                title="Changes Saved"
+                message="All 14 configuration items were committed to main branch."
+              ></nexora-toast>
+            </div>
+
+            <!-- Spinners -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Progress Spinners</h3>
+              <div class="flex items-center gap-4 py-2">
+                <nexora-spinner size="sm" label="Syncing..."></nexora-spinner>
+                <nexora-spinner size="md" label="Processing"></nexora-spinner>
+                <nexora-spinner size="lg"></nexora-spinner>
+              </div>
+              <button
+                type="button"
+                (click)="triggerOverlay()"
+                class="mt-2 text-xs font-semibold text-[#436CF3] hover:underline cursor-pointer"
+              >
+                Trigger full loading overlay demo &rarr;
+              </button>
+            </div>
+
+            <!-- Skeleton Loaders -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Skeleton Pulse Loaders</h3>
+              <div class="space-y-2 p-3 rounded-lg border border-[#EAECF0] bg-[#FAFAFA]">
+                <div class="flex items-center gap-3">
+                  <nexora-skeleton shape="circle" width="32px" height="32px"></nexora-skeleton>
+                  <div class="space-y-1.5 flex-1">
+                    <nexora-skeleton shape="line" width="60%" height="10px"></nexora-skeleton>
+                    <nexora-skeleton shape="line" width="90%" height="8px"></nexora-skeleton>
+                  </div>
+                </div>
+                <nexora-skeleton shape="rect" width="100%" height="24px"></nexora-skeleton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 4. OVERLAYS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden relative">
+        <!-- Interactive loading overlay attached here for demo -->
+        <nexora-loading-overlay [loading]="isOverlayLoading" message="Simulating async cloud operation..."></nexora-loading-overlay>
+
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">4</span>
+            <h2 class="text-sm font-bold text-[#101828]">Overlays</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Modals, Confirmation Dialogs, Drawers, Popovers & Tooltips</span>
+        </div>
+
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Modal Trigger Card -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block">Modal Dialog</span>
+                <p class="text-[11px] text-[#667085] mt-1">Full-featured modal with backdrop, keyboard escape, header & action footer.</p>
+              </div>
+              <button
+                type="button"
+                (click)="isModalOpen = true"
+                class="mt-4 h-8 px-3 rounded-lg bg-[#436CF3] hover:bg-[#3459D9] text-white text-xs font-semibold shadow-xs cursor-pointer"
+              >
+                Open Modal Demo
+              </button>
+            </div>
+
+            <!-- Confirm Dialog Trigger Card -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block">Confirm Dialog</span>
+                <p class="text-[11px] text-[#667085] mt-1">High-priority confirmation prompt for destructive actions.</p>
+              </div>
+              <button
+                type="button"
+                (click)="isConfirmOpen = true"
+                class="mt-4 h-8 px-3 rounded-lg bg-[#F04438] hover:bg-[#D92D20] text-white text-xs font-semibold shadow-xs cursor-pointer"
+              >
+                Open Confirm Dialog
+              </button>
+            </div>
+
+            <!-- Drawer Trigger Card -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block">Slide-out Drawer</span>
+                <p class="text-[11px] text-[#667085] mt-1">Side panel sliding from right with forms, logs, or secondary workflows.</p>
+              </div>
+              <button
+                type="button"
+                (click)="isDrawerOpen = true"
+                class="mt-4 h-8 px-3 rounded-lg border border-[#D0D5DD] bg-white text-[#344054] hover:bg-[#F2F4F7] text-xs font-semibold shadow-xs cursor-pointer"
+              >
+                Open Side Drawer
+              </button>
+            </div>
+
+            <!-- Popovers & Tooltips -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block">Popover & Tooltips</span>
+                <p class="text-[11px] text-[#667085] mt-1">Click-anchored popover container and hover micro-tooltips.</p>
+              </div>
+
+              <div class="mt-4 flex items-center gap-3">
+                <!-- Popover -->
+                <nexora-popover title="Server Health">
+                  <button trigger type="button" class="h-8 px-2.5 rounded-lg border border-[#D0D5DD] bg-white text-xs font-semibold text-[#344054] shadow-xs cursor-pointer">
+                    Click Popover
+                  </button>
+                  <p>Worker node cluster is operating normally at 34% CPU with 0 degraded pods.</p>
+                </nexora-popover>
+
+                <!-- Tooltip -->
+                <nexora-tooltip text="Click to copy API endpoint">
+                  <button type="button" class="h-8 px-2.5 rounded-lg bg-[#EFF4FF] text-[#436CF3] text-xs font-semibold cursor-pointer">
+                    Hover Tooltip
+                  </button>
+                </nexora-tooltip>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rendered Modals and Drawers -->
+        <nexora-modal
+          [(isOpen)]="isModalOpen"
+          title="Create Service Endpoint"
+          subtitle="Configure ingress routing and access control policies."
+          (confirmed)="isModalOpen = false; onActionClick('Confirmed Modal: Endpoint Created');"
+          (cancelled)="isModalOpen = false"
+        >
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-[#344054]">Endpoint Path</label>
+              <input type="text" value="/api/v1/customers" class="mt-1 w-full h-8 px-2.5 rounded border border-[#D0D5DD] text-xs" />
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-[#344054]">Routing Protocol</label>
+              <select class="mt-1 w-full h-8 px-2 rounded border border-[#D0D5DD] text-xs">
+                <option>gRPC Multiplexed</option>
+                <option>HTTP/2 REST</option>
+                <option>WebSocket Live</option>
+              </select>
+            </div>
+          </div>
+        </nexora-modal>
+
+        <nexora-confirm-dialog
+          [(isOpen)]="isConfirmOpen"
+          title="Delete Database Cluster?"
+          message="Are you sure you want to delete 'prod-db-primary'? All replicas will be detached and point-in-time recovery will be frozen."
+          confirmText="Yes, Delete Cluster"
+          variant="danger"
+          (confirmed)="isConfirmOpen = false; onActionClick('Confirmed: Database Cluster Deleted');"
+          (cancelled)="isConfirmOpen = false"
+        ></nexora-confirm-dialog>
+
+        <nexora-drawer
+          [(isOpen)]="isDrawerOpen"
+          title="Deployment Inspector"
+          subtitle="Real-time pod container logs and environment variables."
+          (save)="isDrawerOpen = false; onActionClick('Saved Drawer Inspection');"
+        >
+          <div class="space-y-4">
+            <div class="p-3 rounded-lg bg-[#0F172A] text-slate-300 font-mono text-[11px] space-y-1">
+              <div class="text-[#38BDF8]">[2026-10-05 18:30:11] Node-01 ready</div>
+              <div class="text-[#10B981]">[2026-10-05 18:30:12] Health check passed (200 OK)</div>
+              <div class="text-[#F59E0B]">[2026-10-05 18:30:15] Replica synced in 12ms</div>
+            </div>
+            <p class="text-xs text-[#667085]">You can configure scaling triggers or rollback to the previous deployment revision from here.</p>
+          </div>
+        </nexora-drawer>
+      </section>
+
+
+      <!-- 5. DATA DISPLAY COMPONENTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">5</span>
+            <h2 class="text-sm font-bold text-[#101828]">Data Display Components</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">KPI Stat Cards, Structured Cards, Activity Feeds & Accordions</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- KPI Stat Cards -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">KPI Metrics & Stat Cards</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <nexora-stat-card
+                title="Total Revenue"
+                value="₹12.4M"
+                [change]="12.4"
+                [isPositive]="true"
+                period="vs last month"
+                icon="💰"
+              ></nexora-stat-card>
+
+              <nexora-stat-card
+                title="Active Customers"
+                value="42,910"
+                [change]="8.2"
+                [isPositive]="true"
+                period="vs last month"
+                icon="👥"
+              ></nexora-stat-card>
+
+              <nexora-stat-card
+                title="Churn Rate"
+                value="1.84%"
+                [change]="0.4"
+                [isPositive]="false"
+                period="vs target 1.5%"
+                icon="📉"
+              ></nexora-stat-card>
+
+              <nexora-stat-card
+                title="Platform SLA"
+                value="99.98%"
+                [change]="0.02"
+                [isPositive]="true"
+                period="all 4 regions"
+                icon="🛡"
+              ></nexora-stat-card>
+            </div>
+          </div>
+
+          <!-- Structured Card & Activity Feed & Accordion & Description List -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2 border-t border-[#EAECF0]">
+            <!-- Timeline Activity Feed -->
+            <nexora-card title="Recent Activity Feed" subtitle="Audit log of operations in the past 24 hours">
+              <nexora-timeline [events]="timelineItems"></nexora-timeline>
+            </nexora-card>
+
+            <!-- Key-Value Description List -->
+            <nexora-card title="Organization Profile" subtitle="Configured tenancy metadata and region locks">
+              <nexora-description-list [items]="accountDetails" [striped]="true"></nexora-description-list>
+            </nexora-card>
+
+            <!-- Accordion FAQ / Knowledge Base -->
+            <div class="lg:col-span-2">
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Collapsible Accordion</h3>
+              <nexora-accordion [items]="accordionList"></nexora-accordion>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </ng-container>
+
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: TABLE ACTION ITEMS (15 Action Components) -->
     <!-- ========================================================================= -->
     <ng-container *ngIf="activeTab === 'actions'">
       <div class="mb-4">

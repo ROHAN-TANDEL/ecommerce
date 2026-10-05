@@ -70,6 +70,42 @@ import {
   NexoraCellSparklineComponent,
 } from '../../../components/nexora-inputs';
 
+// Nexora UI Element Families components
+import {
+  // Buttons
+  NexoraButtonComponent,
+  NexoraButtonGroupComponent,
+  NexoraToggleButtonComponent,
+  NexoraSplitButtonComponent,
+  NexoraDropdownButtonComponent,
+  NexoraFabComponent,
+  // Navigation
+  NexoraTabsComponent,
+  NexoraSegmentedComponent,
+  NexoraBreadcrumbsComponent,
+  NexoraPaginationComponent,
+  NexoraStepperComponent,
+  // Feedback & Status
+  NexoraAlertComponent,
+  NexoraBannerComponent,
+  NexoraToastComponent,
+  NexoraSpinnerComponent,
+  NexoraLoadingOverlayComponent,
+  NexoraSkeletonComponent,
+  // Overlays
+  NexoraModalComponent,
+  NexoraConfirmDialogComponent,
+  NexoraDrawerComponent,
+  NexoraPopoverComponent,
+  NexoraTooltipComponent,
+  // Data Display
+  NexoraStatCardComponent,
+  NexoraCardComponent,
+  NexoraTimelineComponent,
+  NexoraAccordionComponent,
+  NexoraDescriptionListComponent,
+} from '../../../components/nexora-ui';
+
 @Component({
   selector: 'app-final',
   standalone: true,
@@ -137,12 +173,40 @@ import {
     NexoraCellUserComponent,
     NexoraCellProgressComponent,
     NexoraCellSparklineComponent,
+    // Nexora UI Element Families components
+    NexoraButtonComponent,
+    NexoraButtonGroupComponent,
+    NexoraToggleButtonComponent,
+    NexoraSplitButtonComponent,
+    NexoraDropdownButtonComponent,
+    NexoraFabComponent,
+    NexoraTabsComponent,
+    NexoraSegmentedComponent,
+    NexoraBreadcrumbsComponent,
+    NexoraPaginationComponent,
+    NexoraStepperComponent,
+    NexoraAlertComponent,
+    NexoraBannerComponent,
+    NexoraToastComponent,
+    NexoraSpinnerComponent,
+    NexoraLoadingOverlayComponent,
+    NexoraSkeletonComponent,
+    NexoraModalComponent,
+    NexoraConfirmDialogComponent,
+    NexoraDrawerComponent,
+    NexoraPopoverComponent,
+    NexoraTooltipComponent,
+    NexoraStatCardComponent,
+    NexoraCardComponent,
+    NexoraTimelineComponent,
+    NexoraAccordionComponent,
+    NexoraDescriptionListComponent,
   ],
   templateUrl: './final.html',
   styleUrl: './final.css'
 })
 export class Final {
-  activeTab: 'inputs' | 'actions' = 'inputs';
+  activeTab: 'inputs' | 'ui-elements' | 'actions' = 'inputs';
 
   // --- Input State Demo Values ---
   // 1. Text Inputs
@@ -246,6 +310,85 @@ export class Final {
     { label: 'Communications', value: 'comms' }
   ];
 
+  // --- UI Elements State Demo Values ---
+  // 1. Buttons
+  btnLoadingState = false;
+  toggleBtnActive = true;
+  splitActions = [
+    { id: 'draft', label: 'Save as Draft', icon: '📝' },
+    { id: 'publish', label: 'Publish to Staging', icon: '🚀' },
+    { id: 'archive', label: 'Archive Record', icon: '🗑', danger: true },
+  ];
+  dropdownActions = [
+    { id: 'duplicate', label: 'Duplicate Entry', icon: '📋' },
+    { id: 'export-csv', label: 'Export as CSV', icon: '📊' },
+    { id: 'delete', label: 'Delete Entry', icon: '✕', danger: true },
+  ];
+  buttonGroupVal = 'grid';
+  buttonGroupOptions = [
+    { label: 'Grid', value: 'grid', icon: '▦' },
+    { label: 'Table', value: 'table', icon: '☰' },
+    { label: 'Kanban', value: 'kanban', icon: '🗂' },
+  ];
+
+  // 2. Navigation
+  activeTabId = 'users';
+  navTabs = [
+    { id: 'users', label: 'Users', icon: '👥', badge: '128' },
+    { id: 'roles', label: 'Roles', icon: '🛡', badge: '12' },
+    { id: 'permissions', label: 'Permissions', icon: '🔑' },
+    { id: 'audit', label: 'Audit Log', icon: '📜' }
+  ];
+  segmentedVal = 'week';
+  segmentedOptions = [
+    { label: 'Day', value: 'day' },
+    { label: 'Week', value: 'week' },
+    { label: 'Month', value: 'month' },
+    { label: 'Year', value: 'year' },
+  ];
+  breadcrumbs = [
+    { label: 'Home', icon: '🏠' },
+    { label: 'Settings' },
+    { label: 'Access Control' },
+    { label: 'Permissions' },
+  ];
+  currPage = 2;
+  currStep = 2;
+  wizardSteps = [
+    { id: 1, label: 'Identity', description: 'Personal info' },
+    { id: 2, label: 'Security', description: 'MFA & passwords' },
+    { id: 3, label: 'Review', description: 'Confirm plan' },
+  ];
+
+  // 3. Feedback
+  showBannerAlert = true;
+  showToastDemo = true;
+  isOverlayLoading = false;
+
+  // 4. Overlays
+  isModalOpen = false;
+  isConfirmOpen = false;
+  isDrawerOpen = false;
+
+  // 5. Data Display
+  timelineItems = [
+    { id: 1, title: 'Deployed v2.4 to Production', description: 'Zero downtime rolling update across 8 nodes.', timestamp: '12m ago', user: 'DevOps Bot', status: 'success' as const },
+    { id: 2, title: 'Database Migration Completed', description: 'Added 4 new columns to user_roles table.', timestamp: '1h ago', user: 'Alex M.', status: 'info' as const },
+    { id: 3, title: 'High Memory Spike Alert', description: 'Node worker-03 reached 88% memory saturation.', timestamp: '3h ago', user: 'Monitoring', status: 'warning' as const },
+  ];
+  accordionList = [
+    { id: '1', title: 'What is the Nexora Vocabulary Architecture?', content: 'Nexora is a declarative, design-tokenized component system built with standalone Angular components and Tailwind CSS.', open: true },
+    { id: '2', title: 'How do inline table cells manage edits?', content: 'Each inline cell component provides seamless ghost-hover states and emits direct two-way model bindings without re-rendering the whole row.' },
+    { id: '3', title: 'Can overlays be nested?', content: 'Yes, modal dialogues, slide-out drawers, tooltips, and popovers use independent backdrop layers and keyboard traps.' },
+  ];
+  accountDetails = [
+    { label: 'Organization ID', value: 'org_84920491', badge: 'Verified' },
+    { label: 'Primary Contact', value: 'sarah.j@acme.io' },
+    { label: 'API Region', value: 'US East (N. Virginia)', badge: 'us-east-1' },
+    { label: 'Billing Plan', value: 'Enterprise Tier', badge: 'Annual' },
+    { label: 'Encrypted Storage', value: '4.8 TB of 10 TB' },
+  ];
+
   // --- Table Action Toolbar State ---
   refreshCount = 0;
   isLocked = false;
@@ -258,6 +401,11 @@ export class Final {
   isCollabActive = true;
   columnScrollIndex = 1;
   lastActionMessage = '';
+
+  triggerOverlay(): void {
+    this.isOverlayLoading = true;
+    setTimeout(() => (this.isOverlayLoading = false), 1500);
+  }
 
   onRefresh(): void {
     this.refreshCount++;
