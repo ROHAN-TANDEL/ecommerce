@@ -1,48 +1,53 @@
 import {
   Component, Input, Output, EventEmitter, ChangeDetectorRef,
-  ChangeDetectionStrategy, HostListener, ElementRef,
+  ChangeDetectionStrategy, HostListener, ElementRef, OnInit, OnDestroy, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { RefreshStateService, RefreshInterval } from './refresh-state';
 
 /**
- * AutoRefreshComponent — purely presentational, timer state in RefreshStateService.
+ * AutoRefreshComponent — isolated auto-refresh widget.
  *
- * [compact]=false  → full dropdown row, interval picker opens to the LEFT
- * [compact]=true   → pinned-panel chip, interval picker opens fixed below the ⌄ button
+ * Can be used standalone anywhere (e.g. `<dt-auto-refresh (refresh)="onRefresh()"></dt-auto-refresh>`)
+ * or linked with a table's shared RefreshStateService via `[state]="myState"`.
+ *
+ * [compact]=true  (default) → standalone chip/button with ⌄ dropdown below it
+ * [compact]=false           → full row with ‹ flyout menu for inside an action dropdown
  */
 @Component({
   selector: 'dt-auto-refresh',
   standalone: true,
   imports: [CommonModule],
+  providers: [RefreshStateService],
   changeDetection: ChangeDetectionStrategy.Default,
-  styles: [':host { display: contents; }'],
+  styles: [':host { display: inline-block; }'],
   template: `
-  <!-- ══ COMPACT CHIP (pinned panel) ════════════════════════════ -->
+  <!-- ══ COMPACT CHIP / STANDALONE BUTTON ════════════════════════ -->
   <ng-container *ngIf="compact; else fullRow">
 
-    <div class="relative inline-flex items-center gap-0.5"
+    <div class="relative inline-flex items-center rounded-lg border border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-colors"
          (click)="$event.stopPropagation()">
 
       <button type="button"
-        class="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-[11px]
-               font-medium text-slate-600 hover:bg-blue-50 hover:text-[#436CF3] transition-colors"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 rounded-l-lg transition-colors"
         (click)="triggerRefresh()" title="Refresh now">
-        <span [class.animate-spin]="state.isRefreshing">⟳</span>
-        <span *ngIf="state.activeInterval !== 'live'" class="tabular-nums">{{ state.countdown }}s</span>
-        <span *ngIf="state.activeInterval === 'live'" class="text-[#436CF3]">Live</span>
+        <span [class.animate-spin]="activeState.isRefreshing" class="text-[13px]">⟳</span>
+        <span *ngIf="activeState.activeInterval !== 'live'" class="tabular-nums font-semibold">{{ activeState.countdown }}s</span>
+        <span *ngIf="activeState.activeInterval === 'live'" class="text-[#436CF3] font-semibold">Live</span>
       </button>
 
-      <button type="button" #compactToggle
-        class="inline-flex h-[24px] w-5 items-center justify-center rounded-md text-[9px]
-               text-slate-500 hover:bg-blue-50 hover:text-[#436CF3] transition-colors"
-        (click)="openCompactMenu($event, compactToggle)" title="Change interval">⌄</button>
+      <div class="h-4 w-[1px] bg-slate-200"></div>
 
-      <!-- fixed-position picker so it escapes any overflow clip -->
+      <button type="button"
+        class="inline-flex h-full items-center px-2 py-1.5 text-[10px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-r-lg transition-colors"
+        (click)="toggleCompactMenu($event)" title="Change refresh interval">
+        <span class="text-[9px]">⌄</span>
+      </button>
+
+      <!-- Anchored relative directly below the button -->
       <div *ngIf="isMenuOpen"
-           class="fixed z-[500] min-w-[160px] rounded-xl border border-slate-200 bg-white
-                  p-1.5 shadow-2xl"
-           [style.top.px]="menuTop" [style.left.px]="menuLeft"
+           class="absolute left-0 top-full mt-1.5 z-[500] min-w-[170px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
            (click)="$event.stopPropagation()">
         <ng-container *ngTemplateOutlet="picker"></ng-container>
       </div>
@@ -54,7 +59,6 @@ import { RefreshStateService, RefreshInterval } from './refresh-state';
   <!-- ══ FULL ROW (inside Actions dropdown) ══════════════════════ -->
   <ng-template #fullRow>
 
-    <!-- This wrapper must be position:relative so the picker anchors correctly -->
     <div class="relative flex w-full items-center gap-0"
          (click)="$event.stopPropagation()">
 
@@ -62,23 +66,23 @@ import { RefreshStateService, RefreshInterval } from './refresh-state';
         class="inline-flex h-[34px] flex-1 items-center gap-1.5 rounded-md px-2
                text-[11px] font-medium text-slate-600 hover:bg-blue-50 hover:text-[#436CF3] transition-colors"
         (click)="triggerRefresh()" title="Refresh now">
-        <span [class.animate-spin]="state.isRefreshing">⟳</span>
+        <span [class.animate-spin]="activeState.isRefreshing" class="text-[13px]">⟳</span>
         <span class="flex-1 text-left">Refresh</span>
-        <span *ngIf="state.activeInterval !== 'live'" class="tabular-nums text-[10px] text-slate-400">
-          {{ state.countdown }}s
+        <span *ngIf="activeState.activeInterval !== 'live'" class="tabular-nums text-[10px] text-slate-400">
+          {{ activeState.countdown }}s
         </span>
-        <span *ngIf="state.activeInterval === 'live'" class="text-[10px] text-[#436CF3]">Live</span>
+        <span *ngIf="activeState.activeInterval === 'live'" class="text-[10px] text-[#436CF3]">Live</span>
       </button>
 
-      <!-- ‹ opens the picker to the LEFT, matches Export/Density pattern -->
+      <!-- ‹ opens picker to the left -->
       <button type="button"
         class="inline-flex h-[34px] w-7 shrink-0 items-center justify-center rounded-md
                text-[9px] text-slate-500 hover:bg-blue-50 hover:text-[#436CF3] transition-colors"
         (click)="toggleInlinePicker($event)" title="Change interval">‹</button>
 
-      <!-- picker: absolute right-full = opens LEFT of this wrapper -->
+      <!-- picker: absolute right-full = opens LEFT -->
       <div *ngIf="isMenuOpen"
-           class="absolute right-full top-0 z-[500] mr-1 min-w-[160px] rounded-xl
+           class="absolute right-full top-0 z-[500] mr-1 min-w-[170px] rounded-xl
                   border border-slate-200 bg-white p-1.5 shadow-2xl"
            (click)="$event.stopPropagation()">
         <ng-container *ngTemplateOutlet="picker"></ng-container>
@@ -91,7 +95,7 @@ import { RefreshStateService, RefreshInterval } from './refresh-state';
   <!-- ══ SHARED PICKER CONTENT ══════════════════════════════════ -->
   <ng-template #picker>
     <div class="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-      Interval
+      Refresh interval
     </div>
     <ng-container *ngFor="let opt of intervalOptions">
       <div *ngIf="opt.sep" class="my-1 border-t border-slate-100"></div>
@@ -99,26 +103,34 @@ import { RefreshStateService, RefreshInterval } from './refresh-state';
         class="flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left
                text-[11px] text-slate-700 hover:bg-blue-50 hover:text-[#436CF3]"
         (click)="setInterval(opt.value!)">
-        <span class="w-4" [class.text-[#436CF3]]="state.activeInterval === opt.value">
-          {{ state.activeInterval === opt.value ? '✓' : '' }}
+        <span class="w-4" [class.text-[#436CF3]]="activeState.activeInterval === opt.value">
+          {{ activeState.activeInterval === opt.value ? '✓' : '' }}
         </span>{{ opt.label }}
       </button>
     </ng-container>
   </ng-template>
   `,
 })
-export class AutoRefreshComponent {
-  @Input() state!: RefreshStateService;
-  @Input() compact = false;
-  @Output() refresh = new EventEmitter<void>();   // kept for compat
+export class AutoRefreshComponent implements OnInit, OnDestroy {
+  /** Optional external state (e.g. from table). If not supplied, an internal instance is used. */
+  @Input() state?: RefreshStateService;
+  /** When true, renders as a standalone chip/button. When false, renders as a dropdown row. */
+  @Input() compact = true;
+
+  @Output() refresh = new EventEmitter<void>();
+  @Output() intervalChange = new EventEmitter<RefreshInterval>();
+
+  private readonly localState = inject(RefreshStateService);
+  private refreshSub?: Subscription;
 
   isMenuOpen = false;
-  menuTop    = 0;
-  menuLeft   = 0;
+
+  get activeState(): RefreshStateService {
+    return this.state ?? this.localState;
+  }
 
   readonly intervalOptions: Array<{ value?: RefreshInterval; label?: string; sep?: boolean }> = [
     { value: '5s',   label: '5 sec'  },
-    { sep: true },
     { value: '15s',  label: '15 sec' },
     { value: '1m',   label: '1 min'  },
     { value: '5m',   label: '5 min'  },
@@ -131,18 +143,25 @@ export class AutoRefreshComponent {
     private readonly cdr: ChangeDetectorRef,
   ) {}
 
+  ngOnInit(): void {
+    this.refreshSub = this.activeState.refreshRequested.subscribe(() => {
+      this.refresh.emit();
+      this.cdr.markForCheck();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+  }
+
   triggerRefresh(): void {
-    this.state.requestRefresh();
+    this.activeState.requestRefresh();
     this.cdr.markForCheck();
   }
 
-  openCompactMenu(event: MouseEvent, btn: HTMLElement): void {
+  toggleCompactMenu(event: MouseEvent): void {
     event.stopPropagation();
-    if (this.isMenuOpen) { this.isMenuOpen = false; this.cdr.markForCheck(); return; }
-    const rect    = btn.getBoundingClientRect();
-    this.menuTop  = rect.bottom + 4;
-    this.menuLeft = rect.left;
-    this.isMenuOpen = true;
+    this.isMenuOpen = !this.isMenuOpen;
     this.cdr.markForCheck();
   }
 
@@ -153,7 +172,8 @@ export class AutoRefreshComponent {
   }
 
   setInterval(interval: RefreshInterval): void {
-    this.state.setInterval(interval);
+    this.activeState.setInterval(interval);
+    this.intervalChange.emit(interval);
     this.isMenuOpen = false;
     this.cdr.markForCheck();
   }

@@ -10,18 +10,21 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
-    <div class="relative flex items-center gap-1" (click)="$event.stopPropagation()">
+    <div class="relative inline-flex items-center" (click)="$event.stopPropagation()">
       <button type="button"
-        class="inline-flex h-[34px] items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium transition-colors"
+        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-medium shadow-sm transition-colors hover:border-slate-300"
         [class.bg-red-50]="isLocked"
+        [class.border-red-200]="isLocked"
         [class.text-red-600]="isLocked"
-        [class.text-slate-600]="!isLocked"
+        [class.bg-white]="!isLocked"
+        [class.border-slate-200]="!isLocked"
+        [class.text-slate-700]="!isLocked"
         [class.hover:bg-slate-50]="!isLocked"
         (click)="toggleLock()"
         [title]="isLocked ? 'Unlock update' : 'Lock for update'">
         <span>{{ isLocked ? '🔒' : '🔓' }}</span>
-        <span>Lock</span>
-        <span *ngIf="isLocked" class="ml-1 text-red-500">{{ countdown }}s</span>
+        <span>{{ isLocked ? 'Locked' : 'Lock' }}</span>
+        <span *ngIf="isLocked" class="tabular-nums font-semibold text-red-500">{{ countdown }}s</span>
       </button>
     </div>
   `

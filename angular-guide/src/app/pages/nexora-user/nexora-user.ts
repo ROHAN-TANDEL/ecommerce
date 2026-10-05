@@ -289,6 +289,4 @@ export class NexoraUser implements OnInit {
   onDemoMenuItemSelected(item: ActionMenuItem): void {
     console.log('Selected demo item:', item.key);
   }
-
-
 }
