@@ -1,0 +1,104 @@
+# Add a new product dynamically
+curl -X POST http://localhost:3000/admin/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "billing_management",
+    "name": "Billing Management",
+    "enabled": true,
+    "routes": ["BillingRoute", "InvoiceRoute"],
+    "roles": {
+      "master": {
+        "enabled": true,
+        "database": {
+          "host": "localhost",
+          "port": 5432,
+          "database": "billing_master",
+          "user": "postgres",
+          "password": "postgres",
+          "pool": {
+            "maxConnections": 20,
+            "idleTimeout": 30000,
+            "connectionTimeout": 5000,
+            "maxUses": 7500,
+            "keepAlive": true,
+            "keepAliveInitialDelay": 10000,
+            "statementTimeout": 30000,
+            "queryTimeout": 30000
+          }
+        }
+      },
+      "client": {
+        "enabled": true,
+        "database": {
+          "host": "localhost",
+          "port": 5432,
+          "database": "billing_client",
+          "user": "postgres",
+          "password": "postgres",
+          "pool": {
+            "maxConnections": 40,
+            "idleTimeout": 30000,
+            "connectionTimeout": 5000,
+            "maxUses": 7500,
+            "keepAlive": true,
+            "keepAliveInitialDelay": 10000,
+            "statementTimeout": 30000,
+            "queryTimeout": 30000
+          }
+        }
+      }
+    }
+  }'
+
+# Add a new role to existing product
+curl -X POST http://localhost:3000/admin/products/identity_access_management/roles \
+  -H "Content-Type: application/json" \
+  -d '{
+    "roleName": "audit",
+    "roleConfig": {
+      "enabled": true,
+      "database": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "iam_audit",
+        "user": "postgres",
+        "password": "postgres",
+        "pool": {
+          "maxConnections": 10,
+          "idleTimeout": 30000,
+          "connectionTimeout": 5000,
+          "maxUses": 7500,
+          "keepAlive": true,
+          "keepAliveInitialDelay": 10000,
+          "statementTimeout": 30000,
+          "queryTimeout": 30000
+        }
+      }
+    }
+  }'
+
+  How to Add a New Database:
+  Option 1: JSON Config
+
+  json
+  // Just add to products.json
+  {
+    "id": "new_product",
+    "roles": {
+      "new_role": {
+        "enabled": true,
+        "database": { ... }
+      }
+    }
+  }
+  Option 2: API Call
+
+  bash
+  # No code changes needed!
+  POST /admin/products
+  POST /admin/products/{productId}/roles
+  How Controllers Use It:
+  typescript
+  // Automatically works for any new role!
+  const result = await req.db.new_role.query('SELECT * FROM table');
+  NO CODE CHANGES REQUIRED FOR NEW DATABASES!
