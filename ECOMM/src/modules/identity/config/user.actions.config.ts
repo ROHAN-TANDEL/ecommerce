@@ -22,8 +22,8 @@ export const UserActionsConfig = {
             name: "Refresh",
             component: "refresh_component",
             active: true,
-            info_note: "",
-            pinned: true,
+            info_note: "Refresh rows",
+            pinned: false,
             section: "section_2",
             order: 1
         },
@@ -33,7 +33,7 @@ export const UserActionsConfig = {
             active: true,
             component: "lock_component",
             pinned: true,
-            info_note: "",
+            info_note: "Lock table for 60s",
             section: "section_2",
             order: 2
         },
@@ -43,7 +43,7 @@ export const UserActionsConfig = {
             active: true,
             component: "edit_component",
             pinned: true,
-            info_note: "",
+            info_note: "Edit selected rows",
             section: "section_1",
             order: 1
         },
@@ -53,16 +53,16 @@ export const UserActionsConfig = {
             active: true,
             component: "save_component",
             pinned: true,
-            info_note: "",
+            info_note: "Save rows",
             section: "section_1",
             order: 2
         },
 
-        delete: {
+        "delete": {
             name: "Delete",
             active: true,
             component: "delete_component",
-            info_note: "",
+            info_note: "Delete selected rows",
             section: "section_1",
             order: 3
         },
@@ -71,7 +71,7 @@ export const UserActionsConfig = {
             name: "Enable",
             active: true,
             component: "enable_component",
-            info_note: "",
+            info_note: "Enable selected rows",
             section: "section_1",
             order: 4
         },
@@ -80,7 +80,7 @@ export const UserActionsConfig = {
             name: "Disable",
             active: true,
             component: "disable_component",
-            info_note: "",
+            info_note: "Disable selected rows",
             section: "section_1",
             order: 5
         },
@@ -89,7 +89,7 @@ export const UserActionsConfig = {
             name: "Revert",
             active: true,
             component: "revert_component",
-            info_note: "",
+            info_note: "Revert selected rows",
             section: "section_2",
             order: 3
         },
@@ -98,7 +98,7 @@ export const UserActionsConfig = {
             name: "Expand",
             active: true,
             component: "expand_component",
-            info_note: "",
+            info_note: "Expand selected rows",
             section: "section_1",
             order: 6
         },
@@ -107,7 +107,7 @@ export const UserActionsConfig = {
             name: "Copy",
             active: true,
             component: "copy_component",
-            info_note: "",
+            info_note: "Copy selected rows",
             section: "section_1",
             order: 7
         },
@@ -116,7 +116,7 @@ export const UserActionsConfig = {
             name: "Reset",
             active: true,
             component: "reset_component",
-            info_note: "",
+            info_note: "reset & clear all the filters",
             section: "section_3",
             order: 1
         },
@@ -125,7 +125,7 @@ export const UserActionsConfig = {
             name: "Export",
             active: true,
             component: "export_component",
-            info_note: "",
+            info_note: "Export rows",
             dropdown_options: {
                 excel: {
                     display_name: "excel .xlsx",
@@ -144,7 +144,7 @@ export const UserActionsConfig = {
             name: "Download",
             active: true,
             component: "download_component",
-            info_note: "",
+            info_note: "Download data",
             dropdown_options: {
                 excel: {
                     display_name: "excel .xlsx",
@@ -163,7 +163,7 @@ export const UserActionsConfig = {
             name: "Full Screen",
             active: true,
             component: "fullscreen_component",
-            info_note: "",
+            info_note: "Maximize & Minimize table",
             section: "section_2",
             order: 10
         },
@@ -172,7 +172,7 @@ export const UserActionsConfig = {
             name: "Collapse",
             active: true,
             component: "collapse_component",
-            info_note: "",
+            info_note: "Collapse rows",
             section: "section_2",
             order: 11
         },
@@ -181,7 +181,7 @@ export const UserActionsConfig = {
             name: "View",
             active: true,
             component: "view_component",
-            info_note: "",
+            info_note: "load saved filters",
             dropdown_default_value: "default_view",
             dropdown_options: {
                 default_view: {
@@ -202,7 +202,7 @@ export const UserActionsConfig = {
             name: "Density",
             component: "density_component",
             active: true,
-            info_note: "",
+            info_note: "Adjust spacing between rows",
             dropdown_default_value: "comfortable",
             dropdown_options: {
                 comfortable: {
@@ -223,7 +223,7 @@ export const UserActionsConfig = {
             name: "Columns",
             component: "column_component",
             active: true,
-            info_note: "",
+            info_note: "Columns view, reorder & configuration",
             dynamic_dropdown: true,
             section: "section_3",
             order: 1
@@ -233,7 +233,7 @@ export const UserActionsConfig = {
             name: "",
             active: true,
             component: "scroller_component",
-            info_note: "",
+            info_note: "Scroller horozontally",
             section: "section_3",
             order: 2
         },
@@ -242,7 +242,8 @@ export const UserActionsConfig = {
             name: "Live",
             component: "live_component_option",
             active: true,
-            info_note: "",
+            info_note: "Show live panel feed",
+            pinned: true,
             section: "section_3",
             order: 3
         }
