@@ -37,6 +37,10 @@ export interface TableConfigPayload {
   enable_add_data_button: boolean;
   show_table_headers: boolean;
   enable_table_search_filters: boolean;
+  enable_row_level_checkboxes?: boolean;
+  enable_master_level_checkbox?: boolean;
+  min_height?: string;
+  max_height?: string;
   editable_single_multiple_selected_rows: boolean;
   editable_all_rows: boolean;
   action_panel: boolean;

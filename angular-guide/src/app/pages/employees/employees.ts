@@ -16,11 +16,51 @@ import {
   ActionDropdownOption,
   PaginationState,
 } from './employees.types';
+import {
+  ButtonComponent,
+  HeaderSectionComponent,
+  ActionPanelComponent,
+  RefreshComponent,
+  SaveComponent,
+  EditComponent,
+  LockComponent,
+  DensityComponent,
+  type TableDensity,
+  TableComponent,
+  TableHeaderComponent,
+  MasterComponent,
+  HeaderComponent,
+  FilterRowComponent,
+  TableBodyComponent,
+  CellComponent,
+  TableFooterComponent,
+  PaginationComponent,
+} from './components';
 
 @Component({
   selector: 'app-employees',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ButtonComponent,
+    HeaderSectionComponent,
+    ActionPanelComponent,
+    RefreshComponent,
+    SaveComponent,
+    EditComponent,
+    LockComponent,
+    DensityComponent,
+    TableComponent,
+    TableHeaderComponent,
+    MasterComponent,
+    HeaderComponent,
+    FilterRowComponent,
+    TableBodyComponent,
+    CellComponent,
+    TableFooterComponent,
+    PaginationComponent,
+  ],
   templateUrl: './employees.html',
   styleUrl: './employees.css',
 })
@@ -72,6 +112,10 @@ export class Employees implements OnInit {
     enable_add_data_button: true,
     show_table_headers: true,
     enable_table_search_filters: true,
+    enable_row_level_checkboxes: true,
+    enable_master_level_checkbox: true,
+    min_height: '380px',
+    max_height: 'calc(100vh - 240px)',
     editable_single_multiple_selected_rows: true,
     editable_all_rows: true,
     action_panel: true,
@@ -398,8 +442,37 @@ export class Employees implements OnInit {
 
   // Component Inputs & Outputs (Event boundaries)
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+  @Input() minHeight = '380px';
+  @Input() maxHeight = 'calc(100vh - 240px)';
   @Output() densityChange = new EventEmitter<'compact' | 'comfortable' | 'spacious'>();
   @Output() actionClicked = new EventEmitter<{ actionKey: string; optionKey?: string; value?: any }>();
+  @Output() selectionChange = new EventEmitter<string[]>();
+
+  // Checkbox & Height Getters (driven by tableConfig with input fallbacks)
+  get enableRowLevelCheckboxes(): boolean {
+    return this.tableConfig.enable_row_level_checkboxes !== false;
+  }
+
+  get enableMasterLevelCheckbox(): boolean {
+    return this.tableConfig.enable_master_level_checkbox !== false;
+  }
+
+  get hasCheckboxColumn(): boolean {
+    return this.enableRowLevelCheckboxes || this.enableMasterLevelCheckbox;
+  }
+
+  get tableMinHeight(): string {
+    return this.tableConfig.min_height || this.minHeight;
+  }
+
+  get tableMaxHeight(): string {
+    return this.tableConfig.max_height || this.maxHeight;
+  }
+
+  get cleanAddButtonName(): string {
+    const raw = this.tableConfig.add_data_button_name || 'Add User';
+    return raw.replace(/^\+\s*/, '');
+  }
 
   // UI Interactive States
   actionsMenuOpen = false;
@@ -407,6 +480,8 @@ export class Employees implements OnInit {
   activeFilterDropdownKey: string | null = null;
   activeRowActionId: string | null = null;
   selectedRowIds = new Set<string>();
+  isEditModeActive = false;
+  isLocked = false;
 
   // Getter/setter for backward compatibility with template checkmark
   get selectedDensity(): 'compact' | 'comfortable' | 'spacious' {
@@ -579,7 +654,7 @@ export class Employees implements OnInit {
       })
       .sort((a, b) => a.order - b.order);
 
-    let currentLeftOffset = 50; // Checkbox column is 50px
+    let currentLeftOffset = this.hasCheckboxColumn ? 50 : 0; // Checkbox column is 50px if active
     list.forEach(col => {
       if (col.isFrozen) {
         col.stickyLeft = `${currentLeftOffset}px`;
@@ -759,24 +834,53 @@ export class Employees implements OnInit {
     this.showToast(`[Actions Menu] ${action.name}`, `Action: ${action.key}`, 'dropdown');
   }
 
-  onSubOptionClick(e: MouseEvent, action: ActionItemConfig & { key: string }, optKey: string, opt: ActionDropdownOption): void {
-    e.stopPropagation();
-    this.actionsMenuOpen = false;
-    this.activeSubmenuKey = null;
+  onDensityChange(d: TableDensity): void {
+    this.density = d;
+    this.densityChange.emit(d);
+    this.actionClicked.emit({ actionKey: 'density', value: d });
+    this.showToast('[Density Event Emitted]', `Density changed to "${d}"`, 'dropdown');
+    this.cdr.markForCheck();
+  }
 
-    if (action.key === 'density') {
-      const densityValue = optKey as 'compact' | 'comfortable' | 'spacious';
-      this.density = densityValue;
-      // Emit the event — do not mutate or apply changes to the table directly
-      this.densityChange.emit(densityValue);
-      this.actionClicked.emit({ actionKey: 'density', optionKey: optKey, value: densityValue });
-      this.showToast('[Event Emitted: densityChange]', `Density factor emitted: "${densityValue}" (no table layout mutation)`, 'dropdown');
-      this.cdr.markForCheck();
+  onLockToggle(locked: boolean): void {
+    this.isLocked = locked;
+    this.showToast(locked ? 'Table Locked' : 'Table Unlocked', locked ? 'Table is now in read-only lock state' : 'Lock released', 'toolbar');
+    this.cdr.markForCheck();
+  }
+
+  onEditToggle(editing: boolean): void {
+    this.isEditModeActive = editing;
+    this.showToast(editing ? 'Edit Mode Activated' : 'Edit Mode Deactivated', editing ? 'Cells are now editable inline' : 'Read-only view restored', 'toolbar');
+    this.cdr.markForCheck();
+  }
+
+  onSaveClick(): void {
+    this.showToast('Save Triggered', 'Saving in-place table modifications via API', 'toolbar');
+  }
+
+  onActionPanelSelect(event: { actionKey: string; optionKey?: string }): void {
+    if (event.actionKey === 'reset') {
+      this.activeFilters = {};
+      this.sortState = { first_name: 'asc' };
+      this.fetchTableData(1, this.pagination.limit);
+      this.showToast('Table Reset', 'Cleared all filters and sorting', 'dropdown');
       return;
     }
+    this.showToast(`[Action] ${event.actionKey}`, event.optionKey ? `Option: ${event.optionKey}` : undefined, 'dropdown');
+  }
 
-    this.actionClicked.emit({ actionKey: action.key, optionKey: optKey, value: opt });
-    this.showToast(`[${action.name}] ${opt.display_name}`, `Config key: ${optKey}`, 'dropdown');
+  onFilterChange(event: { col: EnrichedColumn; value: string }): void {
+    if (event.value) {
+      this.activeFilters[event.col.filter_key] = event.value;
+    } else {
+      delete this.activeFilters[event.col.filter_key];
+    }
+    this.fetchTableData(1, this.pagination.limit);
+    this.showToast(`Filter Applied: ${event.col.header_name}`, event.value ? `Value: "${event.value}"` : 'Filter Cleared', 'filter');
+  }
+
+  onFilterTrigger(event: { col: EnrichedColumn; action: string }): void {
+    this.showToast(`[Filter: ${event.action}]`, `Opened filter selector for ${event.col.header_name}`, 'filter');
   }
 
   toggleFilterDropdown(e: MouseEvent, colKey: string): void {
@@ -864,6 +968,7 @@ export class Employees implements OnInit {
       this.rows.forEach(r => this.selectedRowIds.add(String(r['id'])));
       this.showToast('Selected All Rows', `${this.rows.length} rows selected`, 'header');
     }
+    this.selectionChange.emit(Array.from(this.selectedRowIds));
     this.cdr.markForCheck();
   }
 
@@ -875,6 +980,7 @@ export class Employees implements OnInit {
     } else {
       this.selectedRowIds.add(strId);
     }
+    this.selectionChange.emit(Array.from(this.selectedRowIds));
     this.showToast('Row Selection Changed', `${this.selectedRowIds.size} row(s) selected`, 'row');
     this.cdr.markForCheck();
   }
