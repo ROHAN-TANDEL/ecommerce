@@ -1,151 +1,21 @@
-import { Component, OnInit, ChangeDetectorRef, inject, HostListener } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject, HostListener, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-// ── Strict API Contracts Matching the 3 Configuration Payloads ───────────
-
-export interface TableApiRegistry {
-  paginated_data_api: string;
-  data_api: string;
-  create_api: string;
-  create_bulk_api: string;
-  create_all_api: string;
-  create_import_api: string;
-  update_api: string;
-  update_bulk_api: string;
-  update_all_api: string;
-  update_import_api: string;
-  delete_api: string;
-  delete_bulk_api: string;
-  delete_all_api: string;
-  column_config_api: string;
-  table_config_api: string;
-  action_panel_config_api: string;
-  table_lock_api: string;
-  row_lock_api: string;
-  lock_status_api: string;
-  export_data_api: string;
-  download_data_api: string;
-  get_view_api: string;
-  save_view_api: string;
-  live_talk_api: string;
-  live_listen_api: string;
-}
-
-export interface TableConfigPayload {
-  table_key: string;
-  display_name: string;
-  add_data_button_name?: string;
-  table_api: TableApiRegistry;
-  show_title_header_section: boolean;
-  enable_add_data_button: boolean;
-  show_table_headers: boolean;
-  enable_table_search_filters: boolean;
-  editable_single_multiple_selected_rows: boolean;
-  editable_all_rows: boolean;
-  action_panel: boolean;
-  action_column: {
-    active: boolean;
-    options: string[];
-  };
-  rows: {
-    row_expansion: boolean;
-    freez: boolean;
-  };
-  pagination: {
-    active: boolean;
-    default_page_size: number;
-    page_size_options: number[];
-  };
-}
-
-export interface FilterDataItem {
-  key: string;
-  name: string;
-  type: string;
-  default: boolean;
-}
-
-export interface ColumnFreezeConfig {
-  freez_side: 'left' | 'right';
-  order: number;
-}
-
-export interface ColumnConfigItem {
-  header_name: string;
-  filter_key: string;
-  columns: Record<string, string>;
-  order: number;
-  filter_type: 'search' | 'multi_search' | 'list' | 'date_range' | string;
-  editable: boolean;
-  sorting: boolean;
-  column_resize: boolean;
-  info_note?: string;
-  elipsis?: string;
-  active: boolean;
-  freez?: ColumnFreezeConfig;
-  cell_mode: 'text_code_1000' | 'text_code_2000' | 'text_code_3100' | 'text_code_4000' | string;
-  filter_data?: FilterDataItem[];
-  width?: string;
-}
-
-export type ColumnConfigMap = Record<string, ColumnConfigItem>;
-
-export interface ActionDropdownOption {
-  display_name: string;
-  info_note?: string;
-}
-
-export interface ActionItemConfig {
-  name: string;
-  component: string;
-  active: boolean;
-  info_note?: string;
-  pinned?: boolean;
-  section: string;
-  order: number;
-  dropdown_default_value?: string;
-  dropdown_options?: Record<string, ActionDropdownOption>;
-  dynamic_dropdown?: boolean;
-}
-
-export interface ActionSectionConfig {
-  name: string;
-  component: string;
-  order: number;
-}
-
-export interface ActionPanelConfigPayload {
-  sections: Record<string, ActionSectionConfig>;
-  actions: Record<string, ActionItemConfig>;
-}
-
-// ── Enriched View Models for Component Rendering ──────────────────────────
-
-export interface EnrichedColumn extends ColumnConfigItem {
-  key: string;
-  computedWidth: string;
-  stickyLeft?: string;
-  isFrozen: boolean;
-}
-
-export interface PinnedToolbarAction extends ActionItemConfig {
-  key: string;
-}
-
-export interface SectionActionGroup {
-  sectionKey: string;
-  name: string;
-  order: number;
-  actions: Array<ActionItemConfig & { key: string }>;
-}
-
-export interface ToastMessage {
-  id: number;
-  title: string;
-  detail?: string;
-  source: 'header' | 'toolbar' | 'dropdown' | 'row' | 'filter' | 'pagination';
-}
+import { EmployeesApiService } from './employees-api.service';
+import {
+  TableConfigPayload,
+  ColumnConfigMap,
+  ColumnConfigItem,
+  ActionPanelConfigPayload,
+  ActionItemConfig,
+  EnrichedColumn,
+  PinnedToolbarAction,
+  SectionActionGroup,
+  ToastMessage,
+  FilterDataItem,
+  ActionDropdownOption,
+  PaginationState,
+} from './employees.types';
 
 @Component({
   selector: 'app-employees',
@@ -156,41 +26,47 @@ export interface ToastMessage {
 })
 export class Employees implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly apiService = inject(EmployeesApiService);
 
   // ══════════════════════════════════════════════════════════════════════
-  // RAW 100% CONFIGURATION PAYLOADS (From the 3 APIs)
+  // API CONNECTION & CONFIGURATION STATE
   // ══════════════════════════════════════════════════════════════════════
+  apiBaseUrl = 'http://localhost:3000';
+  apiStatus: 'connected' | 'offline-mock' | 'connecting' = 'connecting';
+  isLoading = true;
+  isDataLoading = false;
 
-  readonly tableConfig: TableConfigPayload = {
+  // Fallback / Initial Table Config
+  tableConfig: TableConfigPayload = {
     table_key: 'users_table_1234',
     display_name: 'User Management',
     add_data_button_name: '+ Add User',
     table_api: {
-      paginated_data_api: 'http://localhost:3000/identity/management/users',
-      data_api: 'http://localhost:3000/identity/management/users/:id',
-      create_api: 'http://localhost:3000/identity/management/users/create',
-      create_bulk_api: 'http://localhost:3000/identity/management/users/create/bulk',
-      create_all_api: 'http://localhost:3000/identity/management/users/create/all',
-      create_import_api: 'http://localhost:3000/identity/management/users/create/import',
-      update_api: 'http://localhost:3000/identity/management/users/update/:id',
-      update_bulk_api: 'http://localhost:3000/identity/management/users/update/bulk',
-      update_all_api: 'http://localhost:3000/identity/management/users/update/all',
-      update_import_api: 'http://localhost:3000/identity/management/users/update/import',
-      delete_api: 'http://localhost:3000/identity/management/users/delete/:id',
-      delete_bulk_api: 'http://localhost:3000/identity/management/users/delete/bulk',
-      delete_all_api: 'http://localhost:3000/identity/management/users/delete/all',
-      column_config_api: 'http://localhost:3000/identity/management/users/config/columns',
-      table_config_api: 'http://localhost:3000/identity/management/users/config/table',
-      action_panel_config_api: 'http://localhost:3000/identity/management/users/config/actions',
-      table_lock_api: 'http://localhost:3000/identity/management/lock/users/table',
-      row_lock_api: 'http://localhost:3000/identity/management/lock/users/rows',
-      lock_status_api: 'http://localhost:3000/identity/management/lock/users',
-      export_data_api: 'http://localhost:3000/identity/management/export/users',
-      download_data_api: 'http://localhost:3000/identity/management/download/users',
-      get_view_api: 'http://localhost:3000/identity/management/view/users',
-      save_view_api: 'http://localhost:3000/identity/management/view/users/save',
-      live_talk_api: 'http://localhost:3000/identity/management/talk/users',
-      live_listen_api: 'http://localhost:3000/identity/management/listen/users',
+      paginated_data_api: '/identity/management/users',
+      data_api: '/identity/management/users/:id',
+      create_api: '/identity/management/users/create',
+      create_bulk_api: '/identity/management/users/create/bulk',
+      create_all_api: '/identity/management/users/create/all',
+      create_import_api: '/identity/management/users/create/import',
+      update_api: '/identity/management/users/update/:id',
+      update_bulk_api: '/identity/management/users/update/bulk',
+      update_all_api: '/identity/management/users/update/all',
+      update_import_api: '/identity/management/users/update/import',
+      delete_api: '/identity/management/users/delete/:id',
+      delete_bulk_api: '/identity/management/users/delete/bulk',
+      delete_all_api: '/identity/management/users/delete/all',
+      column_config_api: '/identity/management/users/config/columns',
+      table_config_api: '/identity/management/users/config/table',
+      action_panel_config_api: '/identity/management/users/config/actions',
+      table_lock_api: '/identity/management/lock/users/table',
+      row_lock_api: '/identity/management/lock/users/rows',
+      lock_status_api: '/identity/management/lock/users',
+      export_data_api: '/identity/management/export/users',
+      download_data_api: '/identity/management/download/users',
+      get_view_api: '/identity/management/view/users',
+      save_view_api: '/identity/management/view/users/save',
+      live_talk_api: '/identity/management/talk/users',
+      live_listen_api: '/identity/management/listen/users',
     },
     show_title_header_section: true,
     enable_add_data_button: true,
@@ -214,7 +90,8 @@ export class Employees implements OnInit {
     },
   };
 
-  readonly rawColumnConfig: ColumnConfigMap = {
+  // Fallback / Initial Column Config Map
+  rawColumnConfig: ColumnConfigMap = {
     first_name: {
       header_name: 'First Name',
       filter_key: 'first_name',
@@ -303,7 +180,8 @@ export class Employees implements OnInit {
     },
   };
 
-  readonly rawActionPanelConfig: ActionPanelConfigPayload = {
+  // Fallback / Initial Action Panel Config
+  rawActionPanelConfig: ActionPanelConfigPayload = {
     sections: {
       section_1: { name: 'Actions', component: 'dropdown_sections_component', order: 1 },
       section_2: { name: 'Views', component: 'dropdown_sections_component', order: 2 },
@@ -314,7 +192,7 @@ export class Employees implements OnInit {
         name: 'Refresh',
         component: 'refresh_component',
         active: true,
-        info_note: '',
+        info_note: 'Refresh rows',
         pinned: true,
         section: 'section_2',
         order: 1,
@@ -324,7 +202,7 @@ export class Employees implements OnInit {
         active: true,
         component: 'lock_component',
         pinned: true,
-        info_note: '',
+        info_note: 'Lock table',
         section: 'section_2',
         order: 2,
       },
@@ -333,7 +211,7 @@ export class Employees implements OnInit {
         active: true,
         component: 'edit_component',
         pinned: true,
-        info_note: '',
+        info_note: 'Edit selected rows',
         section: 'section_1',
         order: 1,
       },
@@ -342,7 +220,7 @@ export class Employees implements OnInit {
         active: true,
         component: 'save_component',
         pinned: true,
-        info_note: '',
+        info_note: 'Save rows',
         section: 'section_1',
         order: 2,
       },
@@ -350,7 +228,7 @@ export class Employees implements OnInit {
         name: 'Delete',
         active: true,
         component: 'delete_component',
-        info_note: '',
+        info_note: 'Delete selected rows',
         section: 'section_1',
         order: 3,
       },
@@ -358,7 +236,7 @@ export class Employees implements OnInit {
         name: 'Enable',
         active: true,
         component: 'enable_component',
-        info_note: '',
+        info_note: 'Enable selected rows',
         section: 'section_1',
         order: 4,
       },
@@ -366,7 +244,7 @@ export class Employees implements OnInit {
         name: 'Disable',
         active: true,
         component: 'disable_component',
-        info_note: '',
+        info_note: 'Disable selected rows',
         section: 'section_1',
         order: 5,
       },
@@ -374,7 +252,7 @@ export class Employees implements OnInit {
         name: 'Revert',
         active: true,
         component: 'revert_component',
-        info_note: '',
+        info_note: 'Revert selected rows',
         section: 'section_2',
         order: 3,
       },
@@ -501,97 +379,190 @@ export class Employees implements OnInit {
   // ══════════════════════════════════════════════════════════════════════
   // ADAPTER ENGINE STATE (Derived dynamically from configs)
   // ══════════════════════════════════════════════════════════════════════
-
   columnsList: EnrichedColumn[] = [];
   pinnedActions: PinnedToolbarAction[] = [];
   sectionGroups: SectionActionGroup[] = [];
 
-  // Dropdown States
+  // Table Data & Pagination
+  rows: Record<string, any>[] = [];
+  pagination: PaginationState = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  };
+
+  // Filter & Sort state
+  activeFilters: Record<string, any> = {};
+  sortState: Record<string, 'asc' | 'desc' | null> = { first_name: 'asc' };
+
+  // Component Inputs & Outputs (Event boundaries)
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+  @Output() densityChange = new EventEmitter<'compact' | 'comfortable' | 'spacious'>();
+  @Output() actionClicked = new EventEmitter<{ actionKey: string; optionKey?: string; value?: any }>();
+
+  // UI Interactive States
   actionsMenuOpen = false;
   activeSubmenuKey: string | null = null;
   activeFilterDropdownKey: string | null = null;
   activeRowActionId: string | null = null;
+  selectedRowIds = new Set<string>();
 
-  // Selected density state
-  selectedDensity: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
+  // Getter/setter for backward compatibility with template checkmark
+  get selectedDensity(): 'compact' | 'comfortable' | 'spacious' {
+    return this.density;
+  }
+  set selectedDensity(val: 'compact' | 'comfortable' | 'spacious') {
+    this.density = val;
+  }
+
+  // Modals for End-to-End CRUD
+  showCreateModal = false;
+  showEditModal = false;
+  createForm = { first_name: '', last_name: '', email: '', password_hash: 'Password123!', status: 'active' };
+  editForm = { id: '', first_name: '', last_name: '', email: '', status: 'active' };
 
   // Floating Toast Stack
   toasts: ToastMessage[] = [];
   private toastCounter = 0;
 
-  // Mock Rows (conforming strictly to the column schema)
-  readonly mockRows: Record<string, any>[] = [
-    {
-      id: 'usr_001',
-      first_name: 'Liam',
-      last_name: 'Walker',
-      email: 'liam.walker@enterprise.io',
-      status: 'active',
-      created_at: '2026-09-12 10:45 AM',
-    },
-    {
-      id: 'usr_002',
-      first_name: 'Olivia',
-      last_name: 'Brooks',
-      email: 'olivia.brooks@enterprise.io',
-      status: 'pending',
-      created_at: '2026-09-14 02:18 PM',
-    },
-    {
-      id: 'usr_003',
-      first_name: 'Ethan',
-      last_name: 'Hayes',
-      email: 'ethan.hayes@enterprise.io',
-      status: 'active',
-      created_at: '2026-09-16 11:30 AM',
-    },
-    {
-      id: 'usr_004',
-      first_name: 'Sophia',
-      last_name: 'Bennett',
-      email: 'sophia.bennett@enterprise.io',
-      status: 'inactive',
-      created_at: '2026-09-18 09:12 AM',
-    },
-    {
-      id: 'usr_005',
-      first_name: 'Noah',
-      last_name: 'Carter',
-      email: 'noah.carter@enterprise.io',
-      status: 'active',
-      created_at: '2026-09-20 04:55 PM',
-    },
-    {
-      id: 'usr_006',
-      first_name: 'Ava',
-      last_name: 'Mitchell',
-      email: 'ava.mitchell@enterprise.io',
-      status: 'pending',
-      created_at: '2026-09-22 01:20 PM',
-    },
-    {
-      id: 'usr_007',
-      first_name: 'Lucas',
-      last_name: 'Sullivan',
-      email: 'lucas.sullivan@enterprise.io',
-      status: 'active',
-      created_at: '2026-09-24 08:40 AM',
-    },
-    {
-      id: 'usr_008',
-      first_name: 'Mia',
-      last_name: 'Reynolds',
-      email: 'mia.reynolds@enterprise.io',
-      status: 'inactive',
-      created_at: '2026-09-26 03:15 PM',
-    },
+  // Local Mock Dataset (Used when backend is offline or on initial fallback)
+  readonly defaultMockRows: Record<string, any>[] = [
+    { id: '1', first_name: 'Liam', last_name: 'Walker', email: 'liam.walker@enterprise.io', status: 'active', created_at: '2026-09-12 10:45 AM' },
+    { id: '2', first_name: 'Olivia', last_name: 'Brooks', email: 'olivia.brooks@enterprise.io', status: 'pending', created_at: '2026-09-14 02:18 PM' },
+    { id: '3', first_name: 'Ethan', last_name: 'Hayes', email: 'ethan.hayes@enterprise.io', status: 'active', created_at: '2026-09-16 11:30 AM' },
+    { id: '4', first_name: 'Sophia', last_name: 'Bennett', email: 'sophia.bennett@enterprise.io', status: 'inactive', created_at: '2026-09-18 09:12 AM' },
+    { id: '5', first_name: 'Noah', last_name: 'Carter', email: 'noah.carter@enterprise.io', status: 'active', created_at: '2026-09-20 04:55 PM' },
+    { id: '6', first_name: 'Ava', last_name: 'Mitchell', email: 'ava.mitchell@enterprise.io', status: 'pending', created_at: '2026-09-22 01:20 PM' },
+    { id: '7', first_name: 'Lucas', last_name: 'Sullivan', email: 'lucas.sullivan@enterprise.io', status: 'active', created_at: '2026-09-24 08:40 AM' },
+    { id: '8', first_name: 'Mia', last_name: 'Reynolds', email: 'mia.reynolds@enterprise.io', status: 'inactive', created_at: '2026-09-26 03:15 PM' },
   ];
 
-  selectedRowIds = new Set<string>();
-
   ngOnInit(): void {
-    this.processColumns();
-    this.processActions();
+    this.bootstrapTable();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // END-TO-END BOOTSTRAP & DATA FETCHING
+  // ══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Loads the 3 configuration APIs in parallel and then fetches initial paginated data
+   */
+  bootstrapTable(): void {
+    this.isLoading = true;
+    this.apiStatus = 'connecting';
+    this.cdr.markForCheck();
+
+    this.apiService.bootstrap(this.apiBaseUrl).subscribe({
+      next: res => {
+        if (res.isLive && res.tableConfig && res.columnsConfig && res.actionsConfig) {
+          this.tableConfig = res.tableConfig;
+          this.rawColumnConfig = res.columnsConfig;
+          this.rawActionPanelConfig = res.actionsConfig;
+          this.apiStatus = 'connected';
+          this.showToast(
+            'API Connected (Live)',
+            `Bootstrap successful from ${this.apiBaseUrl}`,
+            'header'
+          );
+        } else {
+          this.apiStatus = 'offline-mock';
+          this.showToast(
+            'Offline Mock Mode',
+            `Backend offline on ${this.apiBaseUrl} — using schema fallback`,
+            'header'
+          );
+        }
+
+        this.processColumns();
+        this.processActions();
+        this.fetchTableData(1, this.tableConfig.pagination.default_page_size || 10);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.apiStatus = 'offline-mock';
+        this.processColumns();
+        this.processActions();
+        this.fetchTableData(1, 10);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /**
+   * Fetches paginated rows from tableConfig.table_api.paginated_data_api
+   */
+  fetchTableData(page = this.pagination.page, limit = this.pagination.limit): void {
+    this.isDataLoading = true;
+    this.cdr.markForCheck();
+
+    const dataApiUrl = this.tableConfig.table_api.paginated_data_api || '/identity/management/users';
+    const activeSortCol = Object.keys(this.sortState).find(k => this.sortState[k] !== null);
+    const sortOrder = activeSortCol ? this.sortState[activeSortCol] : undefined;
+
+    this.apiService
+      .fetchPaginatedData(
+        dataApiUrl,
+        page,
+        limit,
+        this.activeFilters,
+        activeSortCol,
+        sortOrder,
+        this.apiBaseUrl
+      )
+      .subscribe({
+        next: result => {
+          if (result.isLive && result.rows.length > 0) {
+            this.rows = result.rows;
+            this.pagination = result.pagination;
+          } else {
+            // Apply client-side fallback slicing & filtering
+            this.applyLocalDataFilter(page, limit);
+          }
+          this.isDataLoading = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.applyLocalDataFilter(page, limit);
+          this.isDataLoading = false;
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  private applyLocalDataFilter(page: number, limit: number): void {
+    let dataset = [...this.defaultMockRows];
+
+    // Filter
+    Object.keys(this.activeFilters).forEach(key => {
+      const val = this.activeFilters[key];
+      if (val !== undefined && val !== null && val !== '') {
+        const query = String(val).toLowerCase();
+        dataset = dataset.filter(r => String(r[key] ?? '').toLowerCase().includes(query));
+      }
+    });
+
+    // Sort
+    const activeSortCol = Object.keys(this.sortState).find(k => this.sortState[k] !== null);
+    if (activeSortCol && this.sortState[activeSortCol]) {
+      const dir = this.sortState[activeSortCol];
+      dataset.sort((a, b) => {
+        const vA = String(a[activeSortCol] ?? '');
+        const vB = String(b[activeSortCol] ?? '');
+        return dir === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+      });
+    }
+
+    const total = dataset.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * limit;
+
+    this.rows = dataset.slice(start, start + limit);
+    this.pagination = { page: safePage, limit, total, totalPages };
   }
 
   // ── Column Adapter: Computes orders, freeze left offsets & widths ────
@@ -608,9 +579,7 @@ export class Employees implements OnInit {
       })
       .sort((a, b) => a.order - b.order);
 
-    // Compute cumulative sticky left offsets
-    // Checkbox column has width 50px
-    let currentLeftOffset = 50;
+    let currentLeftOffset = 50; // Checkbox column is 50px
     list.forEach(col => {
       if (col.isFrozen) {
         col.stickyLeft = `${currentLeftOffset}px`;
@@ -627,13 +596,11 @@ export class Employees implements OnInit {
     const actionsMap = this.rawActionPanelConfig.actions;
     const sectionsMap = this.rawActionPanelConfig.sections;
 
-    // 1. Pinned Toolbar Actions (sorted by order)
     this.pinnedActions = Object.keys(actionsMap)
       .filter(key => actionsMap[key].pinned === true && actionsMap[key].active === true)
       .map(key => ({ ...actionsMap[key], key }))
       .sort((a, b) => a.order - b.order);
 
-    // 2. Sections with Non-Pinned Actions
     const sectionKeys = Object.keys(sectionsMap).sort(
       (a, b) => sectionsMap[a].order - sectionsMap[b].order
     );
@@ -659,7 +626,7 @@ export class Employees implements OnInit {
     });
   }
 
-  // ── Global Document Click Listener (Closes popovers) ─────────────────
+  // ── Global Document Click Listener ──────────────────────────────────
   @HostListener('document:click')
   onDocumentClick(): void {
     this.actionsMenuOpen = false;
@@ -669,12 +636,8 @@ export class Employees implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // ── Floating Toast System (Non-destructive) ──────────────────────────
-  showToast(
-    title: string,
-    detail?: string,
-    source: ToastMessage['source'] = 'toolbar'
-  ): void {
+  // ── Floating Toast System ───────────────────────────────────────────
+  showToast(title: string, detail?: string, source: ToastMessage['source'] = 'toolbar'): void {
     const id = ++this.toastCounter;
     const toast: ToastMessage = { id, title, detail, source };
     this.toasts.unshift(toast);
@@ -686,7 +649,7 @@ export class Employees implements OnInit {
 
     setTimeout(() => {
       this.dismissToast(id);
-    }, 3200);
+    }, 3500);
   }
 
   dismissToast(id: number): void {
@@ -694,23 +657,76 @@ export class Employees implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // ── User Interaction Handlers ────────────────────────────────────────
+  // ── Interactive Actions & CRUD Handlers ─────────────────────────────
+
+  isBottomRow(index: number): boolean {
+    return index >= Math.floor(this.rows.length / 2);
+  }
 
   onHeaderAddDataClick(): void {
-    const label = this.tableConfig.add_data_button_name || '+ Add Record';
-    this.showToast(
-      `${label} Clicked`,
-      `Table Config API: ${this.tableConfig.table_api.create_api}`,
-      'header'
-    );
+    this.showCreateModal = true;
+    this.createForm = { first_name: '', last_name: '', email: '', password_hash: 'Password123!', status: 'active' };
+  }
+
+  submitCreateUser(): void {
+    if (!this.createForm.first_name || !this.createForm.email) {
+      this.showToast('Validation Error', 'First name and email are required.', 'header');
+      return;
+    }
+
+    const createUrl = this.tableConfig.table_api.create_api || '/identity/management/users/create';
+    this.apiService.createUser(createUrl, this.createForm, this.apiBaseUrl).subscribe({
+      next: res => {
+        this.showToast('User Created', res?.message || 'New user record created successfully via API', 'header');
+        this.showCreateModal = false;
+        this.fetchTableData();
+      },
+      error: () => {
+        // Fallback local append
+        this.defaultMockRows.unshift({
+          id: String(Date.now()),
+          ...this.createForm,
+          created_at: new Date().toLocaleDateString(),
+        });
+        this.showToast('User Created (Local)', `${this.createForm.first_name} added to table`, 'header');
+        this.showCreateModal = false;
+        this.fetchTableData();
+      },
+    });
+  }
+
+  submitEditUser(): void {
+    const updateUrl = this.tableConfig.table_api.update_api || '/identity/management/users/update/:id';
+    this.apiService.updateUser(updateUrl, this.editForm.id, this.editForm, this.apiBaseUrl).subscribe({
+      next: res => {
+        this.showToast('User Updated', res?.message || `User ID ${this.editForm.id} updated via API`, 'row');
+        this.showEditModal = false;
+        this.fetchTableData();
+      },
+      error: () => {
+        const local = this.defaultMockRows.find(r => r['id'] === this.editForm.id);
+        if (local) {
+          local['first_name'] = this.editForm.first_name;
+          local['last_name'] = this.editForm.last_name;
+          local['email'] = this.editForm.email;
+          local['status'] = this.editForm.status;
+        }
+        this.showToast('User Updated (Local)', `Changes saved for ID: ${this.editForm.id}`, 'row');
+        this.showEditModal = false;
+        this.fetchTableData();
+      },
+    });
   }
 
   onPinnedActionClick(action: PinnedToolbarAction): void {
-    this.showToast(
-      `[Toolbar Action] ${action.name}`,
-      `Component: ${action.component} (Section: ${action.section})`,
-      'toolbar'
-    );
+    this.actionClicked.emit({ actionKey: action.key });
+
+    if (action.key === 'refresh') {
+      this.bootstrapTable();
+      this.showToast('[Refresh Triggered]', 'Re-syncing table configurations and rows from API', 'toolbar');
+      return;
+    }
+    this.showToast(`[Toolbar] ${action.name}`, `Component: ${action.component} (Section: ${action.section})`, 'toolbar');
   }
 
   toggleActionsMenu(e: MouseEvent): void {
@@ -729,32 +745,38 @@ export class Employees implements OnInit {
     }
     this.actionsMenuOpen = false;
     this.activeSubmenuKey = null;
-    this.showToast(
-      `[Actions Menu] ${action.name}`,
-      `Component: ${action.component} (Order: ${action.order})`,
-      'dropdown'
-    );
+
+    this.actionClicked.emit({ actionKey: action.key });
+
+    if (action.key === 'reset') {
+      this.activeFilters = {};
+      this.sortState = { first_name: 'asc' };
+      this.fetchTableData(1, this.pagination.limit);
+      this.showToast('Table Reset', 'Cleared all filters and sorting', 'dropdown');
+      return;
+    }
+
+    this.showToast(`[Actions Menu] ${action.name}`, `Action: ${action.key}`, 'dropdown');
   }
 
-  onSubOptionClick(
-    e: MouseEvent,
-    action: ActionItemConfig & { key: string },
-    optKey: string,
-    opt: ActionDropdownOption
-  ): void {
+  onSubOptionClick(e: MouseEvent, action: ActionItemConfig & { key: string }, optKey: string, opt: ActionDropdownOption): void {
     e.stopPropagation();
     this.actionsMenuOpen = false;
     this.activeSubmenuKey = null;
 
     if (action.key === 'density') {
-      this.selectedDensity = optKey as 'compact' | 'comfortable' | 'spacious';
+      const densityValue = optKey as 'compact' | 'comfortable' | 'spacious';
+      this.density = densityValue;
+      // Emit the event — do not mutate or apply changes to the table directly
+      this.densityChange.emit(densityValue);
+      this.actionClicked.emit({ actionKey: 'density', optionKey: optKey, value: densityValue });
+      this.showToast('[Event Emitted: densityChange]', `Density factor emitted: "${densityValue}" (no table layout mutation)`, 'dropdown');
+      this.cdr.markForCheck();
+      return;
     }
 
-    this.showToast(
-      `[${action.name}] Selected: ${opt.display_name}`,
-      opt.info_note ? `Note: ${opt.info_note}` : `Config Key: ${optKey}`,
-      'dropdown'
-    );
+    this.actionClicked.emit({ actionKey: action.key, optionKey: optKey, value: opt });
+    this.showToast(`[${action.name}] ${opt.display_name}`, `Config key: ${optKey}`, 'dropdown');
   }
 
   toggleFilterDropdown(e: MouseEvent, colKey: string): void {
@@ -765,36 +787,25 @@ export class Employees implements OnInit {
 
   onFilterItemClick(e: MouseEvent, col: EnrichedColumn, item: FilterDataItem): void {
     e.stopPropagation();
-    this.showToast(
-      `[Filter] Column "${col.header_name}"`,
-      `Filter Option: ${item.name} (${item.key})`,
-      'filter'
-    );
+    this.activeFilterDropdownKey = null;
+    this.activeFilters[col.filter_key] = item.key;
+    this.fetchTableData(1, this.pagination.limit);
+    this.showToast(`Filter Applied: ${col.header_name}`, `Value: ${item.name}`, 'filter');
   }
 
   onSearchInput(col: EnrichedColumn, value: string): void {
-    if (value.trim()) {
-      this.showToast(
-        `[Search] Column "${col.header_name}"`,
-        `Filter Type: ${col.filter_type} | Query: "${value}"`,
-        'filter'
-      );
-    }
+    this.activeFilters[col.filter_key] = value.trim();
+    this.fetchTableData(1, this.pagination.limit);
+    this.showToast(`Search Applied: ${col.header_name}`, `Query: "${value}"`, 'filter');
   }
-
-  sortState: Record<string, 'asc' | 'desc' | null> = { first_name: 'asc' };
 
   onHeaderSortClick(col: EnrichedColumn): void {
     if (!col.sorting) return;
     const current = this.sortState[col.key];
     const next: 'asc' | 'desc' | null = current === 'asc' ? 'desc' : current === 'desc' ? null : 'asc';
-    this.sortState[col.key] = next;
-    this.showToast(
-      `[Sort] Column "${col.header_name}"`,
-      next ? `Direction: ${next.toUpperCase()}` : 'Sort cleared',
-      'header'
-    );
-    this.cdr.markForCheck();
+    this.sortState = { [col.key]: next };
+    this.fetchTableData(1, this.pagination.limit);
+    this.showToast(`Sort: ${col.header_name}`, next ? `Direction: ${next.toUpperCase()}` : 'Cleared', 'header');
   }
 
   toggleRowActionMenu(e: MouseEvent, rowId: string): void {
@@ -806,48 +817,76 @@ export class Employees implements OnInit {
   onRowActionClick(e: MouseEvent, optionKey: string, row: Record<string, any>): void {
     e.stopPropagation();
     this.activeRowActionId = null;
-    this.showToast(
-      `[Row Action] "${optionKey}"`,
-      `Target Row: ${row['first_name']} ${row['last_name']} (ID: ${row['id']})`,
-      'row'
-    );
+
+    if (optionKey === 'delete') {
+      const deleteUrl = this.tableConfig.table_api.delete_api || '/identity/management/users/delete/:id';
+      this.apiService.deleteUser(deleteUrl, row['id'], this.apiBaseUrl).subscribe({
+        next: res => {
+          this.showToast('User Deleted', res?.message || `User ID ${row['id']} deleted via API`, 'row');
+          this.fetchTableData();
+        },
+        error: () => {
+          const idx = this.defaultMockRows.findIndex(r => r['id'] === row['id']);
+          if (idx !== -1) this.defaultMockRows.splice(idx, 1);
+          this.showToast('User Deleted (Local)', `Deleted row: ${row['first_name']}`, 'row');
+          this.fetchTableData();
+        },
+      });
+      return;
+    }
+
+    if (optionKey === 'edit') {
+      this.editForm = {
+        id: String(row['id']),
+        first_name: row['first_name'] || '',
+        last_name: row['last_name'] || '',
+        email: row['email'] || '',
+        status: row['status'] || 'active',
+      };
+      this.showEditModal = true;
+      return;
+    }
+
+    if (optionKey === 'refresh') {
+      this.fetchTableData();
+      this.showToast('Refreshed', `Reloaded row data from API`, 'row');
+      return;
+    }
+
+    this.showToast(`[Row Action] ${optionKey}`, `Row: ${row['first_name']} ${row['last_name']}`, 'row');
   }
 
   toggleSelectAll(): void {
-    if (this.selectedRowIds.size === this.mockRows.length) {
+    if (this.selectedRowIds.size === this.rows.length) {
       this.selectedRowIds.clear();
-      this.showToast(`Selection Cleared`, `All rows deselected`, 'header');
+      this.showToast('Selection Cleared', 'All rows deselected', 'header');
     } else {
-      this.mockRows.forEach(r => this.selectedRowIds.add(r['id']));
-      this.showToast(`Selected All Rows`, `${this.mockRows.length} rows selected`, 'header');
+      this.rows.forEach(r => this.selectedRowIds.add(String(r['id'])));
+      this.showToast('Selected All Rows', `${this.rows.length} rows selected`, 'header');
     }
     this.cdr.markForCheck();
   }
 
   toggleRowSelect(e: MouseEvent, rowId: string): void {
     e.stopPropagation();
-    if (this.selectedRowIds.has(rowId)) {
-      this.selectedRowIds.delete(rowId);
+    const strId = String(rowId);
+    if (this.selectedRowIds.has(strId)) {
+      this.selectedRowIds.delete(strId);
     } else {
-      this.selectedRowIds.add(rowId);
+      this.selectedRowIds.add(strId);
     }
-    this.showToast(
-      `Row Selection Changed`,
-      `${this.selectedRowIds.size} row(s) currently selected`,
-      'row'
-    );
+    this.showToast('Row Selection Changed', `${this.selectedRowIds.size} row(s) selected`, 'row');
     this.cdr.markForCheck();
   }
 
-  isBottomRow(index: number): boolean {
-    return index >= Math.floor(this.mockRows.length / 2);
+  onPaginationPageChange(page: number): void {
+    this.pagination.page = page;
+    this.fetchTableData(page, this.pagination.limit);
   }
 
-  onPaginationChange(type: 'page' | 'limit', val: number): void {
-    this.showToast(
-      `[Pagination] ${type === 'page' ? 'Page Navigation' : 'Page Size Changed'}`,
-      `Set ${type} to: ${val}`,
-      'pagination'
-    );
+  onPaginationLimitChange(limit: number): void {
+    this.pagination.limit = limit;
+    this.pagination.page = 1;
+    this.fetchTableData(1, limit);
   }
 }
