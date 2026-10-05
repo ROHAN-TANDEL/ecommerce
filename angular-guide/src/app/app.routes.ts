@@ -7,6 +7,7 @@ import { Final } from "./pages/final/final";
 import { Starter } from "./pages/starter/starter";
 import { Live } from "./pages/live/live";
 import { Principal } from "./pages/principal/principal";
+import { Employees } from "./pages/employees/employees";
 
 export const routes: Routes = [
     { path: 'login',           component: Login },
@@ -17,6 +18,6 @@ export const routes: Routes = [
     { path: 'nexora/starter',   component: Starter },
     { path: 'nexora/live',      component: Live },
     { path: 'nexora/principal', component: Principal },
-    { path: 'principal',        component: Principal },
+    { path: 'nexora/emp',        component: Employees },
     { path: '',                redirectTo: 'login', pathMatch: 'full' },
 ];

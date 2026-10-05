@@ -1,0 +1,596 @@
+<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-6 pb-28">
+  <div class="max-w-[1400px] mx-auto space-y-4">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. PAGE TITLE & HEADER SECTION (Driven by table_config)         -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <header *ngIf="tableConfig.show_title_header_section"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-4 rounded-xl border border-slate-200 shadow-2xs">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-base font-semibold text-slate-900 tracking-tight">
+            {{ tableConfig.display_name }}
+          </h1>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
+            {{ tableConfig.table_key }}
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Config-driven modular table engine. All columns, freeze offsets, and toolbar actions are dynamically bound.
+        </p>
+      </div>
+
+      <!-- Header Primary Button: Driven by add_data_button_name -->
+      <div *ngIf="tableConfig.enable_add_data_button" class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="onHeaderAddDataClick()"
+          class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-slate-800 active:scale-98 cursor-pointer"
+        >
+          <!-- Minimal monochrome plus SVG icon -->
+          <svg class="w-3.5 h-3.5 stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>{{ tableConfig.add_data_button_name || '+ Add Record' }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2. ACTION PANEL & TOOLBAR COMPONENT (Driven by actions_config)  -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div *ngIf="tableConfig.action_panel"
+         class="relative flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+
+      <!-- Left: Pinned Toolbar Actions (pinned: true) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+        <button
+          *ngFor="let action of pinnedActions"
+          type="button"
+          (click)="onPinnedActionClick(action)"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+        >
+          <!-- Monochrome line icons based on action key -->
+          <ng-container [ngSwitch]="action.key">
+            <!-- Refresh -->
+            <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <!-- Lock -->
+            <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" />
+            </svg>
+            <!-- Edit -->
+            <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            <!-- Save -->
+            <svg *ngSwitchCase="'save'" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            <!-- Default fallback -->
+            <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </ng-container>
+
+          <span>{{ action.name }}</span>
+        </button>
+      </div>
+
+      <!-- Right: Main ⚙ Actions Menu Trigger (Groups non-pinned actions into Sections) -->
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleActionsMenu($event)"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+        >
+          <!-- Minimal gear monochrome SVG -->
+          <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Actions</span>
+          <svg class="w-3 h-3 text-slate-400 transition-transform" [class.rotate-180]="actionsMenuOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- Dropdown Popover: Grouped by Sections (section_1, section_2, section_3) -->
+        <div
+          *ngIf="actionsMenuOpen"
+          class="absolute right-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl divide-y divide-slate-100"
+          (click)="$event.stopPropagation()"
+        >
+          <div *ngFor="let section of sectionGroups" class="py-1 first:pt-0 last:pb-0">
+            <!-- Section Header Label -->
+            <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-400">
+              {{ section.name }}
+            </div>
+
+            <!-- Action Items in this Section -->
+            <div class="space-y-0.5">
+              <div *ngFor="let action of section.actions" class="relative group">
+                <button
+                  type="button"
+                  (click)="onActionItemClick($event, action)"
+                  class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
+                >
+                  <span class="font-medium">{{ action.name }}</span>
+
+                  <!-- Arrow if action has dropdown_options or dynamic_dropdown -->
+                  <svg *ngIf="action.dropdown_options || action.dynamic_dropdown" class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <!-- Submenu Popover for actions with dropdown_options (Export, Download, View, Density) -->
+                <div
+                  *ngIf="activeSubmenuKey === action.key && action.dropdown_options"
+                  class="absolute right-full top-0 mr-1.5 z-60 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
+                  (click)="$event.stopPropagation()"
+                >
+                  <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400">
+                    {{ action.name }} Options
+                  </div>
+                  <button
+                    *ngFor="let optKey of action.dropdown_options | keyvalue"
+                    type="button"
+                    (click)="onSubOptionClick($event, action, optKey.key, optKey.value)"
+                    class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
+                  >
+                    <div>
+                      <div class="font-medium">{{ optKey.value.display_name }}</div>
+                      <div *ngIf="optKey.value.info_note" class="text-[10px] text-slate-400">
+                        {{ optKey.value.info_note }}
+                      </div>
+                    </div>
+                    <!-- Selected checkmark indicator for density -->
+                    <span *ngIf="action.key === 'density' && selectedDensity === optKey.key" class="text-xs text-slate-900 font-bold">
+                      ✓
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Submenu for dynamic columns dropdown -->
+                <div
+                  *ngIf="activeSubmenuKey === action.key && action.dynamic_dropdown"
+                  class="absolute right-full top-0 mr-1.5 z-60 w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-1"
+                  (click)="$event.stopPropagation()"
+                >
+                  <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400">
+                    Visible Columns ({{ columnsList.length }})
+                  </div>
+                  <div *ngFor="let col of columnsList" class="flex items-center gap-2 px-2.5 py-1 text-xs text-slate-700">
+                    <input type="checkbox" [checked]="col.active" disabled class="rounded border-slate-300 accent-slate-900" />
+                    <span class="truncate">{{ col.header_name }}</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 3. TABLE CONTAINER (Sticky Headers, Frozen Columns, Filters)    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+      <div class="overflow-x-auto relative">
+        <table class="w-full text-left border-collapse table-fixed">
+
+          <!-- ── THEAD (Headers + Embedded Filter Row) ────────────────── -->
+          <thead *ngIf="tableConfig.show_table_headers" class="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+
+            <!-- ROW 1: COLUMN HEADERS -->
+            <tr class="border-b border-slate-200 text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+
+              <!-- Selection Checkbox Column Header (Fixed Left 0px) -->
+              <th class="w-[50px] px-3 py-3 bg-slate-50 sticky left-0 z-30 border-r border-slate-200 text-center">
+                <input
+                  type="checkbox"
+                  [checked]="selectedRowIds.size === mockRows.length && mockRows.length > 0"
+                  (change)="toggleSelectAll()"
+                  class="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer"
+                  title="Select all rows"
+                />
+              </th>
+
+              <!-- Dynamic Column Headers (Sorted by order, with computed sticky left offsets) -->
+              <th
+                *ngFor="let col of columnsList"
+                [style.width]="col.computedWidth"
+                [style.left]="col.stickyLeft || null"
+                [class.sticky]="col.isFrozen"
+                [class.z-25]="col.isFrozen"
+                [class.border-r]="col.isFrozen"
+                [class.border-slate-200]="col.isFrozen"
+                [class.bg-slate-100]="col.isFrozen"
+                class="px-3.5 py-3 select-none transition-colors"
+              >
+                <div class="flex items-center justify-between gap-1.5">
+                  <div
+                    class="flex items-center gap-1.5 truncate cursor-pointer group"
+                    (click)="onHeaderSortClick(col)"
+                  >
+                    <span class="truncate font-medium text-slate-800">{{ col.header_name }}</span>
+
+                    <!-- Modern Paired Chevron Sort SVG Indicator -->
+                    <span *ngIf="col.sorting" class="flex flex-col gap-[1.5px] items-center shrink-0 ml-0.5">
+                      <svg
+                        class="w-2 h-2 transition-colors"
+                        [class.text-slate-900]="sortState[col.key] === 'asc'"
+                        [class.text-slate-300]="sortState[col.key] !== 'asc'"
+                        viewBox="0 0 10 6" fill="currentColor">
+                        <path d="M5 0.5L9.5 5.5H0.5L5 0.5Z" />
+                      </svg>
+                      <svg
+                        class="w-2 h-2 transition-colors"
+                        [class.text-slate-900]="sortState[col.key] === 'desc'"
+                        [class.text-slate-300]="sortState[col.key] !== 'desc'"
+                        viewBox="0 0 10 6" fill="currentColor">
+                        <path d="M5 5.5L0.5 0.5H9.5L5 5.5Z" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  <!-- Modern Info Note Icon with Floating Micro-Tooltip -->
+                  <div *ngIf="col.info_note" class="relative group/info flex items-center shrink-0">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center w-4 h-4 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                    </button>
+
+                    <!-- Floating Dark Micro-Tooltip -->
+                    <div class="pointer-events-none absolute right-0 top-full mt-1.5 z-50 hidden group-hover/info:block whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-normal text-slate-100 shadow-xl border border-slate-800">
+                      {{ col.info_note }}
+                      <div class="absolute -top-1 right-2 h-2 w-2 rotate-45 bg-slate-900 border-t border-l border-slate-800"></div>
+                    </div>
+                  </div>
+                </div>
+              </th>
+
+              <!-- Action Column Header (Fixed Right 0px) -->
+              <th *ngIf="tableConfig.action_column.active"
+                  class="w-[110px] px-3 py-3 bg-slate-50 sticky right-0 z-30 border-l border-slate-200 text-center">
+                Action
+              </th>
+            </tr>
+
+            <!-- ROW 2: SEARCH & FILTER ROW (Driven by enable_table_search_filters & filter_type) -->
+            <tr *ngIf="tableConfig.enable_table_search_filters" class="bg-white border-b border-slate-200 text-xs">
+
+              <!-- Filter Checkbox Placeholder (Fixed Left 0px) -->
+              <th class="w-[50px] px-2 py-2 bg-white sticky left-0 z-30 border-r border-slate-200 text-center">
+                <!-- Clean clear filter indicator -->
+                <span class="text-[10px] text-slate-300">#</span>
+              </th>
+
+              <!-- Column Filters -->
+              <th
+                *ngFor="let col of columnsList"
+                [style.width]="col.computedWidth"
+                [style.left]="col.stickyLeft || null"
+                [class.sticky]="col.isFrozen"
+                [class.z-40]="activeFilterDropdownKey === col.key"
+                [class.z-25]="col.isFrozen && activeFilterDropdownKey !== col.key"
+                [class.border-r]="col.isFrozen"
+                [class.border-slate-200]="col.isFrozen"
+                [class.bg-slate-50]="col.isFrozen"
+                class="px-2 py-1.5 align-middle"
+              >
+                <!-- 1. Text Search Filter (search or multi_search) -->
+                <div *ngIf="col.filter_type === 'search' || col.filter_type === 'multi_search'" class="relative">
+                  <input
+                    type="text"
+                    [placeholder]="'Filter ' + col.header_name"
+                    (keyup.enter)="onSearchInput(col, $any($event.target).value)"
+                    class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <!-- 2. Checklist Dropdown Filter (list) -->
+                <div *ngIf="col.filter_type === 'list'" class="relative">
+                  <button
+                    type="button"
+                    (click)="toggleFilterDropdown($event, col.key)"
+                    class="flex w-full h-7 items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-600 hover:border-slate-300 cursor-pointer"
+                  >
+                    <span>All {{ col.header_name }}</span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  <!-- Filter Checklist Popover -->
+                  <div
+                    *ngIf="activeFilterDropdownKey === col.key"
+                    class="absolute left-0 top-full mt-1 z-40 w-44 rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl space-y-1"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <div *ngFor="let item of col.filter_data"
+                         (click)="onFilterItemClick($event, col, item)"
+                         class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 cursor-pointer text-xs text-slate-700">
+                      <input type="checkbox" [checked]="item.default" class="rounded border-slate-300 accent-slate-900" />
+                      <span>{{ item.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Date Range Filter (date_range) -->
+                <div *ngIf="col.filter_type === 'date_range'">
+                  <button
+                    type="button"
+                    (click)="showToast('[Date Range Filter]', 'Range selector opened for ' + col.header_name, 'filter')"
+                    class="flex w-full h-7 items-center justify-between rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-500 hover:border-slate-300 cursor-pointer"
+                  >
+                    <span>Select Range</span>
+                    <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                  </button>
+                </div>
+              </th>
+
+              <!-- Actions column filter placeholder (Fixed Right 0px) -->
+              <th *ngIf="tableConfig.action_column.active"
+                  class="w-[110px] px-2 py-2 bg-white sticky right-0 z-30 border-l border-slate-200 text-center">
+                <svg class="w-3.5 h-3.5 text-slate-300 mx-auto" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="1.5"></circle>
+                  <circle cx="12" cy="12" r="1.5"></circle>
+                  <circle cx="19" cy="12" r="1.5"></circle>
+                </svg>
+              </th>
+            </tr>
+
+          </thead>
+
+          <!-- ── TBODY: DYNAMIC CELL MODES & PRESENTATION VOCABULARY ───── -->
+          <tbody class="divide-y divide-slate-100 text-xs">
+            <tr
+              *ngFor="let row of mockRows; let i = index; let even = even"
+              [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
+              [class.bg-blue-50]="selectedRowIds.has(row['id'])"
+              [class.z-40]="activeRowActionId === row['id']"
+              [class.relative]="activeRowActionId === row['id']"
+              class="hover:bg-slate-100/70 transition-colors"
+            >
+
+              <!-- Checkbox Cell (Fixed Left 0px) -->
+              <td class="w-[50px] px-3 py-3 text-center sticky left-0 z-10 border-r border-slate-200"
+                  [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
+                  [class.bg-white]="!even && !selectedRowIds.has(row['id'])"
+                  [class.bg-blue-50]="selectedRowIds.has(row['id'])">
+                <input
+                  type="checkbox"
+                  [checked]="selectedRowIds.has(row['id'])"
+                  (click)="toggleRowSelect($event, row['id'])"
+                  class="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer"
+                />
+              </td>
+
+              <!-- Dynamic Data Cells Rendered by cell_mode -->
+              <td
+                *ngFor="let col of columnsList"
+                [style.width]="col.computedWidth"
+                [style.left]="col.stickyLeft || null"
+                [class.sticky]="col.isFrozen"
+                [class.z-10]="col.isFrozen"
+                [class.border-r]="col.isFrozen"
+                [class.border-slate-200]="col.isFrozen"
+                [class.bg-slate-50]="col.isFrozen && even && !selectedRowIds.has(row['id'])"
+                [class.bg-white]="col.isFrozen && !even && !selectedRowIds.has(row['id'])"
+                [class.bg-blue-50]="col.isFrozen && selectedRowIds.has(row['id'])"
+                [class.py-2]="selectedDensity === 'compact'"
+                [class.py-3]="selectedDensity === 'comfortable'"
+                [class.py-4]="selectedDensity === 'spacious'"
+                class="px-3.5 align-middle truncate"
+              >
+                <!-- CELL MODE 1: text_code_1000 (Plain text / Alphanumeric) -->
+                <ng-container *ngIf="col.cell_mode === 'text_code_1000'">
+                  <span class="font-medium text-slate-800">{{ row[col.key] }}</span>
+                </ng-container>
+
+                <!-- CELL MODE 2: text_code_2000 (Email / Linked contact) -->
+                <ng-container *ngIf="col.cell_mode === 'text_code_2000'">
+                  <div class="flex items-center gap-1.5 text-slate-600 font-mono text-[11px]">
+                    <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span class="truncate">{{ row[col.key] }}</span>
+                  </div>
+                </ng-container>
+
+                <!-- CELL MODE 3: text_code_3100 (Status Badge) -->
+                <ng-container *ngIf="col.cell_mode === 'text_code_3100'">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+                    [ngClass]="{
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200': row[col.key] === 'active',
+                      'bg-amber-50 text-amber-700 border border-amber-200': row[col.key] === 'pending',
+                      'bg-slate-100 text-slate-600 border border-slate-200': row[col.key] === 'inactive'
+                    }"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full"
+                      [ngClass]="{
+                        'bg-emerald-500': row[col.key] === 'active',
+                        'bg-amber-500': row[col.key] === 'pending',
+                        'bg-slate-400': row[col.key] === 'inactive'
+                      }"
+                    ></span>
+                    <span>{{ row[col.key] }}</span>
+                  </span>
+                </ng-container>
+
+                <!-- CELL MODE 4: text_code_4000 (Timestamp / Date) -->
+                <ng-container *ngIf="col.cell_mode === 'text_code_4000'">
+                  <span class="text-slate-500 text-[11px] font-mono">{{ row[col.key] }}</span>
+                </ng-container>
+
+              </td>
+
+              <!-- Row Action Column (Fixed Right 0px with elevated z-index when active) -->
+              <td *ngIf="tableConfig.action_column.active"
+                  class="w-[110px] px-3 text-center sticky right-0 border-l border-slate-200"
+                  [class.z-40]="activeRowActionId === row['id']"
+                  [class.z-10]="activeRowActionId !== row['id']"
+                  [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
+                  [class.bg-white]="!even && !selectedRowIds.has(row['id'])"
+                  [class.bg-blue-50]="selectedRowIds.has(row['id'])">
+
+                <div class="relative inline-block text-left">
+                  <!-- Minimalist Monochrome Action Kebab Button -->
+                  <button
+                    type="button"
+                    (click)="toggleRowActionMenu($event, row['id'])"
+                    class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer"
+                    title="Row Actions"
+                  >
+                    <!-- Monochrome 3 vertical dots SVG -->
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="1.75"></circle>
+                      <circle cx="12" cy="12" r="1.75"></circle>
+                      <circle cx="12" cy="19" r="1.75"></circle>
+                    </svg>
+                  </button>
+
+                  <!-- Row Action Popover (Elevated z-50, opens upwards on bottom rows) -->
+                  <div
+                    *ngIf="activeRowActionId === row['id']"
+                    class="absolute right-0 z-50 w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-2xl space-y-0.5 text-left"
+                    [class.top-full]="!isBottomRow(i)"
+                    [class.mt-1]="!isBottomRow(i)"
+                    [class.bottom-full]="isBottomRow(i)"
+                    [class.mb-1]="isBottomRow(i)"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <button
+                      *ngFor="let opt of tableConfig.action_column.options"
+                      type="button"
+                      (click)="onRowActionClick($event, opt, row)"
+                      class="flex w-full items-center px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100 rounded capitalize transition-colors cursor-pointer"
+                    >
+                      {{ opt }}
+                    </button>
+                  </div>
+                </div>
+
+              </td>
+
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════ -->
+      <!-- 4. PAGINATION FOOTER (Driven by table_config.pagination)      -->
+      <!-- ═════════════════════════════════════════════════════════════ -->
+      <footer *ngIf="tableConfig.pagination.active"
+              class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3 text-xs text-slate-600">
+
+        <!-- Records Counter -->
+        <div class="flex items-center gap-1.5">
+          <span>Showing</span>
+          <span class="font-medium text-slate-900">1</span>
+          <span>to</span>
+          <span class="font-medium text-slate-900">{{ mockRows.length }}</span>
+          <span>of</span>
+          <span class="font-medium text-slate-900">{{ mockRows.length }}</span>
+          <span>entries</span>
+        </div>
+
+        <!-- Page Jumpers -->
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            (click)="onPaginationChange('page', 1)"
+            class="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs shadow-2xs cursor-pointer"
+          >
+            «
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-md bg-slate-900 text-white font-medium text-xs shadow-2xs"
+          >
+            1
+          </button>
+          <button
+            type="button"
+            (click)="onPaginationChange('page', 2)"
+            class="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs shadow-2xs cursor-pointer"
+          >
+            2
+          </button>
+          <button
+            type="button"
+            (click)="onPaginationChange('page', 2)"
+            class="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs shadow-2xs cursor-pointer"
+          >
+            »
+          </button>
+        </div>
+
+        <!-- Rows Per Page Selector (Driven by page_size_options) -->
+        <div class="flex items-center gap-2">
+          <span class="text-slate-500">Rows per page:</span>
+          <select
+            (change)="onPaginationChange('limit', +$any($event.target).value)"
+            class="h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-900 shadow-2xs cursor-pointer"
+          >
+            <option *ngFor="let size of tableConfig.pagination.page_size_options" [value]="size" [selected]="size === tableConfig.pagination.default_page_size">
+              {{ size }}
+            </option>
+          </select>
+        </div>
+
+      </footer>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5. FLOATING TOAST NOTIFICATION SYSTEM (Non-Destructive)         -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div
+      *ngFor="let toast of toasts"
+      class="pointer-events-auto bg-slate-900/95 backdrop-blur text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-800 flex items-start justify-between gap-3 transform transition-all duration-200 ease-out animate-slide-up"
+    >
+      <div class="space-y-0.5">
+        <div class="text-xs font-semibold text-white tracking-tight flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>{{ toast.title }}</span>
+        </div>
+        <div *ngIf="toast.detail" class="text-[11px] text-slate-300 font-mono">
+          {{ toast.detail }}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="dismissToast(toast.id)"
+        class="text-slate-400 hover:text-white text-base leading-none cursor-pointer"
+      >
+        ×
+      </button>
+    </div>
+  </div>
+
+</div>
