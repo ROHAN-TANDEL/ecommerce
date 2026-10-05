@@ -2,6 +2,7 @@ import { UserColumnConfig } from "../config/user.column.config.js";
 import { UserActionsConfig } from "../config/user.actions.config.js";
 
 import {UserResponse} from "../response/UserResponse.js";
+import {UserTableConfig} from "../config/user.table.config.js";
 
 export class UserController {
 
@@ -167,93 +168,7 @@ export class UserController {
     }
 
     async getUserTableConfig(req, res) {
-        return res.json({
-            "users_table_unique_key": {
-                "table_name": "users",
-                "display_name": "Users Management",
-                "show_headers" : true,
-                "live_count_panel" : true,
-                "main_action_panel" : true,
-                "show_checkboxes" : true,
-                "fixed_checkboxes" : true,
-                "fixed_actions" : true,
-                "show_actions" : true,
-                "row_expansion" : true,
-                "data_api": "/identity/management/users",
-                "update_api": "/identity/management/users/update/:id",
-                "config_api": "/identity/management/users/config/columns",
-                "table_config_api": "/identity/management/users/config/table",
-                "primary_key": "id",
-                "selection": {
-                    "enabled": true,
-                    "multiple": true
-                },
-                "pagination": {
-                    "enabled": true,
-                    "default_page_size": 25,
-                    "page_size_options": [10, 25, 50, 100]
-                },
-                "sorting": {
-                    "enabled": true,
-                    "multiple": true
-                },
-                "filtering": {
-                    "enabled": true
-                },
-                "editing": {
-                    "enabled": true,
-                    "row_editable": true
-                },
-                "actions": {
-                    "edit": true,
-                    "delete": true,
-                    "enable": true,
-                    "disable": true,
-                    "revert": true,
-                    "more": true
-                },
-                "export": {
-                    "enabled": true,
-                    "formats": ["excel", "csv"]
-                },
-                "download": {
-                    "enabled": true,
-                    "formats": ["excel", "csv"]
-                },
-                "column_management": {
-                    "enabled": true,
-                    "reorder": true,
-                    "show_hide": false
-                },
-                "column_freeze": {
-                    "enabled": true,
-                    "start": 2,
-                    "end": 1
-                },
-                "row_freeze": {
-                    "enabled": true,
-                    "top": 2,
-                    "bottom": 0
-                },
-                "column_resize": {
-                    "enabled": true
-                },
-                "view": {
-                    "fullscreen": true,
-                    "density": true,
-                    "default_density": "comfortable"
-                },
-                "live_collaboration": {
-                    "enabled": true
-                },
-                "features": {
-                    "column_navigation": true,
-                    "column_count_indicator": true,
-                    "save_view": true,
-                    "reset_view": true
-                }
-            }
-        });
+        return res.json(UserTableConfig);
     }
 
     async getUserColumnsConfig(req, res) {
@@ -341,6 +256,42 @@ export class UserController {
             console.log({error: errors});
             return res.status(400).json({ data: null, message: "row update failed", code: 400 });
         }
+    }
+
+
+
+    async lockTable(req, res) {
+        return res.status(200).json({ data: null, message: "lockTable initiated", code: 200 });
+    }
+    async lockRows(req, res) {
+        return res.status(200).json({ data: null, message: "lockRows initiated", code: 200 });
+    }
+
+    async getLocks(req, res) {
+        return res.status(200).json({ data: null, message: "getLocks initiated", code: 200 });
+    }
+
+    async saveView(req, res) {
+        return res.status(200).json({ data: null, message: "saveView initiated", code: 200 });
+    }
+
+    async getView(req, res) {
+        return res.status(200).json({ data: null, message: "getView initiated", code: 200 });
+    }
+    async downloadData(req, res) {
+        return res.status(200).json({ data: null, message: "downloadData initiated", code: 200 });
+    }
+
+    async exportData(req, res) {
+        return res.status(200).json({ data: null, message: "exportData initiated", code: 200 });
+    }
+
+    async liveUpdateSub(req, res) {
+        return res.status(200).json({ data: null, message: "liveUpdateSub initiated", code: 200 });
+    }
+
+    async liveUpdatePub(req, res) {
+        return res.status(200).json({ data: null, message: "liveUpdatePub initiated", code: 200 });
     }
 
     async importCreateUsers(req, res) {}

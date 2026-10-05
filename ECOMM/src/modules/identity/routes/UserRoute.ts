@@ -55,12 +55,29 @@ export class UserRoute {
         router.delete('/users/delete/:id', user.deleteUser.bind(user));
 
         /** delete more users **/
-            router.delete('/users/delete/all', user.deleteAllUsers.bind(user));
+        router.delete('/users/delete/all', user.deleteAllUsers.bind(user));
 
         /** TODO delete more users **/
         router.delete('/users/delete/bulk', user.deleteBulkUsers.bind(user));
 
-        // router.get('/users/config/actions'. user.userActionsConfig.bind(user));
+        router.post('/lock/users/table', user.lockTable.bind(user));
+
+        router.post('/lock/users/rows', user.lockRows.bind(user));
+
+        router.get('/lock/users', user.getLocks.bind(user));
+
+        router.post('/export/users', user.exportData.bind(user));
+
+        router.post('/download/users', user.downloadData.bind(user));
+
+        router.get('/view/users', user.getView.bind(user));
+
+        router.get('/view/users/save', user.saveView.bind(user));
+
+        router.get('/talk/users', user.liveUpdatePub.bind(user));
+
+        router.get('/listen/users', user.liveUpdateSub.bind(user));
+
 
         return router;
     }

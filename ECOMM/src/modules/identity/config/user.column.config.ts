@@ -1,34 +1,47 @@
 export const UserColumnConfig = {
     first_name: {
         header_name: 'First Name',
-        columns: { users: 'first_name' },
-        filter_type: 'search',
+        filter_key : 'first_name',
+        columns: {
+            users: 'first_name'
+        },
+        order : 1,
+        filter_type: 'multi_search',
         editable: true,
         sorting: true,
+        column_resize : true,
         info_note: 'User first name',
         elipsis: 'text_elipsis',
         active: true,
-        show: true,
-        master_edit_allow: true,
-        // freez : { freez_side : "left", order : 1 },
+        freez : {
+            freez_side : "left",
+            order : 1
+        },
+        cell_mode : "text_code_1000",
         filter_data: []
     },
     last_name: {
         header_name: 'Last Name',
+        filter_key : 'last_name',
         columns: { users: 'last_name' },
         filter_type: 'search',
-        editable: true,
+        editable: false,
+        order : 2,
         sorting: true,
         info_note: 'User last name',
         elipsis: 'text_elipsis',
         active: true,
-        show: true,
-        master_edit_allow: true,
-        // freez : { freez_side : "left", order : 2 },
+        column_resize : true,
+        cell_mode : "text_code_1000",
+        freez : {
+            freez_side : "left",
+            order : 2
+        },
         filter_data: []
     },
     email: {
         header_name: 'Email',
+        filter_key : 'user_email',
         columns: { users: 'email' },
         filter_type: 'search',
         editable: true,
@@ -36,21 +49,24 @@ export const UserColumnConfig = {
         info_note: 'User email address',
         elipsis: 'text_elipsis',
         active: true,
-        show: true,
-        master_edit_allow: true,
+        order : 3,
+        cell_mode : "text_code_2000",
+        column_resize : true,
         filter_data: []
     },
     status: {
         header_name: 'Status',
+        filter_key : 'user_name',
         columns: { users: 'status' },
         filter_type: 'list',
         editable: true,
         sorting: true,
         info_note: 'Current user status',
         elipsis: 'text_elipsis',
+        cell_mode : "text_code_3100",
         active: true,
-        show: true,
-        master_edit_allow: true,
+        order: 4,
+        column_resize : true,
         filter_data: [
             { key: 'active', name: 'Active', type: 'check_box', default: false },
             { key: 'inactive', name: 'Inactive', type: 'check_box', default: false },
@@ -58,16 +74,18 @@ export const UserColumnConfig = {
         ]
     },
     created_at: {
+        filter_key : 'user_created_at',
         header_name: 'Registration Date',
         columns: { users: 'created_at' },
         filter_type: 'date_range',
         editable: false,
+        column_resize : true,
+        cell_mode : "text_code_4000",
         sorting: true,
+        order : 5,
         info_note: 'Date user registered',
         elipsis: 'text_elipsis',
         active: true,
-        show: true,
-        master_edit_allow: false,
         filter_data: []
     }
 };
