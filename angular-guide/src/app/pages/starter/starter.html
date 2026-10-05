@@ -1,0 +1,822 @@
+<div class="min-h-screen bg-slate-50/50 pb-24 text-slate-900 font-sans antialiased">
+  <!-- Top Navigation & Action Header -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-4 shadow-xs">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+            Nexora UI
+          </span>
+          <h1 class="text-xl font-bold text-slate-900 tracking-tight">Nexora Starter Component Showcase</h1>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Dedicated showcase for advanced UI components: Scheduling, Layouts, Hierarchy, States, Drag-Drop, Collaboration & Business UI.
+        </p>
+      </div>
+
+      <!-- Action status ticker -->
+      <div class="flex items-center gap-2 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+        <span class="text-slate-600 font-mono truncate max-w-sm">{{ lastActionMessage }}</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
+      <button
+        type="button"
+        (click)="activeTab = 'scheduling'"
+        [class]="activeTab === 'scheduling' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        11. Dates & Scheduling
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'layout'"
+        [class]="activeTab === 'layout' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        13. Layout & Structural
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'typography'"
+        [class]="activeTab === 'typography' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        14. Information Hierarchy
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'states'"
+        [class]="activeTab === 'states' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        15. States (Empty/Error)
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'dragdrop'"
+        [class]="activeTab === 'dragdrop' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        16. Drag-and-Drop / Kanban
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'collab'"
+        [class]="activeTab === 'collab' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        17. Collaboration
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'business'"
+        [class]="activeTab === 'business' ? 'bg-blue-600 text-white font-semibold shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap"
+      >
+        18. Business & Fintech UI
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 pt-6">
+
+    <!-- 11. DATES & SCHEDULING TAB -->
+    @if (activeTab === 'scheduling') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">11. Dates and Scheduling Vocabulary</h2>
+          <p class="text-xs text-slate-500">Interactive calendars, mini widgets, agenda slots, event cards, indicators, and timestamps.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Full Calendar -->
+          <div class="lg:col-span-8 bg-white p-5 border border-slate-200 rounded-xl shadow-2xs">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Interactive Month Calendar</h3>
+            <nexora-calendar
+              [selectedDate]="selectedCalendarDate"
+              (dateSelect)="onDateSelect($event)"
+            />
+          </div>
+
+          <!-- Mini Calendar & Event Indicators -->
+          <div class="lg:col-span-4 space-y-6">
+            <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs">
+              <h3 class="text-sm font-semibold text-slate-800 mb-3">Compact Mini Calendar</h3>
+              <nexora-mini-calendar
+                [selectedDate]="selectedCalendarDate"
+                (dateSelect)="onDateSelect($event)"
+              />
+            </div>
+
+            <!-- Event Indicators -->
+            <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs">
+              <h3 class="text-sm font-semibold text-slate-800 mb-3">Event Status Indicators</h3>
+              <div class="flex flex-wrap gap-2">
+                <nexora-event-indicator status="completed" label="Audit Completed" />
+                <nexora-event-indicator status="active" label="In Progress" />
+                <nexora-event-indicator status="scheduled" label="Quarterly Review" />
+                <nexora-event-indicator status="cancelled" label="Postponed" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Cards & Agenda Slots -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-3">
+            <h3 class="text-sm font-semibold text-slate-800 mb-2">Event Cards</h3>
+            <nexora-event-card
+              title="Global Financial Q4 Strategy"
+              subtitle="Auditing and compliance pipeline roadmap"
+              time="10:00 AM - 11:30 AM"
+              location="Boardroom 4A / Virtual"
+              badge="High Priority"
+              variant="blue"
+            />
+            <nexora-event-card
+              title="AWS Infrastructure Disaster Recovery Drill"
+              subtitle="Testing cross-region failover and ledger restore"
+              time="02:00 PM - 04:00 PM"
+              location="SecOps War Room"
+              badge="Critical"
+              variant="amber"
+            />
+          </div>
+
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-3">
+            <h3 class="text-sm font-semibold text-slate-800 mb-2">Agenda Time Slots</h3>
+            <nexora-agenda-slot
+              time="09:00 AM"
+              duration="30 min"
+              title="Daily Engineering Standup"
+              subtitle="Nexora Table sync & PR reviews"
+              tag="Team Sync"
+            />
+            <nexora-agenda-slot
+              time="11:00 AM"
+              duration="60 min"
+              title="Security & PCI-DSS Audit Inspection"
+              subtitle="Reviewing encrypted column storage & salt rotators"
+              tag="Compliance"
+            />
+            <nexora-agenda-slot
+              time="03:30 PM"
+              duration="45 min"
+              title="Product Demo: New Form Builders"
+              subtitle="Presenting 45+ inputs vocabulary to stakeholders"
+              tag="Demo"
+            />
+          </div>
+        </div>
+
+        <!-- Timestamps & Relative Dates -->
+        <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs">
+          <h3 class="text-sm font-semibold text-slate-800 mb-3">Relative Dates & Precision Timestamps</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Relative Time Ago</span>
+              <div class="flex flex-col gap-1.5">
+                <div><nexora-relative-date [date]="sampleDates.now" /></div>
+                <div><nexora-relative-date [date]="sampleDates.tenMinAgo" /></div>
+                <div><nexora-relative-date [date]="sampleDates.threeHoursAgo" /></div>
+                <div><nexora-relative-date [date]="sampleDates.yesterday" /></div>
+                <div><nexora-relative-date [date]="sampleDates.fourDaysAgo" /></div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Absolute Formatted Dates</span>
+              <div class="flex flex-col gap-1.5">
+                <div><nexora-timestamp [date]="sampleDates.now" format="date" /></div>
+                <div><nexora-timestamp [date]="sampleDates.yesterday" format="datetime" /></div>
+                <div><nexora-timestamp [date]="sampleDates.now" format="time" /></div>
+                <div><nexora-timestamp [date]="sampleDates.now" format="iso" /></div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+              <span class="text-xs font-semibold text-slate-500 uppercase">With Clock Icon & Seconds</span>
+              <div class="flex flex-col gap-1.5">
+                <div><nexora-timestamp [date]="sampleDates.now" [showIcon]="true" format="datetime" /></div>
+                <div><nexora-timestamp [date]="sampleDates.threeHoursAgo" [showIcon]="true" format="time" [showSeconds]="true" /></div>
+                <div><nexora-timestamp [date]="sampleDates.yesterday" [showIcon]="true" format="date" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 13. LAYOUT & STRUCTURAL TAB -->
+    @if (activeTab === 'layout') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">13. Layout & Structural Vocabulary</h2>
+          <p class="text-xs text-slate-500">Container, Section, Panel, Stack, Split Pane, Toolbar Layout, Action Bar, Divider & Spacer.</p>
+        </div>
+
+        <!-- Section Layout Demo -->
+        <nexora-section-layout
+          title="User Account Configuration"
+          subtitle="Manage your authentication methods, session lifetimes, and authorization scopes."
+        >
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <nexora-panel title="Session Security" description="Configure automatic token revocation">
+                <p class="text-xs text-slate-600">Idle timeout will terminate active sessions after 15 minutes of inactivity.</p>
+              </nexora-panel>
+              <nexora-panel title="Multi-Region Replicas" description="Active-active cross region replication">
+                <p class="text-xs text-slate-600">Replicating database transactions across ap-south-1 and us-east-1.</p>
+              </nexora-panel>
+            </div>
+
+            <nexora-divider text="ACTION TOOLBAR & BARS" />
+
+            <!-- Toolbar Layout -->
+            <nexora-toolbar-layout>
+              <div toolbar-left class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-700">Records View:</span>
+                <span class="text-xs bg-slate-100 px-2 py-1 rounded font-mono">1,492 items</span>
+              </div>
+              <div toolbar-right class="flex items-center gap-2">
+                <button type="button" (click)="logAction('Export clicked')" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs">
+                  Export CSV
+                </button>
+                <button type="button" (click)="logAction('Create clicked')" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs">
+                  + Create Entry
+                </button>
+              </div>
+            </nexora-toolbar-layout>
+
+            <!-- Bottom Floating Action Bar -->
+            <nexora-action-bar
+              infoText="3 items selected in current page"
+              primaryLabel="Approve Selected"
+              secondaryLabel="Reject Selected"
+              (primaryAction)="logAction('Approved 3 items')"
+              (secondaryAction)="logAction('Rejected 3 items')"
+            />
+          </div>
+        </nexora-section-layout>
+
+        <!-- Split Pane Demo -->
+        <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs">
+          <h3 class="text-sm font-semibold text-slate-800 mb-1">Interactive Resizable Split Pane</h3>
+          <p class="text-xs text-slate-500 mb-4">Click and drag the center handle to resize panes dynamically.</p>
+
+          <nexora-split-pane [initialLeftWidth]="35">
+            <div pane-left class="p-4 bg-slate-50 h-64 overflow-y-auto">
+              <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Navigation Tree / Sidebar</h4>
+              <ul class="text-xs space-y-2 text-slate-700">
+                <li class="p-2 bg-white rounded border border-slate-200 font-medium">📁 Root Storage</li>
+                <li class="p-2 bg-white rounded border border-slate-200">📂 Financial Records (2026)</li>
+                <li class="p-2 bg-white rounded border border-slate-200">📂 Invoices & Receipts</li>
+                <li class="p-2 bg-white rounded border border-slate-200">📂 Customer Identity Vault</li>
+              </ul>
+            </div>
+            <div pane-right class="p-4 bg-white h-64 overflow-y-auto">
+              <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Selected Folder Details</h4>
+              <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-900">
+                This pane seamlessly adjusts in width while preserving responsive layouts and scroll containers.
+              </div>
+            </div>
+          </nexora-split-pane>
+        </div>
+      </div>
+    }
+
+    <!-- 14. INFORMATION HIERARCHY TAB -->
+    @if (activeTab === 'typography') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">14. Information Hierarchy & Micro-Typography</h2>
+          <p class="text-xs text-slate-500">Structured headings with badges, captions, help indicators with tooltips, and metadata rows.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Headings & Captions -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-2">Heading Vocabulary</h3>
+
+            <nexora-heading
+              level="h1"
+              overline="SYSTEM OVERVIEW"
+              badge="Production"
+              badgeVariant="success"
+              title="Enterprise Ledger Architecture"
+              subtitle="Distributed consensus ledger with cryptographic audit trail verification."
+            />
+
+            <nexora-heading
+              level="h2"
+              overline="SECURITY LEVEL 4"
+              badge="SOC-2 Audited"
+              badgeVariant="primary"
+              title="Zero-Trust Access Control"
+              subtitle="Role-based and attribute-based security parameters."
+            />
+
+            <nexora-heading
+              level="h3"
+              title="Telemetry & Error Ingestion"
+              subtitle="Real-time latency monitoring across distributed microservices."
+            />
+
+            <nexora-divider />
+
+            <div>
+              <span class="text-xs font-semibold text-slate-500 uppercase block mb-1">Captions & Helper Texts</span>
+              <nexora-caption text="Standard footnote caption style for tables and cards." variant="default" />
+              <nexora-caption text="Warning: Modifying this parameter will force a session cache invalidation." variant="warning" />
+              <nexora-caption text="System online: All clusters operating with 99.99% uptime." variant="success" />
+              <nexora-caption text="Critical: Database sync delay exceeded 450ms threshold." variant="danger" />
+            </div>
+          </div>
+
+          <!-- Info Indicators & Metadata Rows -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-2">Info Indicators & Metadata Rows</h3>
+
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+              <span class="text-xs font-semibold text-slate-500 uppercase block">Inline Info Indicators (Hover for Tooltips)</span>
+              <div class="flex items-center gap-4 text-xs text-slate-700">
+                <span class="flex items-center gap-1">
+                  Interest Rate
+                  <nexora-info-indicator tooltipText="Annual percentage rate compounded daily according to RBI guidelines" type="info" />
+                </span>
+
+                <span class="flex items-center gap-1">
+                  KYC Verification
+                  <nexora-info-indicator tooltipText="Requires government-issued photo ID and proof of address" type="help" />
+                </span>
+
+                <span class="flex items-center gap-1">
+                  API Rate Limit
+                  <nexora-info-indicator tooltipText="Exceeding 100 req/sec will trigger an HTTP 429 response" type="warning" />
+                </span>
+              </div>
+            </div>
+
+            <!-- Metadata Rows -->
+            <div class="p-4 bg-white border border-slate-200 rounded-lg shadow-2xs">
+              <span class="text-xs font-bold uppercase text-slate-500 block mb-3">Resource Metadata Drawer Inspector</span>
+              <nexora-metadata-row label="Entity ID" value="ent_9832104" [copyable]="true" icon="🔑" />
+              <nexora-metadata-row label="Created By" value="rohan.tandel@enterprise.com" icon="👤" />
+              <nexora-metadata-row label="Deployment Region" value="ap-south-1 (Mumbai)" icon="🌐" />
+              <nexora-metadata-row label="Compliance Status" value="AUDITED" [badge]="true" badgeVariant="success" icon="🛡️" />
+              <nexora-metadata-row label="Encryption Standard" value="AES-256 GCM" [badge]="true" badgeVariant="info" icon="🔒" />
+              <nexora-metadata-row label="Pending Approval" value="Level 2 Required" [badge]="true" badgeVariant="warning" icon="⏳" />
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 15. EMPTY, ERROR & LOADING STATES TAB -->
+    @if (activeTab === 'states') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">15. Empty, Loading & Error Experiences</h2>
+          <p class="text-xs text-slate-500">Empty states, filtered no results, 403 access denied, 404 not found, error recovery, and offline banner.</p>
+        </div>
+
+        <!-- Offline Banner -->
+        <nexora-offline-state (checkConnection)="logAction('Rechecking internet connection...')" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Empty State -->
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-empty-state
+              title="No customer transactions yet"
+              description="When transactions occur through your payment gateways, they will populate here in real-time."
+              actionLabel="+ Create First Transaction"
+              (action)="logAction('Clicked create transaction in empty state')"
+            />
+          </div>
+
+          <!-- No Search Results -->
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-no-results
+              [searchQuery]="simulatedSearchQuery"
+              (reset)="simulatedSearchQuery = ''; logAction('Cleared filters')"
+            />
+          </div>
+
+          <!-- 403 No Permission -->
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-no-permission
+              title="Restricted Financial Ledger View"
+              description="Your account role does not have permission to view unmasked credit card or bank account records."
+              requestAccessLabel="Request Manager Approval"
+              (requestAccess)="logAction('Submitted access request')"
+            />
+          </div>
+
+          <!-- 404 Not Found -->
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-not-found
+              title="Invoice record #INV-84920 not found"
+              description="The requested invoice record has either been archived or permanently deleted from the ledger."
+              (goBack)="logAction('Clicked go back from 404')"
+            />
+          </div>
+        </div>
+
+        <!-- Error State with Retry & Loading State -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-error-state
+              code="503"
+              message="Payment Gateway Unreachable"
+              suggestion="Upstream payment provider returned timeout. Retrying in 5 seconds with exponential backoff."
+              details="Error: ETIMEDOUT 104.244.42.1:443&#10;at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1494:16)&#10;Code: GATEWAY_TIMEOUT&#10;TraceID: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+              (retry)="logAction('Retrying failed network request...')"
+            />
+          </div>
+
+          <div class="bg-white p-4 border border-slate-200 rounded-xl shadow-2xs">
+            <nexora-loading-state
+              label="Syncing ledger across 4 shards..."
+              subtext="Processing cryptographic Merkle tree hashes"
+              [canCancel]="true"
+              (cancel)="logAction('Cancelled background sync operation')"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 16. DRAG AND DROP & KANBAN TAB -->
+    @if (activeTab === 'dragdrop') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">16. Drag-and-Drop & Ordering Vocabulary</h2>
+          <p class="text-xs text-slate-500">6-dot grab handles, sortable item lists, reorderable table column manager, and Kanban board cards & columns.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Sortable Workflow List -->
+          <div class="lg:col-span-6 bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-slate-800">Sortable Execution Steps</h3>
+                <p class="text-xs text-slate-500">Reorder steps using the arrows or grab handles</p>
+              </div>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">{{ sortableItems.length }} steps</span>
+            </div>
+
+            <div class="space-y-2.5">
+              @for (item of sortableItems; track item.id; let idx = $index) {
+                <nexora-sortable-item
+                  [title]="item.title"
+                  [subtitle]="item.subtitle"
+                  [order]="idx + 1"
+                  (moveUp)="moveItem(idx, 'up')"
+                  (moveDown)="moveItem(idx, 'down')"
+                />
+              }
+            </div>
+          </div>
+
+          <!-- Reorderable Table Columns -->
+          <div class="lg:col-span-6 bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-slate-800">Reorderable Column Manager</h3>
+                <p class="text-xs text-slate-500">Toggle visibility and reorder column layout</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              @for (col of reorderableColumns; track col.key) {
+                <nexora-reorderable-column
+                  [label]="col.label"
+                  [key]="col.key"
+                  [visible]="col.visible"
+                  (visibleChange)="col.visible = $event; logAction('Toggled column ' + col.label + ' to ' + $event)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Kanban Board Showcase -->
+        <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Interactive Kanban Board Architecture</h3>
+              <p class="text-xs text-slate-500">Dedicated Kanban column & card components with tags, priority, dates, and assignees</p>
+            </div>
+          </div>
+
+          <div class="flex gap-4 overflow-x-auto pb-4 pt-1">
+            <!-- Todo Column -->
+            <nexora-kanban-column
+              title="To Do / Backlog"
+              [count]="kanbanCards.todo.length"
+              statusVariant="slate"
+              (addCard)="addKanbanItem('todo')"
+            >
+              @for (card of kanbanCards.todo; track card.id) {
+                <nexora-kanban-card
+                  [title]="card.title"
+                  [tag]="card.tag"
+                  [tagVariant]="card.tagVariant"
+                  [priority]="card.priority"
+                  [dueDate]="card.dueDate"
+                  [assigneeName]="card.assignee"
+                />
+              }
+            </nexora-kanban-column>
+
+            <!-- In Progress Column -->
+            <nexora-kanban-column
+              title="In Progress"
+              [count]="kanbanCards.inProgress.length"
+              statusVariant="blue"
+              (addCard)="addKanbanItem('inProgress')"
+            >
+              @for (card of kanbanCards.inProgress; track card.id) {
+                <nexora-kanban-card
+                  [title]="card.title"
+                  [tag]="card.tag"
+                  [tagVariant]="card.tagVariant"
+                  [priority]="card.priority"
+                  [dueDate]="card.dueDate"
+                  [assigneeName]="card.assignee"
+                />
+              }
+            </nexora-kanban-column>
+
+            <!-- Done Column -->
+            <nexora-kanban-column
+              title="Completed / Done"
+              [count]="kanbanCards.done.length"
+              statusVariant="emerald"
+              (addCard)="addKanbanItem('done')"
+            >
+              @for (card of kanbanCards.done; track card.id) {
+                <nexora-kanban-card
+                  [title]="card.title"
+                  [tag]="card.tag"
+                  [tagVariant]="card.tagVariant"
+                  [priority]="card.priority"
+                  [dueDate]="card.dueDate"
+                  [assigneeName]="card.assignee"
+                />
+              }
+            </nexora-kanban-column>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 17. COLLABORATION INDICATORS TAB -->
+    @if (activeTab === 'collab') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">17. Collaboration Indicators Vocabulary</h2>
+          <p class="text-xs text-slate-500">Avatar stacks, live viewer counts, row editing indicators, typing indicator animations, row locks, and sync status.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Live Viewer Count & Presence Avatars -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Presence Avatars & Viewer Count</h3>
+            <p class="text-xs text-slate-500">Renders stacked avatar circles with `+N viewing` badge</p>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
+              <div>
+                <span class="text-xs font-semibold text-slate-500 block mb-2">Default (Max 3 Displayed):</span>
+                <nexora-viewer-count [viewers]="activeViewers" [maxDisplay]="3" />
+              </div>
+
+              <div>
+                <span class="text-xs font-semibold text-slate-500 block mb-2">Expanded (Max 5 Displayed):</span>
+                <nexora-viewer-count [viewers]="activeViewers" [maxDisplay]="5" label="collaborators active" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Live Typing Indicators</h3>
+            <p class="text-xs text-slate-500">Pulsing animated bounce dots for real-time collaboration</p>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
+              <div>
+                <nexora-typing-indicator userName="Alex Lee" />
+              </div>
+              <div>
+                <nexora-typing-indicator userName="Rohan Tandel & 2 others" />
+              </div>
+              <div>
+                <nexora-typing-indicator />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Row Editing Indicator -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Concurrent Editing Indicator</h3>
+            <p class="text-xs text-slate-500">Pulsing beacon notifying that a record is currently being edited</p>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+              <div><nexora-editing-indicator userName="Jo Patterson" targetType="row" /></div>
+              <div><nexora-editing-indicator userName="Morgan Vance" targetType="form" /></div>
+              <div><nexora-editing-indicator userName="Sarah Taylor" targetType="cell" /></div>
+            </div>
+          </div>
+
+          <!-- Row Lock & Sync Status -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Row Lock & Real-time Sync Status</h3>
+            <p class="text-xs text-slate-500">Interactive controls to toggle row locks and cycle sync states</p>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
+              <div class="flex items-center justify-between">
+                <nexora-row-lock-indicator
+                  [locked]="rowIsLocked"
+                  lockedBy="Devin Chen"
+                  [canUnlock]="true"
+                  (unlock)="toggleRowLock()"
+                />
+                <button
+                  type="button"
+                  (click)="toggleRowLock()"
+                  class="text-xs px-2.5 py-1 bg-white border border-slate-300 rounded font-medium hover:bg-slate-50"
+                >
+                  Toggle Lock
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between pt-3 border-t border-slate-200">
+                <nexora-sync-status [status]="syncStatus" />
+                <button
+                  type="button"
+                  (click)="cycleSync()"
+                  class="text-xs px-2.5 py-1 bg-white border border-slate-300 rounded font-medium hover:bg-slate-50"
+                >
+                  Cycle Sync State
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- 18. SPECIALIZED BUSINESS UI TAB -->
+    @if (activeTab === 'business') {
+      <div class="space-y-8">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">18. Specialized Business & Fintech UI</h2>
+          <p class="text-xs text-slate-500">Currency display, percentage variances, masked sensitive values, reference numbers, approval status, risk metrics, and compliance badges.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Currency & Percentage Display -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-slate-800">Fintech Currency & Variances</h3>
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  (click)="activeCurrency = 'INR'"
+                  [class]="activeCurrency === 'INR' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'"
+                  class="px-2 py-0.5 text-xs rounded font-mono font-medium"
+                >
+                  INR ₹
+                </button>
+                <button
+                  type="button"
+                  (click)="activeCurrency = 'USD'"
+                  [class]="activeCurrency === 'USD' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'"
+                  class="px-2 py-0.5 text-xs rounded font-mono font-medium"
+                >
+                  USD $
+                </button>
+                <button
+                  type="button"
+                  (click)="activeCurrency = 'EUR'"
+                  [class]="activeCurrency === 'EUR' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'"
+                  class="px-2 py-0.5 text-xs rounded font-mono font-medium"
+                >
+                  EUR €
+                </button>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Disbursed Ledger Amount:</span>
+                <nexora-currency-display [amount]="sampleAmount" [currency]="activeCurrency" [colored]="true" [showTrend]="true" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Chargeback Deduction:</span>
+                <nexora-currency-display [amount]="-1420.50" [currency]="activeCurrency" [colored]="true" [showTrend]="true" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">QoQ Revenue Growth:</span>
+                <nexora-percentage-display [value]="14.8" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Net Churn Rate:</span>
+                <nexora-percentage-display [value]="-2.3" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Masked Values & Reference Numbers -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Sensitive Data Masking & Reference Keys</h3>
+            <p class="text-xs text-slate-500">Masked credit cards, PAN/SSN, and copyable reference keys</p>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Corporate Credit Card:</span>
+                <nexora-masked-value rawValue="4821992019484821" [copyable]="true" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Tax Identification / PAN:</span>
+                <nexora-masked-value rawValue="AAACR4829K" [copyable]="true" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Swift Wire Reference:</span>
+                <nexora-reference-number value="SWIFT-IN-984210" [copyable]="true" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Ledger Block Hash:</span>
+                <nexora-reference-number value="0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1f" [copyable]="true" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Approval Status & Risk Metrics -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Approval Workflow & Risk Indicators</h3>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Disbursement Status:</span>
+                <nexora-approval-status status="APPROVED" [stepCount]="3" [totalSteps]="3" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Level 2 Signoff:</span>
+                <nexora-approval-status status="PENDING" [stepCount]="1" [totalSteps]="3" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">AML Risk Assessment:</span>
+                <nexora-risk-indicator level="CRITICAL" [score]="92" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Credit Default Risk:</span>
+                <nexora-risk-indicator level="LOW" [score]="14" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Compliance Framework Badges -->
+          <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Compliance & Regulatory Badges</h3>
+
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Security Standard:</span>
+                <nexora-compliance-badge framework="SOC2 Type II" status="Compliant" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Data Privacy:</span>
+                <nexora-compliance-badge framework="GDPR / DPDP" status="Compliant" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Card Payment Security:</span>
+                <nexora-compliance-badge framework="PCI-DSS v4.0" status="In Review" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-600">Healthcare Vault:</span>
+                <nexora-compliance-badge framework="HIPAA" status="Exempt" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permission Matrix -->
+        <div class="bg-white p-5 border border-slate-200 rounded-xl shadow-2xs space-y-4">
+          <h3 class="text-sm font-semibold text-slate-800">Visual Permission & Role Matrix</h3>
+          <p class="text-xs text-slate-500">Clean visual matrix component detailing permissions across organizational roles</p>
+          <nexora-permission-matrix [rows]="permissionMatrixData" />
+        </div>
+      </div>
+    }
+
+  </main>
+</div>

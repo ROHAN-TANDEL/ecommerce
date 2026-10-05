@@ -104,6 +104,37 @@ import {
   NexoraTimelineComponent,
   NexoraAccordionComponent,
   NexoraDescriptionListComponent,
+  // 6. Selection/Display Combinations
+  NexoraUserSelectorComponent,
+  NexoraChipSelectorComponent,
+  NexoraIconSelectorComponent,
+  NexoraCascadingSelectorComponent,
+  // 7. Search and Filtering
+  NexoraSearchBarComponent,
+  NexoraFilterChipComponent,
+  NexoraFilterGroupComponent,
+  NexoraFilterBuilderComponent,
+  NexoraSortControlComponent,
+  NexoraQuickFiltersComponent,
+  // 8. Tags, Badges and Labels
+  NexoraStatusBadgeComponent,
+  NexoraBadgeComponent,
+  NexoraCountBadgeComponent,
+  NexoraNotificationBadgeComponent,
+  NexoraChipComponent,
+  NexoraPresenceIndicatorComponent,
+  // 9. File/Document UI
+  NexoraDropzoneComponent,
+  NexoraFileCardComponent,
+  NexoraAttachmentItemComponent,
+  NexoraAttachmentListComponent,
+  // 10. User/Entity Representations
+  NexoraAvatarComponent,
+  NexoraAvatarGroupComponent,
+  NexoraUserIdentityComponent,
+  NexoraUserCardComponent,
+  NexoraOrgIdentityComponent,
+  NexoraEntityCardComponent,
 } from '../../../components/nexora-ui';
 
 @Component({
@@ -201,6 +232,37 @@ import {
     NexoraTimelineComponent,
     NexoraAccordionComponent,
     NexoraDescriptionListComponent,
+    // 6. Selection/Display Combinations
+    NexoraUserSelectorComponent,
+    NexoraChipSelectorComponent,
+    NexoraIconSelectorComponent,
+    NexoraCascadingSelectorComponent,
+    // 7. Search and Filtering
+    NexoraSearchBarComponent,
+    NexoraFilterChipComponent,
+    NexoraFilterGroupComponent,
+    NexoraFilterBuilderComponent,
+    NexoraSortControlComponent,
+    NexoraQuickFiltersComponent,
+    // 8. Tags, Badges and Labels
+    NexoraStatusBadgeComponent,
+    NexoraBadgeComponent,
+    NexoraCountBadgeComponent,
+    NexoraNotificationBadgeComponent,
+    NexoraChipComponent,
+    NexoraPresenceIndicatorComponent,
+    // 9. File/Document UI
+    NexoraDropzoneComponent,
+    NexoraFileCardComponent,
+    NexoraAttachmentItemComponent,
+    NexoraAttachmentListComponent,
+    // 10. User/Entity Representations
+    NexoraAvatarComponent,
+    NexoraAvatarGroupComponent,
+    NexoraUserIdentityComponent,
+    NexoraUserCardComponent,
+    NexoraOrgIdentityComponent,
+    NexoraEntityCardComponent,
   ],
   templateUrl: './final.html',
   styleUrl: './final.css'
@@ -388,6 +450,123 @@ export class Final {
     { label: 'Billing Plan', value: 'Enterprise Tier', badge: 'Annual' },
     { label: 'Encrypted Storage', value: '4.8 TB of 10 TB' },
   ];
+
+  // --- Group 6: Selection/Display Combinations ---
+  selectedUserId: string | number = 'u1';
+  usersList = [
+    { id: 'u1', name: 'John Smith', role: 'Lead Architect', email: 'john.s@acme.io', online: true },
+    { id: 'u2', name: 'Sarah Connor', role: 'DevOps Engineer', email: 'sarah.c@acme.io', online: true },
+    { id: 'u3', name: 'Michael Chen', role: 'Security Director', email: 'm.chen@acme.io', online: false },
+    { id: 'u4', name: 'Jessica Taylor', role: 'Product Lead', email: 'jess.t@acme.io', online: true },
+  ];
+
+  allChipOptions = [
+    { id: 1, label: 'Finance' },
+    { id: 2, label: 'Human Resources' },
+    { id: 3, label: 'Engineering' },
+    { id: 4, label: 'Product Design' },
+    { id: 5, label: 'Legal & Compliance' },
+  ];
+  selectedChipItems = [
+    { id: 1, label: 'Finance' },
+    { id: 2, label: 'Human Resources' },
+  ];
+
+  selectedIconKey = '📊';
+
+  cascadingData = [
+    {
+      id: 'us',
+      name: 'United States',
+      children: [
+        {
+          id: 'ca',
+          name: 'California',
+          children: [
+            { id: 'sf', name: 'San Francisco' },
+            { id: 'la', name: 'Los Angeles' },
+          ]
+        },
+        {
+          id: 'ny',
+          name: 'New York',
+          children: [
+            { id: 'nyc', name: 'New York City' },
+            { id: 'alb', name: 'Albany' },
+          ]
+        }
+      ]
+    },
+    {
+      id: 'in',
+      name: 'India',
+      children: [
+        {
+          id: 'ka',
+          name: 'Karnataka',
+          children: [
+            { id: 'blr', name: 'Bengaluru' },
+            { id: 'mys', name: 'Mysuru' },
+          ]
+        },
+        {
+          id: 'mh',
+          name: 'Maharashtra',
+          children: [
+            { id: 'mum', name: 'Mumbai' },
+            { id: 'pun', name: 'Pune' },
+          ]
+        }
+      ]
+    }
+  ];
+  selectedCountry = 'us';
+  selectedState = 'ca';
+  selectedCity = 'sf';
+
+  // --- Group 7: Search and Filtering ---
+  searchQueryStr = '';
+  activeFilterChips = [
+    { id: '1', field: 'Status', value: 'Active' },
+    { id: '2', field: 'Department', value: 'Finance' },
+  ];
+  filterRules = [
+    { id: 'r1', field: 'status', operator: 'equals', value: 'Active' },
+    { id: 'r2', field: 'dept', operator: 'equals', value: 'Finance' },
+  ];
+  sortCols = [
+    { label: 'Created Date', key: 'created_at' },
+    { label: 'Customer Name', key: 'name' },
+    { label: 'Contract Amount', key: 'amount' },
+  ];
+  selectedSortKey = 'created_at';
+  sortDir: 'asc' | 'desc' = 'desc';
+  quickFilterTab = 'active';
+  quickFilterTabs = [
+    { label: 'All Users', value: 'all', count: 124 },
+    { label: 'Active', value: 'active', count: 96 },
+    { label: 'Archived', value: 'archived', count: 28 },
+  ];
+
+  // --- Group 9: File/Document UI ---
+  demoFileCard = { name: 'annual_audit_report_2026.pdf', size: '4.8 MB', progress: 84 };
+  attachmentFiles = [
+    { id: 1, name: 'architecture_specification_v2.pdf', size: '2.4 MB' },
+    { id: 2, name: 'security_compliance_soc2.docx', size: '890 KB' },
+    { id: 3, name: 'financial_ledger_q3.xlsx', size: '1.6 MB' },
+  ];
+
+  // --- Group 10: User/Entity Representations ---
+  teamAvatars = [
+    { name: 'Sarah Jenkins', status: 'online' as const },
+    { name: 'Alex Morales', status: 'online' as const },
+    { name: 'Michael Chen', status: 'busy' as const },
+    { name: 'Jessica Taylor', status: 'away' as const },
+    { name: 'David Kim' },
+    { name: 'Emily Watson' },
+    { name: 'Robert Vance' },
+  ];
+
 
   // --- Table Action Toolbar State ---
   refreshCount = 0;

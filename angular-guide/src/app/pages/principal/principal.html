@@ -1,0 +1,544 @@
+<div class="min-h-screen bg-slate-50/60 text-slate-900 font-sans antialiased pb-24">
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-4 shadow-xs">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+            Nexora Principal
+          </span>
+          <h1 class="text-xl font-bold text-slate-900 tracking-tight">Enterprise Master Table Architecture</h1>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Modular, composable table section components assembled into a fully featured enterprise master data grid.
+        </p>
+      </div>
+
+      <!-- Action Status Ticker -->
+      <div class="flex items-center gap-2 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-slate-700 font-mono truncate max-w-sm">{{ lastActionMessage }}</span>
+      </div>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="max-w-7xl mx-auto mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+      <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+        <button
+          type="button"
+          (click)="viewMode = 'master-table'"
+          [class]="viewMode === 'master-table' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span>🏆</span>
+          <span>Assembled Master Table</span>
+        </button>
+        <button
+          type="button"
+          (click)="viewMode = 'table-sections'"
+          [class]="viewMode === 'table-sections' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span>🧩</span>
+          <span>Explore Table Section Components (11 Building Blocks)</span>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-400 hidden sm:block">
+        Route: <span class="font-mono text-slate-600">/nexora/principal</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 pt-6">
+
+    <!-- VIEW 1: ASSEMBLED FULLY WORKING MASTER TABLE -->
+    @if (viewMode === 'master-table') {
+      <div class="space-y-6">
+        <!-- Explanatory Banner -->
+        <div class="p-4 bg-blue-50/60 border border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">✨</span>
+            <div>
+              <h2 class="text-sm font-bold text-blue-950">Complete Master Table In Action</h2>
+              <p class="text-xs text-blue-800">
+                This table is assembled entirely from the modular table section components below. Try searching, sorting, clicking the expand arrow ▶, selecting rows for bulk actions, or toggling column visibility.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              (click)="masterTableRef.isLoading = !masterTableRef.isLoading"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-blue-300 text-blue-700 hover:bg-blue-50 cursor-pointer shadow-2xs"
+            >
+              Simulate Loading
+            </button>
+            <button
+              type="button"
+              (click)="masterTableRef.isError = !masterTableRef.isError"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 cursor-pointer shadow-2xs"
+            >
+              Simulate Error
+            </button>
+          </div>
+        </div>
+
+        <!-- The Assembled Master Table Component -->
+        <nexora-master-table
+          #masterTableRef
+          (actionTriggered)="logAction($event)"
+        />
+      </div>
+    }
+
+    <!-- VIEW 2: MODULAR TABLE SECTIONS EXPLORATION -->
+    @if (viewMode === 'table-sections') {
+      <div class="space-y-6">
+        <!-- Sub-navigation Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 text-xs">
+          <button
+            type="button"
+            (click)="activeSection = 'header'"
+            [class]="activeSection === 'header' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            1. Title &amp; Tabs Header
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'toolbar'"
+            [class]="activeSection === 'toolbar' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            2. Toolbar &amp; Columns
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'filter-bar'"
+            [class]="activeSection === 'filter-bar' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            3. Filter Query Bar
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'selection-bar'"
+            [class]="activeSection === 'selection-bar' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            4. Bulk Selection Bar
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'head'"
+            [class]="activeSection === 'head' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            5. Thead Headers
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'row-states'"
+            [class]="activeSection === 'row-states' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            6. Row States
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'cells'"
+            [class]="activeSection === 'cells' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            7. Cell Types
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'detail-drawer'"
+            [class]="activeSection === 'detail-drawer' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            8. Detail Accordion
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'footer'"
+            [class]="activeSection === 'footer' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            9. Summary Footer
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'pagination'"
+            [class]="activeSection === 'pagination' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            10. Pagination
+          </button>
+          <button
+            type="button"
+            (click)="activeSection = 'states'"
+            [class]="activeSection === 'states' ? 'bg-blue-600 text-white font-bold' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            11. State Overlays
+          </button>
+        </div>
+
+        <!-- 1. Header Component Playground -->
+        @if (activeSection === 'header') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-header&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 1: Table Title, View Tabs &amp; Primary CTAs</h3>
+              <p class="text-xs text-slate-500">Provides title typography, item count badge, quick status tabs with counters, and primary action buttons.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <nexora-master-table-header
+                title="Global Procurement Contracts"
+                description="Audited purchasing records and master vendor agreements."
+                [totalCount]="240"
+                [filteredCount]="180"
+                [activeTabId]="sampleHeaderTab"
+                (tabChange)="sampleHeaderTab = $event; logAction('Header tab changed to: ' + $event)"
+                (primaryAction)="logAction('Header Primary Action clicked')"
+                (secondaryAction)="logAction('Header Secondary Action clicked')"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- 2. Toolbar Component Playground -->
+        @if (activeSection === 'toolbar') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-toolbar&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 2: Action Toolbar, Columns Manager &amp; Density Controls</h3>
+              <p class="text-xs text-slate-500">Global search with instant clear, columns toggle popover, table density switcher, auto-refresh sync, and export actions.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <nexora-master-table-toolbar
+                [searchQuery]="toolbarSearchQuery"
+                [density]="toolbarDensity"
+                [columns]="sampleColumns"
+                [activeFilterCount]="2"
+                [isFilterActive]="true"
+                (searchChange)="toolbarSearchQuery = $event; logAction('Searched: ' + $event)"
+                (densityChange)="toolbarDensity = $event; logAction('Density changed to: ' + $event)"
+                (export)="logAction('Exported format: ' + $event)"
+                (autoRefreshToggle)="logAction('Auto-refresh: ' + $event)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- 3. Filter Bar Component Playground -->
+        @if (activeSection === 'filter-bar') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-filter-bar&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 3: Dedicated Filter &amp; Query Bar</h3>
+              <p class="text-xs text-slate-500">Quick dropdown selectors for Status, Industry, Country, and Revenue thresholds with active filters indicator.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <nexora-master-table-filter-bar
+                [filters]="sampleFilters"
+                (filterChange)="onFilterChangeLog($event)"
+                (filterReset)="logAction('Filters cleared')"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- 4. Selection Bar Component Playground -->
+        @if (activeSection === 'selection-bar') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-selection-bar&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 4: Floating Bulk Actions Banner</h3>
+              <p class="text-xs text-slate-500">Appears when rows are checked. Provides bulk status update, bulk owner assign, bulk export, and delete actions.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <nexora-master-table-selection-bar
+                [selectedCount]="sampleSelectedCount"
+                [totalCount]="148"
+                (selectAllGlobal)="sampleSelectedCount = 148; logAction('Selected all 148 global records')"
+                (bulkStatus)="logAction('Bulk Status Action')"
+                (bulkAssign)="logAction('Bulk Assign Owner Action')"
+                (bulkExport)="logAction('Bulk Export Action')"
+                (bulkDelete)="logAction('Bulk Delete Action')"
+                (deselectAll)="sampleSelectedCount = 0; logAction('Deselected all')"
+              />
+              @if (sampleSelectedCount === 0) {
+                <div class="p-6 text-center text-xs text-slate-400">
+                  <span>Selection bar is hidden when 0 rows are selected. </span>
+                  <button type="button" (click)="sampleSelectedCount = 4" class="text-blue-600 underline font-semibold cursor-pointer">
+                    Click to simulate 4 rows selected
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- 5. Head Component Playground -->
+        @if (activeSection === 'head') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-head&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 5: Table Column Headers &amp; Sorters</h3>
+              <p class="text-xs text-slate-500">Features multi-directional sort arrows, indeterminate select all checkbox, column width specifications, and column resizing bars.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full border-collapse">
+                <nexora-master-table-head
+                  [columns]="sampleTheadColumns"
+                  [allSelected]="false"
+                  [isIndeterminate]="true"
+                  (sortChange)="logAction('Sort clicked: ' + $event.key + ' ' + $event.direction)"
+                  (selectAllChange)="logAction('Select all toggled: ' + $event)"
+                />
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- 6. Row States Playground -->
+        @if (activeSection === 'row-states') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;tr nexora-master-table-row&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 6: Row States (Standard, Selected, Expanded, Disabled)</h3>
+              <p class="text-xs text-slate-500">Interactive rows with expand triggers, checkbox selection, and styled visual feedback.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-100 border-b border-slate-200 text-slate-500 font-semibold">
+                    <th class="w-10 px-3 py-2"></th>
+                    <th class="w-12 px-4 py-2"></th>
+                    <th class="px-4 py-2 text-left">State Description</th>
+                    <th class="px-4 py-2 text-left">Customer</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Normal Row -->
+                  <tr
+                    nexora-master-table-row
+                    [isSelected]="isRow1Selected"
+                    [isExpanded]="isRow1Expanded"
+                    (selectChange)="isRow1Selected = $event; logAction('Row 1 selection: ' + $event)"
+                    (expandChange)="isRow1Expanded = $event; logAction('Row 1 expansion: ' + $event)"
+                  >
+                    <td class="px-4 py-3 font-semibold text-slate-700">1. Standard Row</td>
+                    <td class="px-4 py-3"><nexora-cell-customer name="Acme Corp" email="info@acme.com" /></td>
+                    <td class="px-4 py-3"><nexora-cell-status-badge status="Active" /></td>
+                  </tr>
+
+                  <!-- Selected Row -->
+                  <tr
+                    nexora-master-table-row
+                    [isSelected]="isRow2Selected"
+                    [isExpanded]="isRow2Expanded"
+                    (selectChange)="isRow2Selected = $event; logAction('Row 2 selection: ' + $event)"
+                    (expandChange)="isRow2Expanded = $event; logAction('Row 2 expansion: ' + $event)"
+                  >
+                    <td class="px-4 py-3 font-semibold text-blue-700">2. Selected Row (Active Highlight)</td>
+                    <td class="px-4 py-3"><nexora-cell-customer name="Globex Holdings" email="ops@globex.de" /></td>
+                    <td class="px-4 py-3"><nexora-cell-status-badge status="Pending" /></td>
+                  </tr>
+
+                  <!-- Disabled Row -->
+                  <tr
+                    nexora-master-table-row
+                    [isDisabled]="isRow3Disabled"
+                    [showSelection]="true"
+                  >
+                    <td class="px-4 py-3 font-semibold text-slate-400">3. Disabled / Restricted Row</td>
+                    <td class="px-4 py-3"><nexora-cell-customer name="Cyberdyne Restricted" email="blocked@cyberdyne.com" /></td>
+                    <td class="px-4 py-3"><nexora-cell-status-badge status="Suspended" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- 7. Specialized Cell Types Playground -->
+        @if (activeSection === 'cells') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Components: &lt;nexora-cell-*&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 7: Specialized Cell Types Vocabulary</h3>
+              <p class="text-xs text-slate-500">Reusable cell components tailored specifically for enterprise tables and forms.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Customer Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Customer &amp; Avatar Cell</span>
+                <nexora-cell-customer name="Wayne Enterprises Ltd" email="procurement@wayne.uk" />
+              </div>
+
+              <!-- Status Badge Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Status Badges</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <nexora-cell-status-badge status="Active" />
+                  <nexora-cell-status-badge status="Pending" />
+                  <nexora-cell-status-badge status="Suspended" />
+                  <nexora-cell-status-badge status="Inactive" />
+                </div>
+              </div>
+
+              <!-- Currency Revenue Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Currency &amp; Growth Metric</span>
+                <div class="flex items-center gap-4">
+                  <nexora-cell-revenue [amount]="85000000" [growthPercent]="28.4" currency="INR" />
+                  <nexora-cell-revenue [amount]="1200000" [growthPercent]="-2.1" currency="USD" />
+                </div>
+              </div>
+
+              <!-- Health Progress Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Health Progress Meter</span>
+                <div class="space-y-1.5">
+                  <nexora-cell-health-progress [value]="94" />
+                  <nexora-cell-health-progress [value]="68" />
+                  <nexora-cell-health-progress [value]="32" />
+                </div>
+              </div>
+
+              <!-- Tags Group Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Tags &amp; Service Pods Group</span>
+                <nexora-cell-tags-group [tags]="['Tier-1', 'PCI-DSS', 'High ARR', 'Multi-Region']" [maxVisible]="2" />
+              </div>
+
+              <!-- Actions Dropdown Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                <span class="text-xs font-bold text-slate-500 uppercase">Row Action Dropdown Menu</span>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-slate-600">Click icon to open options:</span>
+                  <nexora-cell-actions-dropdown (actionSelect)="logAction('Dropdown item: ' + $event)" />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 8. Detail Drawer Playground -->
+        @if (activeSection === 'detail-drawer') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;tr nexora-master-table-row-detail&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 8: Collapsible Row Detail Accordion Drawer</h3>
+              <p class="text-xs text-slate-500">Expands beneath any row to inspect deep contract terms, activity audit trails, and internal operational notes.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full border-collapse">
+                <tr
+                  nexora-master-table-row-detail
+                  accountName="Stark Industries"
+                  accountId="ACC-104"
+                  dedicatedRep="Tony Stark (Lead Architect)"
+                ></tr>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- 9. Summary Footer Playground -->
+        @if (activeSection === 'footer') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-footer&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 9: Aggregate Summary Footer</h3>
+              <p class="text-xs text-slate-500">Automatically sums columns, counts active records, and reports aggregate metrics across current filtered views.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full border-collapse">
+                <nexora-master-table-footer
+                  [rowCount]="12"
+                  [totalRevenue]="324700000"
+                  [activeCount]="7"
+                />
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- 10. Pagination Playground -->
+        @if (activeSection === 'pagination') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Component: &lt;nexora-master-table-pagination&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 10: Pagination &amp; Page Size Controller</h3>
+              <p class="text-xs text-slate-500">Complete pagination bar with dynamic range calculation, page size selector, and smart numeric page buttons.</p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <nexora-master-table-pagination
+                [currentPage]="paginationCurrentPage"
+                [pageSize]="paginationPageSize"
+                [totalItems]="paginationTotalItems"
+                (pageChange)="paginationCurrentPage = $event; logAction('Page changed to: ' + $event)"
+                (pageSizeChange)="paginationPageSize = $event; logAction('Page size changed to: ' + $event)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- 11. States Playground -->
+        @if (activeSection === 'states') {
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div>
+              <span class="text-xs font-mono uppercase text-blue-600 font-bold">Components: &lt;nexora-master-table-empty&gt;, &lt;...-loading&gt;, &lt;...-error&gt;</span>
+              <h3 class="text-base font-bold text-slate-900 mt-1">Section 11: Empty, Loading Skeleton &amp; Error Overlays</h3>
+              <p class="text-xs text-slate-500">Visual feedback states when loading data, handling zero results, or recovering from network errors.</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="border border-slate-200 rounded-2xl overflow-hidden">
+              <div class="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-600 uppercase">
+                Empty / No Results State
+              </div>
+              <nexora-master-table-empty (reset)="logAction('Reset filter clicked in empty state')" />
+            </div>
+
+            <!-- Error State -->
+            <div class="border border-slate-200 rounded-2xl overflow-hidden">
+              <div class="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-600 uppercase">
+                Error State with Retry Action
+              </div>
+              <nexora-master-table-error (retry)="logAction('Retry triggered in error state')" />
+            </div>
+
+            <!-- Loading Skeleton -->
+            <div class="border border-slate-200 rounded-2xl overflow-hidden">
+              <div class="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-600 uppercase">
+                Skeleton Loading State
+              </div>
+              <nexora-master-table-loading />
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
+  </main>
+</div>

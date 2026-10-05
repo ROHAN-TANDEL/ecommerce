@@ -1091,6 +1091,296 @@
         </div>
       </section>
 
+      <!-- 6. SELECTION / DISPLAY COMBINATIONS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">6</span>
+            <h2 class="text-sm font-bold text-[#101828]">Selection / Display Combinations</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">User Selector, Tag/Chip Selector, Icon Selector & Cascading Select</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- User Selector: [ 🔵 John Smith ▼ ] -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block mb-1">User Selector</span>
+                <p class="text-[11px] text-[#667085] mb-3">Selector with avatar and live online presence indicator.</p>
+              </div>
+              <nexora-user-selector
+                [users]="usersList"
+                [(selectedId)]="selectedUserId"
+                (userSelected)="onActionClick('Selected User: ' + $event.name)"
+              ></nexora-user-selector>
+            </div>
+
+            <!-- Removable Chip Selector: [ Finance × ] [ HR × ] [ + Add ] -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block mb-1">Chip / Tag Selector</span>
+                <p class="text-[11px] text-[#667085] mb-3">Removable pills with inline [ + Add ] trigger.</p>
+              </div>
+              <nexora-chip-selector
+                [allOptions]="allChipOptions"
+                [(selected)]="selectedChipItems"
+                (selectedChange)="onActionClick('Updated chips count: ' + $event.length)"
+              ></nexora-chip-selector>
+            </div>
+
+            <!-- Icon Selector -->
+            <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-bold text-[#101828] block mb-1">Icon Selector</span>
+                <p class="text-[11px] text-[#667085] mb-3">Filterable grid picker with live icon trigger.</p>
+              </div>
+              <div>
+                <nexora-icon-selector
+                  [(selectedIcon)]="selectedIconKey"
+                  label="Category Icon"
+                  (selectedIconChange)="onActionClick('Picked Icon: ' + $event)"
+                ></nexora-icon-selector>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cascading Hierarchical Selector: Country -> State -> City -->
+          <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA]">
+            <div class="mb-3">
+              <span class="text-xs font-bold text-[#101828] block">Hierarchical / Cascading Selector</span>
+              <p class="text-[11px] text-[#667085]">Multi-level stepped selectors (Country &rarr; State / Region &rarr; City).</p>
+            </div>
+            <nexora-cascading-selector
+              [data]="cascadingData"
+              [(level1Id)]="selectedCountry"
+              [(level2Id)]="selectedState"
+              [(level3Id)]="selectedCity"
+              (selectionChange)="onActionClick('Location: ' + $event.level1 + ' / ' + $event.level2 + ' / ' + $event.level3)"
+            ></nexora-cascading-selector>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 7. SEARCH AND FILTERING -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">7</span>
+            <h2 class="text-sm font-bold text-[#101828]">Search & Filtering</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Search Bar, Filter Chips, Filter Builder, Sorter & Quick Tabs</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Search Bar & Sorter & Quick Filters Toolbar -->
+          <div class="flex flex-col md:flex-row items-center gap-3">
+            <div class="flex-1 w-full">
+              <nexora-search-bar
+                [(query)]="searchQueryStr"
+                (queryChange)="onActionClick('Searching: ' + $event)"
+              ></nexora-search-bar>
+            </div>
+            <nexora-quick-filters
+              [options]="quickFilterTabs"
+              [(activeValue)]="quickFilterTab"
+              (activeValueChange)="onActionClick('Quick Filter: ' + $event)"
+            ></nexora-quick-filters>
+            <nexora-sort-control
+              [fields]="sortCols"
+              [(selectedKey)]="selectedSortKey"
+              [(direction)]="sortDir"
+              (sortChange)="onActionClick('Sorted by ' + $event.key + ' ' + $event.direction)"
+            ></nexora-sort-control>
+          </div>
+
+          <!-- Active Filter Chips Group -->
+          <div class="p-4 rounded-xl border border-[#EAECF0] bg-[#FAFAFA] space-y-2">
+            <span class="text-[11px] font-semibold text-[#667085] block">Active Filter Pills & Group:</span>
+            <nexora-filter-group
+              [(filters)]="activeFilterChips"
+              (addFilterClicked)="onActionClick('Opened Filter Dialog')"
+            ></nexora-filter-group>
+          </div>
+
+          <!-- Advanced Filter Builder -->
+          <nexora-filter-builder
+            [(conditions)]="filterRules"
+            (conditionsChange)="onActionClick('Filter conditions updated (' + $event.length + ' rules)')"
+          ></nexora-filter-builder>
+        </div>
+      </section>
+
+
+      <!-- 8. TAGS, BADGES AND LABELS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">8</span>
+            <h2 class="text-sm font-bold text-[#101828]">Tags, Badges & Labels</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Status Badges, Count Badges, Notification Dots & Presence</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Status Badges -->
+          <div>
+            <h3 class="text-xs font-bold text-[#344054] mb-3">Status Badges (Pills with status dots)</h3>
+            <div class="flex flex-wrap items-center gap-3">
+              <nexora-status-badge label="ACTIVE" variant="success"></nexora-status-badge>
+              <nexora-status-badge label="PENDING" variant="warning"></nexora-status-badge>
+              <nexora-status-badge label="FAILED" variant="error"></nexora-status-badge>
+              <nexora-status-badge label="PROCESSING" variant="info"></nexora-status-badge>
+              <nexora-status-badge label="PREMIUM" variant="purple"></nexora-status-badge>
+              <nexora-status-badge label="ARCHIVED" variant="neutral"></nexora-status-badge>
+            </div>
+          </div>
+
+          <!-- Removable Chips, Badges & Count Pills -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#EAECF0]">
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Removable Chips</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <nexora-chip label="Finance" color="blue" (removed)="onActionClick('Removed Finance chip')"></nexora-chip>
+                <nexora-chip label="Operations" color="green" (removed)="onActionClick('Removed Operations chip')"></nexora-chip>
+                <nexora-chip label="Archive" color="gray" (removed)="onActionClick('Removed Archive chip')"></nexora-chip>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Count Badges</h3>
+              <div class="flex items-center gap-3">
+                <nexora-count-badge [count]="3" variant="neutral"></nexora-count-badge>
+                <nexora-count-badge [count]="12" variant="primary"></nexora-count-badge>
+                <nexora-count-badge [count]="99" variant="danger"></nexora-count-badge>
+                <nexora-count-badge [count]="140" [max]="99" variant="danger"></nexora-count-badge>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Presence Indicators</h3>
+              <div class="flex flex-wrap items-center gap-4">
+                <nexora-presence-indicator status="online"></nexora-presence-indicator>
+                <nexora-presence-indicator status="busy"></nexora-presence-indicator>
+                <nexora-presence-indicator status="away"></nexora-presence-indicator>
+                <nexora-presence-indicator status="offline"></nexora-presence-indicator>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 9. FILE / DOCUMENT UI -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">9</span>
+            <h2 class="text-sm font-bold text-[#101828]">File & Document UI</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Dropzone, Upload Progress Card & Attachment Lists</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Dropzone -->
+          <nexora-dropzone
+            hint="Upload technical specs, spreadsheets or security certifications"
+            (filesDropped)="onActionClick('Dropped ' + $event.length + ' files')"
+          ></nexora-dropzone>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-[#EAECF0]">
+            <!-- File Card with Progress Bar -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">File Card with Upload Progress</h3>
+              <nexora-file-card
+                [name]="demoFileCard.name"
+                [size]="demoFileCard.size"
+                [progress]="demoFileCard.progress"
+                (removed)="onActionClick('Removed file card')"
+              ></nexora-file-card>
+            </div>
+
+            <!-- Attachment List -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Completed Attachments</h3>
+              <nexora-attachment-list
+                [items]="attachmentFiles"
+                (download)="onActionClick('Downloading: ' + $event.name)"
+                (removed)="onActionClick('Deleted: ' + $event.name)"
+              ></nexora-attachment-list>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 10. USER & ENTITY REPRESENTATIONS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">10</span>
+            <h2 class="text-sm font-bold text-[#101828]">User & Entity Representations</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Avatars, Avatar Groups, User Cards & Organization Identifiers</span>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Avatar Sizes & Avatar Group: [ ○ ○ ○ +4 ] -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Avatar Sizes & Presence</h3>
+              <div class="flex items-center gap-3">
+                <nexora-avatar name="Jo Doh" size="xs" status="online"></nexora-avatar>
+                <nexora-avatar name="Sarah Jenkins" size="sm" status="away"></nexora-avatar>
+                <nexora-avatar name="Michael Chen" size="md" status="busy"></nexora-avatar>
+                <nexora-avatar name="Alex Morales" size="lg" status="online"></nexora-avatar>
+                <nexora-avatar name="DevOps Master" size="xl" status="online"></nexora-avatar>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-3">Avatar Stacked Group (○ ○ ○ +4)</h3>
+              <nexora-avatar-group [avatars]="teamAvatars" [max]="3" size="md"></nexora-avatar-group>
+            </div>
+          </div>
+
+          <!-- User Card & Org Identity & Entity Card -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-[#EAECF0]">
+            <!-- User Card: [JO] Jo | Finance | Active -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">User Card Representation</h3>
+              <nexora-user-card
+                name="Jo Doh"
+                department="Finance"
+                email="doh@example.com"
+                badge="Lead"
+                [active]="true"
+              ></nexora-user-card>
+            </div>
+
+            <!-- Organization Identity -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Organization Identity</h3>
+              <div class="p-4 rounded-xl border border-[#EAECF0] bg-white shadow-xs">
+                <nexora-org-identity orgName="Acme Global Inc" tier="Enterprise" [membersCount]="184"></nexora-org-identity>
+              </div>
+            </div>
+
+            <!-- Entity Card -->
+            <div>
+              <h3 class="text-xs font-bold text-[#344054] mb-2.5">Infrastructure Entity Card</h3>
+              <nexora-entity-card
+                title="Node worker-08"
+                subtitle="AWS us-east-1a &bull; 64GB ECC RAM"
+                icon="⚡"
+                badge="Operational"
+              ></nexora-entity-card>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </ng-container>
 
 
