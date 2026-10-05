@@ -840,7 +840,7 @@ export class Employees implements OnInit {
   }
 
   isBottomRow(index: number): boolean {
-    return index >= this.mockRows.length - 3;
+    return index >= Math.floor(this.mockRows.length / 2);
   }
 
   onPaginationChange(type: 'page' | 'limit', val: number): void {
