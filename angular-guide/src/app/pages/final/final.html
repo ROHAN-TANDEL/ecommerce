@@ -1,141 +1,741 @@
-<div class="p-6 bg-slate-50 min-h-screen">
-  <!-- Live feedback banner -->
-  <div *ngIf="lastActionMessage" class="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs text-blue-700">
-    <span><strong>Last event:</strong> {{ lastActionMessage }}</span>
-    <span class="text-[10px] text-blue-500">Auto-updates from components</span>
+<div class="min-h-screen bg-[#F8F9FC] text-[#1D2939] pb-24">
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-[#EAECF0] sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-[#436CF3] text-white text-xs font-bold">N</span>
+          <h1 class="text-lg font-bold text-[#101828] tracking-tight">NEXORA — Input & Cell Presentation Vocabulary</h1>
+        </div>
+        <p class="text-xs text-[#667085] mt-0.5">
+          Unified reference of all editable inputs, formatting rules, and cell display variants for Nexora data views.
+        </p>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex items-center gap-1.5 p-1 bg-[#F2F4F7] rounded-lg">
+        <button
+          type="button"
+          (click)="activeTab = 'inputs'"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer"
+          [class.bg-white]="activeTab === 'inputs'"
+          [class.text-[#1D2939]]="activeTab === 'inputs'"
+          [class.shadow-xs]="activeTab === 'inputs'"
+          [class.text-[#667085]]="activeTab !== 'inputs'"
+        >
+          Input & Cell Vocabulary
+        </button>
+        <button
+          type="button"
+          (click)="activeTab = 'actions'"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer"
+          [class.bg-white]="activeTab === 'actions'"
+          [class.text-[#1D2939]]="activeTab === 'actions'"
+          [class.shadow-xs]="activeTab === 'actions'"
+          [class.text-[#667085]]="activeTab !== 'actions'"
+        >
+          Table Action Items (15)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live action feedback banner -->
+  <div *ngIf="lastActionMessage" class="max-w-7xl mx-auto px-6 mt-4">
+    <div class="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs text-blue-700 shadow-xs">
+      <span><strong>Event Triggered:</strong> {{ lastActionMessage }}</span>
+      <span class="text-[10px] text-blue-500">Live Component Feedback</span>
+    </div>
   </div>
 
-  <nexora-vertical-section [columns]="4">
+  <div class="max-w-7xl mx-auto px-6 py-6 space-y-8">
 
-    <!-- 1. Auto Refresh -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Auto Refresh</span>
-      <div class="flex items-center gap-2">
-        <dt-auto-refresh (refresh)="onRefresh()"></dt-auto-refresh>
-        <span class="text-[11px] text-slate-500">Ticks: {{ refreshCount }}</span>
+    <!-- ========================================================================= -->
+    <!-- TAB 1: INPUT & CELL PRESENTATION VOCABULARY -->
+    <!-- ========================================================================= -->
+    <ng-container *ngIf="activeTab === 'inputs'">
+
+      <!-- SECTION 1: BASIC TEXT INPUTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">1</span>
+            <h2 class="text-sm font-bold text-[#101828]">Basic Text Inputs</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">7 Components &bull; Single & Multi-line</span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <!-- Text Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-text-input
+              label="Company Name"
+              badge="Text"
+              hint="Standard single-line text input"
+              [(value)]="textVal"
+            ></nexora-text-input>
+          </div>
+
+          <!-- Textarea Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-textarea-input
+              label="Bio / Notes"
+              badge="Textarea"
+              hint="Multi-line expandable textarea"
+              [(value)]="textareaVal"
+              [rows]="2"
+            ></nexora-textarea-input>
+          </div>
+
+          <!-- Search Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-search-input
+              label="Search Query"
+              badge="Search"
+              hint="Search with auto-clear icon"
+              [(value)]="searchVal"
+            ></nexora-search-input>
+          </div>
+
+          <!-- Email Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-email-input
+              label="Billing Email"
+              badge="Email"
+              hint="With mail leading icon"
+              [(value)]="emailVal"
+            ></nexora-email-input>
+          </div>
+
+          <!-- Password Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-password-input
+              label="Account Password"
+              badge="Password"
+              hint="With show / hide visibility eye"
+              [(value)]="passwordVal"
+            ></nexora-password-input>
+          </div>
+
+          <!-- URL Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-url-input
+              label="Portal Endpoint"
+              badge="URL"
+              hint="With https:// prefix badge"
+              [(value)]="urlVal"
+            ></nexora-url-input>
+          </div>
+
+          <!-- Phone Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-phone-input
+              label="Direct Contact"
+              badge="Phone"
+              hint="With country dial code selector"
+              [(phone)]="phoneVal"
+              [(countryCode)]="phoneCode"
+            ></nexora-phone-input>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- SECTION 2: NUMERIC INPUTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">2</span>
+            <h2 class="text-sm font-bold text-[#101828]">Numeric Inputs</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">6 Components &bull; Quantities & Currencies</span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Number Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-number-input
+              label="Seat Count"
+              badge="Number"
+              hint="Integer stepper with up/down arrows"
+              [(value)]="numberVal"
+              [min]="1"
+              [max]="100"
+            ></nexora-number-input>
+          </div>
+
+          <!-- Decimal Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-decimal-input
+              label="Unit Weight / Index"
+              badge="Decimal"
+              hint="Fixed 2-decimal precision"
+              [(value)]="decimalVal"
+              [precision]="2"
+            ></nexora-decimal-input>
+          </div>
+
+          <!-- Currency Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-currency-input
+              label="Contract Value"
+              badge="Currency"
+              hint="Comma separated thousands with symbol"
+              [(value)]="currencyVal"
+              currencySymbol="$"
+            ></nexora-currency-input>
+          </div>
+
+          <!-- Percentage Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-percentage-input
+              label="SLA Compliance Rate"
+              badge="Percentage"
+              hint="Bounded percentage [0 - 100]"
+              [(value)]="percentageVal"
+            ></nexora-percentage-input>
+          </div>
+
+          <!-- Slider Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-slider-input
+              label="Storage Allocation"
+              badge="Slider"
+              hint="Continuous track with live badge"
+              [(value)]="sliderVal"
+              [min]="0"
+              [max]="100"
+            ></nexora-slider-input>
+          </div>
+
+          <!-- Number Range Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-number-range-input
+              label="Price Filter Range"
+              badge="Number Range"
+              hint="Paired min/max boundaries"
+              [(minVal)]="minRangeVal"
+              [(maxVal)]="maxRangeVal"
+            ></nexora-number-range-input>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- SECTION 3: SELECTION INPUTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">3</span>
+            <h2 class="text-sm font-bold text-[#101828]">Selection Inputs</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">8 Components &bull; Single, Multi & Chips</span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Single Select -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-select-input
+              label="Environment"
+              badge="Select"
+              hint="Single select dropdown menu"
+              [options]="selectOptions"
+              [(value)]="selectVal"
+            ></nexora-select-input>
+          </div>
+
+          <!-- Multi Select -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-multi-select-input
+              label="Tech Stack"
+              badge="Multi-Select"
+              hint="Checklist with chip tags display"
+              [options]="multiSelectOptions"
+              [(values)]="multiSelectVals"
+            ></nexora-multi-select-input>
+          </div>
+
+          <!-- Autocomplete -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-autocomplete-input
+              label="Assigned Lead"
+              badge="Autocomplete"
+              hint="Search filtered dropdown list"
+              [items]="autocompleteItems"
+              [(searchQuery)]="autocompleteVal"
+            ></nexora-autocomplete-input>
+          </div>
+
+          <!-- Tag Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-tag-input
+              label="Metadata Tags"
+              badge="Tag Input"
+              hint="Press Enter or comma to create"
+              [(tags)]="tags"
+            ></nexora-tag-input>
+          </div>
+
+          <!-- Radio Group -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-radio-group-input
+              label="Billing Cycle"
+              badge="Radio Group"
+              hint="Single mutual selection"
+              [options]="radioOptions"
+              [(value)]="radioVal"
+            ></nexora-radio-group-input>
+          </div>
+
+          <!-- Checkbox Single -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-checkbox-input
+              label="Agree to Terms & SLA"
+              description="Authorizes automated maintenance cycles."
+              hint="Standalone boolean state"
+              [(checked)]="singleCheck"
+            ></nexora-checkbox-input>
+          </div>
+
+          <!-- Checkbox Group -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-checkbox-group-input
+              label="Preferences"
+              badge="Checkbox Group"
+              hint="Multiple boolean checks"
+              [options]="checkboxGroupOptions"
+              [(values)]="checkboxGroupVals"
+            ></nexora-checkbox-group-input>
+          </div>
+
+          <!-- Toggle / Switch -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] flex flex-col justify-between">
+            <nexora-toggle-input
+              label="Live Sync"
+              description="Instantly propagate real-time edits."
+              badge="Switch"
+              [(checked)]="toggleVal"
+            ></nexora-toggle-input>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- SECTION 4: DATE & TIME INPUTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">4</span>
+            <h2 class="text-sm font-bold text-[#101828]">Date & Time Inputs</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">7 Components &bull; Calendars, Ranges & Pickers</span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Date Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-date-picker-input
+              label="Due Date"
+              badge="Date"
+              hint="Single calendar date selector"
+              [(value)]="dateVal"
+            ></nexora-date-picker-input>
+          </div>
+
+          <!-- Date Range -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-date-range-input
+              label="Fiscal Period"
+              badge="Date Range"
+              hint="Start to End date interval"
+              [(startDate)]="startDateVal"
+              [(endDate)]="endDateVal"
+            ></nexora-date-range-input>
+          </div>
+
+          <!-- Month Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-month-picker-input
+              label="Invoice Month"
+              badge="Month"
+              hint="Year-month interval selector"
+              [(value)]="monthVal"
+            ></nexora-month-picker-input>
+          </div>
+
+          <!-- Year Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-year-picker-input
+              label="Audit Year"
+              badge="Year"
+              hint="Year stepper with arrow buttons"
+              [(year)]="yearVal"
+            ></nexora-year-picker-input>
+          </div>
+
+          <!-- Time Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-time-picker-input
+              label="Daily Backup"
+              badge="Time"
+              hint="24h / 12h clock picker"
+              [(value)]="timeVal"
+            ></nexora-time-picker-input>
+          </div>
+
+          <!-- Datetime Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-datetime-picker-input
+              label="Maintenance Window"
+              badge="Date + Time"
+              hint="Timestamp selection"
+              [(value)]="datetimeVal"
+            ></nexora-datetime-picker-input>
+          </div>
+
+          <!-- Datetime Range -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] lg:col-span-2">
+            <nexora-datetime-range-input
+              label="Service Outage Window"
+              badge="DateTime Range"
+              hint="Full start-to-end datetime interval"
+              [(startDateTime)]="startDateTimeVal"
+              [(endDateTime)]="endDateTimeVal"
+            ></nexora-datetime-range-input>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- SECTION 5: SPECIALIZED INPUTS -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">5</span>
+            <h2 class="text-sm font-bold text-[#101828]">Specialized Inputs</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">7 Components &bull; Uploads, Code, OTP & Editors</span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- File Upload -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-file-upload-input
+              label="Attachments & Documents"
+              badge="File Upload"
+              hint="Drag & drop or browse files"
+              [multiple]="true"
+              [(files)]="uploadedFiles"
+            ></nexora-file-upload-input>
+          </div>
+
+          <!-- Image Upload -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-image-upload-input
+              label="Profile Avatar"
+              badge="Image Upload"
+              hint="Square thumbnail with remove action"
+              [(imageUrl)]="avatarImageUrl"
+            ></nexora-image-upload-input>
+          </div>
+
+          <!-- Color Picker -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-color-picker-input
+              label="Brand Accent Color"
+              badge="Color Picker"
+              hint="Swatch preview with quick presets"
+              [(color)]="selectedColor"
+            ></nexora-color-picker-input>
+          </div>
+
+          <!-- Rating Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-rating-input
+              label="Customer Satisfaction"
+              badge="Rating"
+              hint="Interactive 5-star rating"
+              [(rating)]="ratingVal"
+            ></nexora-rating-input>
+          </div>
+
+          <!-- OTP Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-otp-input
+              label="Two-Factor Security PIN"
+              badge="OTP / PIN"
+              hint="Auto-advances to next digit box"
+              [length]="6"
+            ></nexora-otp-input>
+          </div>
+
+          <!-- Rich Text Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA]">
+            <nexora-rich-text-input
+              label="Release Notes"
+              badge="Rich Text"
+              hint="Mini WYSIWYG editor bar"
+              [(htmlContent)]="richTextContent"
+            ></nexora-rich-text-input>
+          </div>
+
+          <!-- Code Editor Input -->
+          <div class="p-4 rounded-lg border border-[#F2F4F7] bg-[#FAFAFA] lg:col-span-3">
+            <nexora-code-editor-input
+              label="Service Config Payload"
+              badge="JSON Editor"
+              hint="Monospace editor with copy button & line numbers"
+              language="json"
+              [(code)]="codeSnippet"
+            ></nexora-code-editor-input>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- SECTION 6: TABLE CELLS VOCABULARY -->
+      <section class="bg-white rounded-xl border border-[#EAECF0] shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 bg-[#F9FAFB] border-b border-[#EAECF0] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-[#EFF4FF] text-[#436CF3] flex items-center justify-center text-xs font-bold">6</span>
+            <h2 class="text-sm font-bold text-[#101828]">Table Cells Vocabulary (Inline Editable & Presentation Cells)</h2>
+          </div>
+          <span class="text-[11px] font-medium text-[#667085]">Direct Table Integration Demo</span>
+        </div>
+
+        <div class="p-6">
+          <div class="overflow-x-auto rounded-lg border border-[#EAECF0]">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-[#F8F9FC] border-b border-[#EAECF0] text-[11px] font-semibold text-[#667085]">
+                  <th class="p-3 w-10 text-center">Sel</th>
+                  <th class="p-3 min-w-[200px]">User / Service</th>
+                  <th class="p-3 min-w-[150px]">Inline Text</th>
+                  <th class="p-3 min-w-[110px] text-right">Amount ($)</th>
+                  <th class="p-3 min-w-[130px]">Category</th>
+                  <th class="p-3 min-w-[100px]">Status</th>
+                  <th class="p-3 min-w-[140px]">Progress</th>
+                  <th class="p-3 min-w-[120px]">Trend</th>
+                  <th class="p-3 min-w-[130px]">Due Date</th>
+                  <th class="p-3 w-16 text-center">Active</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#EAECF0]">
+                <tr *ngFor="let row of inlineRows; let idx = index" class="hover:bg-[#F9FAFB] transition-colors">
+                  <!-- Checkbox Cell -->
+                  <td class="p-2 text-center">
+                    <nexora-cell-checkbox [(checked)]="row.enabled"></nexora-cell-checkbox>
+                  </td>
+
+                  <!-- User Presentation Cell -->
+                  <td class="p-2">
+                    <nexora-cell-user [name]="row.name" [email]="row.userEmail"></nexora-cell-user>
+                  </td>
+
+                  <!-- Inline Text Cell -->
+                  <td class="p-2">
+                    <nexora-cell-text [(value)]="row.name"></nexora-cell-text>
+                  </td>
+
+                  <!-- Inline Number Cell -->
+                  <td class="p-2">
+                    <nexora-cell-number [(value)]="row.amount"></nexora-cell-number>
+                  </td>
+
+                  <!-- Inline Select Cell -->
+                  <td class="p-2">
+                    <nexora-cell-select [options]="inlineSelectOptions" [(value)]="row.category"></nexora-cell-select>
+                  </td>
+
+                  <!-- Badge Presentation Cell -->
+                  <td class="p-2">
+                    <nexora-cell-badge
+                      [label]="row.status"
+                      [variant]="row.status === 'Active' ? 'success' : row.status === 'Pending' ? 'warning' : 'error'"
+                    ></nexora-cell-badge>
+                  </td>
+
+                  <!-- Progress Presentation Cell -->
+                  <td class="p-2">
+                    <nexora-cell-progress
+                      [percent]="row.progress"
+                      [colorClass]="row.progress > 70 ? 'bg-[#10B981]' : row.progress > 30 ? 'bg-[#436CF3]' : 'bg-[#EF4444]'"
+                    ></nexora-cell-progress>
+                  </td>
+
+                  <!-- Sparkline Presentation Cell -->
+                  <td class="p-2">
+                    <nexora-cell-sparkline
+                      [points]="row.trend"
+                      [positive]="idx % 2 === 0"
+                      [changePercent]="(idx + 1) * 8.4"
+                    ></nexora-cell-sparkline>
+                  </td>
+
+                  <!-- Inline Date Cell -->
+                  <td class="p-2">
+                    <nexora-cell-date [(value)]="row.date"></nexora-cell-date>
+                  </td>
+
+                  <!-- Inline Toggle Cell -->
+                  <td class="p-2 text-center">
+                    <nexora-cell-toggle [(checked)]="row.enabled"></nexora-cell-toggle>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-2 text-[11px] text-[#667085] flex items-center justify-between">
+            <span>Inline cells switch seamlessly between display & edit states with focus styling.</span>
+            <span class="font-medium text-[#436CF3]">{{ inlineRows.length }} sample rows bound to Angular model</span>
+          </div>
+        </div>
+      </section>
+
+    </ng-container>
+
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: TABLE ACTION ITEMS (15 Action Components) -->
+    <!-- ========================================================================= -->
+    <ng-container *ngIf="activeTab === 'actions'">
+      <div class="mb-4">
+        <h2 class="text-sm font-bold text-[#101828]">Table Toolbar Action Components</h2>
+        <p class="text-xs text-[#667085]">Individually extracted and decoupled table toolbar controls.</p>
       </div>
-    </div>
 
-    <!-- 2. Lock Update -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Lock Update</span>
-      <div>
-        <dt-lock-update (lock)="onLock($event)"></dt-lock-update>
-      </div>
-    </div>
+      <nexora-vertical-section [columns]="4">
+        <!-- 1. Auto Refresh -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Auto Refresh</span>
+          <div class="flex items-center gap-2">
+            <dt-auto-refresh (refresh)="onRefresh()"></dt-auto-refresh>
+            <span class="text-[11px] text-slate-500">Ticks: {{ refreshCount }}</span>
+          </div>
+        </div>
 
-    <!-- 3. Table Density -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Density</span>
-      <div>
-        <dt-density [value]="density" (valueChange)="onDensityChange($event)"></dt-density>
-      </div>
-    </div>
+        <!-- 2. Lock Update -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Lock Update</span>
+          <div>
+            <dt-lock-update (lock)="onLock($event)"></dt-lock-update>
+          </div>
+        </div>
 
-    <!-- 4. Export Action -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Export</span>
-      <div>
-        <dt-export (export)="onExport($event)"></dt-export>
-      </div>
-    </div>
+        <!-- 3. Table Density -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Density</span>
+          <div>
+            <dt-density [value]="density" (valueChange)="onDensityChange($event)"></dt-density>
+          </div>
+        </div>
 
-    <!-- 5. Download Action -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Download</span>
-      <div>
-        <dt-download (download)="onDownload($event)"></dt-download>
-      </div>
-    </div>
+        <!-- 4. Export Action -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Export</span>
+          <div>
+            <dt-export (export)="onExport($event)"></dt-export>
+          </div>
+        </div>
 
-    <!-- 6. Columns Manager -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Columns Manager</span>
-      <div>
-        <dt-columns-manager (visibilityChange)="onColumnsChange($event)"></dt-columns-manager>
-      </div>
-    </div>
+        <!-- 5. Download Action -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Download</span>
+          <div>
+            <dt-download (download)="onDownload($event)"></dt-download>
+          </div>
+        </div>
 
-    <!-- 7. Column Navigation -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Column Stepper</span>
-      <div>
-        <dt-column-nav [label]="columnScrollIndex + ' of 5 cols'" (navigate)="onColumnNav($event)"></dt-column-nav>
-      </div>
-    </div>
+        <!-- 6. Columns Manager -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Columns Manager</span>
+          <div>
+            <dt-columns-manager (visibilityChange)="onColumnsChange($event)"></dt-columns-manager>
+          </div>
+        </div>
 
-    <!-- 8. Saved Views Manager -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Saved Views</span>
-      <div>
-        <dt-views-manager
-          [activeView]="activeView"
-          (viewChange)="onViewChange($event)"
-          (saveView)="onSaveView()"
-          (resetView)="onResetView()">
-        </dt-views-manager>
-      </div>
-    </div>
+        <!-- 7. Column Navigation -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Column Stepper</span>
+          <div>
+            <dt-column-nav [label]="columnScrollIndex + ' of 5 cols'" (navigate)="onColumnNav($event)"></dt-column-nav>
+          </div>
+        </div>
 
-    <!-- 9. Fullscreen Toggle -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Fullscreen</span>
-      <div>
-        <dt-fullscreen-toggle [(fullscreen)]="isFullscreen"></dt-fullscreen-toggle>
-      </div>
-    </div>
+        <!-- 8. Saved Views Manager -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Saved Views</span>
+          <div>
+            <dt-views-manager
+              [activeView]="activeView"
+              (viewChange)="onViewChange($event)"
+              (saveView)="onSaveView()"
+              (resetView)="onResetView()">
+            </dt-views-manager>
+          </div>
+        </div>
 
-    <!-- 10. Collapse Toggle -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Table Collapse</span>
-      <div>
-        <dt-collapse-toggle [(collapsed)]="isCollapsed"></dt-collapse-toggle>
-      </div>
-    </div>
+        <!-- 9. Fullscreen Toggle -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Fullscreen</span>
+          <div>
+            <dt-fullscreen-toggle [(fullscreen)]="isFullscreen"></dt-fullscreen-toggle>
+          </div>
+        </div>
 
-    <!-- 11. Live Collab Toggle -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Collaboration</span>
-      <div>
-        <dt-collab-toggle [(active)]="isCollabActive"></dt-collab-toggle>
-      </div>
-    </div>
+        <!-- 10. Collapse Toggle -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Table Collapse</span>
+          <div>
+            <dt-collapse-toggle [(collapsed)]="isCollapsed"></dt-collapse-toggle>
+          </div>
+        </div>
 
-    <!-- 12. Edit & Save Action Buttons -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Edit / Save</span>
-      <div class="flex items-center gap-1.5">
-        <dt-action-button icon="✎" label="Edit" variant="default" (clicked)="onActionClick('Edit')"></dt-action-button>
-        <dt-action-button icon="✓" label="Save" variant="primary" (clicked)="onActionClick('Save')"></dt-action-button>
-      </div>
-    </div>
+        <!-- 11. Live Collab Toggle -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Collaboration</span>
+          <div>
+            <dt-collab-toggle [(active)]="isCollabActive"></dt-collab-toggle>
+          </div>
+        </div>
 
-    <!-- 13. Delete & Revert Buttons -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Delete / Revert</span>
-      <div class="flex items-center gap-1.5">
-        <dt-action-button icon="🗑" label="Delete" variant="danger" (clicked)="onActionClick('Delete')"></dt-action-button>
-        <dt-action-button icon="↶" label="Revert" variant="amber" (clicked)="onActionClick('Revert')"></dt-action-button>
-      </div>
-    </div>
+        <!-- 12. Edit & Save Action Buttons -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Edit / Save</span>
+          <div class="flex items-center gap-1.5">
+            <dt-action-button icon="✎" label="Edit" variant="default" (clicked)="onActionClick('Edit')"></dt-action-button>
+            <dt-action-button icon="✓" label="Save" variant="primary" (clicked)="onActionClick('Save')"></dt-action-button>
+          </div>
+        </div>
 
-    <!-- 14. Enable & Disable Buttons -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Enable / Disable</span>
-      <div class="flex items-center gap-1.5">
-        <dt-action-button icon="✅" label="Enable" variant="success" (clicked)="onActionClick('Enable')"></dt-action-button>
-        <dt-action-button icon="⊘" label="Disable" variant="default" (clicked)="onActionClick('Disable')"></dt-action-button>
-      </div>
-    </div>
+        <!-- 13. Delete & Revert Buttons -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Delete / Revert</span>
+          <div class="flex items-center gap-1.5">
+            <dt-action-button icon="🗑" label="Delete" variant="danger" (clicked)="onActionClick('Delete')"></dt-action-button>
+            <dt-action-button icon="↶" label="Revert" variant="amber" (clicked)="onActionClick('Revert')"></dt-action-button>
+          </div>
+        </div>
 
-    <!-- 15. Copy & Reset Buttons -->
-    <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Copy / Reset</span>
-      <div class="flex items-center gap-1.5">
-        <dt-action-button icon="⎘" label="Copy" variant="default" (clicked)="onActionClick('Copy')"></dt-action-button>
-        <dt-action-button icon="↺" label="Reset" variant="default" (clicked)="onActionClick('Reset')"></dt-action-button>
-      </div>
-    </div>
+        <!-- 14. Enable & Disable Buttons -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Enable / Disable</span>
+          <div class="flex items-center gap-1.5">
+            <dt-action-button icon="✅" label="Enable" variant="success" (clicked)="onActionClick('Enable')"></dt-action-button>
+            <dt-action-button icon="⊘" label="Disable" variant="default" (clicked)="onActionClick('Disable')"></dt-action-button>
+          </div>
+        </div>
 
-  </nexora-vertical-section>
+        <!-- 15. Copy & Reset Buttons -->
+        <div class="flex flex-col gap-1.5 p-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Copy / Reset</span>
+          <div class="flex items-center gap-1.5">
+            <dt-action-button icon="⎘" label="Copy" variant="default" (clicked)="onActionClick('Copy')"></dt-action-button>
+            <dt-action-button icon="↺" label="Reset" variant="default" (clicked)="onActionClick('Reset')"></dt-action-button>
+          </div>
+        </div>
+      </nexora-vertical-section>
+    </ng-container>
+
+  </div>
 </div>
