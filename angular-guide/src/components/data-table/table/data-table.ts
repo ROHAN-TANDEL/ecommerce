@@ -156,7 +156,7 @@ export interface TableBulkActionRequest {
     </div>
 
     <!-- ── TOOLBAR ACTIONS ──────────────────────────────────────── -->
-    <div *ngIf="showMainActionPanel" class="border-b border-slate-200">
+    <div *ngIf="showMainActionPanel" class="relative border-b border-slate-200">
       <dt-toolbar-actions
         [actions]="tableConfig?.actions ?? defaultActions"
         [exportConfig]="tableConfig?.export ?? defaultExport"

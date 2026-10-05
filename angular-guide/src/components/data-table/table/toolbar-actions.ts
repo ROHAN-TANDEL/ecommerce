@@ -63,9 +63,9 @@ export interface ActionItem {
     .tb-icon:hover  { @apply bg-slate-50 text-[#436CF3]; }
     .tb-icon.active { @apply border-[#436CF3] text-[#436CF3]; }
 
-    /* ── main dropdown (fixed, anchored by JS from trigger bounding rect) ── */
+    /* ── main dropdown (absolute, anchored relative to action button) ── */
     .actions-drop {
-      @apply fixed z-[200] w-64 rounded-xl
+      @apply absolute right-5 top-1 z-[200] w-64 rounded-xl
              border border-slate-200 bg-white p-1.5 shadow-2xl;
     }
     /* ── child submenu: opens LEFT of the dropdown row ─────────── */
@@ -117,7 +117,6 @@ export interface ActionItem {
   <!-- Parent wraps its Actions button + this component in a relative div -->
   <div *ngIf="actionsOpen"
        class="actions-drop"
-       [style.top.px]="dropTop" [style.right.px]="dropRight"
        (click)="$event.stopPropagation()">
 
     <ng-container *ngFor="let action of actionItems">
@@ -192,7 +191,10 @@ export interface ActionItem {
 
         <!-- child submenu (LEFT) — shown for hasChildren items AND for refresh interval -->
         <div *ngIf="(action.hasChildren && openChildMenu === action.key) || (action.key === 'refresh' && openChildMenu === 'refresh')"
-             class="child-drop" (click)="$event.stopPropagation()">
+             class="child-drop"
+             [class.!top-auto]="action.key === 'density' || action.key === 'columns' || action.key === 'view'"
+             [class.bottom-0]="action.key === 'density' || action.key === 'columns' || action.key === 'view'"
+             (click)="$event.stopPropagation()">
           <ng-container [ngSwitch]="action.key">
 
             <!-- Refresh interval picker -->

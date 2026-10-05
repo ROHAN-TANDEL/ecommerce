@@ -52,19 +52,9 @@ export class NexoraUser implements OnInit {
   actionsDropRight = 0;
 
   toggleActionsMenu(e: MouseEvent): void {
-    const btn  = e.currentTarget as HTMLElement;
-    const rect = btn.getBoundingClientRect();
-    const wasOpen = this.actionsOpen;
-    this.actionsOpen = false;
+    e.stopPropagation();
+    this.actionsOpen = !this.actionsOpen;
     this.cdr.markForCheck();
-    if (!wasOpen) {
-      this.actionsDropTop   = rect.bottom + 6;
-      this.actionsDropRight = window.innerWidth - rect.right;
-      setTimeout(() => {
-        this.actionsOpen = true;
-        this.cdr.markForCheck();
-      }, 0);
-    }
   }
 
   @HostListener('document:click')
