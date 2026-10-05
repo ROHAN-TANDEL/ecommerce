@@ -1,4 +1,6 @@
 import { UserColumnConfig } from "../config/user.column.config.js";
+import { UserActionsConfig } from "../config/user.actions.config.js";
+
 import {UserResponse} from "../response/UserResponse.js";
 
 export class UserController {
@@ -256,6 +258,10 @@ export class UserController {
 
     async getUserColumnsConfig(req, res) {
         return res.json(UserColumnConfig);
+    }
+
+    async getUserActionsConfig(req, res) {
+        return res.json(UserActionsConfig);
     }
 
     async createBulkUsers(req, res) {

@@ -29,6 +29,8 @@ export class UserRoute {
         /** user columns configuration **/
         router.get('/users/config/columns', user.getUserColumnsConfig.bind(user));
 
+        router.get('/users/config/actions', user.getUserActionsConfig.bind(user));
+
         //--UPDATE--//
         /** update one user **/
         router.put('/users/update/:id', user.updateUser.bind(user));
@@ -57,6 +59,8 @@ export class UserRoute {
 
         /** TODO delete more users **/
         router.delete('/users/delete/bulk', user.deleteBulkUsers.bind(user));
+
+        // router.get('/users/config/actions'. user.userActionsConfig.bind(user));
 
         return router;
     }
