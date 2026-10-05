@@ -49,9 +49,9 @@ export const UserTableConfig = {
 
     "enable_table_search_filters" : true,
 
-    "editable_single_multiple_selected_rows" : true, // single rows check boxes
+    "enable_row_level_checkboxes" : true,
 
-    "editable_all_rows" : true, // master checkbox to be shown
+    "enable_master_level_checkbox" : true,
 
     "action_panel" : true,
 
@@ -76,6 +76,6 @@ export const UserTableConfig = {
     "pagination": {
         "active": true,
         "default_page_size": 10,
-        "page_size_options": [10, 25, 50, 100]
+        "page_size_options": [10, 25, 50, 100, 200, 250]
     }
 };
