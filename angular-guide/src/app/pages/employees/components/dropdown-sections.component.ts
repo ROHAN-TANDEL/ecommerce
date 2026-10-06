@@ -37,7 +37,8 @@ import { ScrollerComponent } from './scroller.component';
       <!-- Dropdown Popover Menu -->
       <div
         *ngIf="isOpen"
-        class="absolute right-0 top-full mt-1.5 z-[100] w-60 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap"
+        [ngClass]="menuAlign === 'right' ? 'right-0' : 'left-0'"
+        class="absolute top-full mt-1.5 z-[100] w-60 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap max-h-[calc(100vh-80px)] overflow-y-auto"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-400 border-b border-slate-100 mb-1">
           {{ section.name }} Menu
@@ -119,7 +120,8 @@ import { ScrollerComponent } from './scroller.component';
           <!-- ═══════════════════════════════════════════════════════════ -->
           <div
             *ngIf="activeSubmenuKey === action.key && (action.key === 'columns' || action.dynamic_dropdown)"
-            class="absolute right-full top-0 mr-1.5 z-[110] w-64 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2"
+            [ngClass]="submenuAlign === 'right' ? 'left-full ml-1.5' : 'right-full mr-1.5'"
+            class="absolute top-0 z-[110] w-64 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto"
           >
             <div class="flex items-center justify-between pb-1 border-b border-slate-100">
               <span class="text-xs font-semibold text-slate-800">
@@ -198,7 +200,8 @@ import { ScrollerComponent } from './scroller.component';
           <!-- ═══════════════════════════════════════════════════════════ -->
           <div
             *ngIf="activeSubmenuKey === action.key && action.key === 'view'"
-            class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5"
+            [ngClass]="submenuAlign === 'right' ? 'left-full ml-1.5' : 'right-full mr-1.5'"
+            class="absolute top-0 z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5 max-h-[calc(100vh-100px)] overflow-y-auto"
           >
             <div class="px-2.5 py-1 text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
               SAVED VIEWS
@@ -239,7 +242,8 @@ import { ScrollerComponent } from './scroller.component';
           <!-- ═══════════════════════════════════════════════════════════ -->
           <div
             *ngIf="activeSubmenuKey === action.key && action.dropdown_options && action.key !== 'columns' && action.key !== 'scroller' && action.key !== 'view'"
-            class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
+            [ngClass]="submenuAlign === 'right' ? 'left-full ml-1.5' : 'right-full mr-1.5'"
+            class="absolute top-0 z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl max-h-[calc(100vh-100px)] overflow-y-auto"
           >
             <div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
               {{ action.name }} Options
@@ -281,6 +285,8 @@ export class DropdownSectionsComponent {
   @Output() scrollTable = new EventEmitter<'left' | 'right' | 'start' | 'end'>();
 
   isOpen = false;
+  menuAlign: 'left' | 'right' = 'left';
+  submenuAlign: 'left' | 'right' = 'right';
   activeSubmenuKey: string | null = null;
   columnSearchQuery = '';
 
@@ -288,6 +294,13 @@ export class DropdownSectionsComponent {
 
   toggleMenu(e: MouseEvent): void {
     e.stopPropagation();
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 250;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.menuAlign = spaceRight < menuWidth && spaceLeft >= spaceRight ? 'right' : 'left';
+    }
     this.isOpen = !this.isOpen;
     if (!this.isOpen) {
       this.activeSubmenuKey = null;
@@ -323,7 +336,17 @@ export class DropdownSectionsComponent {
   onActionItemClick(action: ActionItemConfig & { key: string }, e: MouseEvent): void {
     e.stopPropagation();
     if (isSubmenuAction(action)) {
-      this.activeSubmenuKey = this.activeSubmenuKey === action.key ? null : action.key;
+      if (this.activeSubmenuKey === action.key) {
+        this.activeSubmenuKey = null;
+      } else {
+        this.activeSubmenuKey = action.key;
+        const target = e.currentTarget as HTMLElement;
+        const rect = target.getBoundingClientRect();
+        const submenuWidth = (action.key === 'columns' || action.dynamic_dropdown) ? 280 : 220;
+        const spaceRight = window.innerWidth - rect.right;
+        const spaceLeft = rect.left;
+        this.submenuAlign = (spaceRight >= submenuWidth || spaceRight >= spaceLeft) ? 'right' : 'left';
+      }
       return;
     }
     this.isOpen = false;

@@ -46,7 +46,8 @@ import { CommonModule } from '@angular/common';
       <!-- Saved Views Popover -->
       <div
         *ngIf="isOpen"
-        class="absolute left-0 top-full mt-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5"
+        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
+        class="absolute top-full mt-1.5 z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5 max-h-[calc(100vh-100px)] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
@@ -91,11 +92,19 @@ export class ViewComponent {
   @Output() viewSelect = new EventEmitter<string>();
 
   isOpen = false;
+  dropdownAlign: 'left' | 'right' = 'left';
 
   constructor(private readonly elRef: ElementRef) {}
 
   toggleOpen(e: MouseEvent): void {
     e.stopPropagation();
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 220;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+    }
     this.isOpen = !this.isOpen;
   }
 

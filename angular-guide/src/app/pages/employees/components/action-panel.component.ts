@@ -8,17 +8,33 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
   standalone: true,
   imports: [CommonModule, DropdownSectionsComponent],
   template: `
-    <div class="relative z-30 flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
+    <div class="relative z-30 flex flex-wrap items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
 
-      <!-- Left: Pinned Toolbar Actions Slot (Driven dynamically by config pinned: true) -->
-      <div class="flex items-center flex-wrap gap-1.5 overflow-visible">
-        <ng-content></ng-content>
-      </div>
+      <!-- Pinned Toolbar Actions Slot -->
+      <ng-content></ng-content>
 
-      <!-- Right: Config-driven Dropdown Section Components (Actions, Views, More) -->
-      <div class="flex items-center flex-wrap gap-2 overflow-visible" *ngIf="sectionGroups && sectionGroups.length > 0">
+      <!-- Pinned Dropdown Section Components (Actions, Views, More, Exports) aligned with other pinned items as last -->
+      <ng-container *ngFor="let section of pinnedSectionGroups">
         <dropdown-sections-component
-          *ngFor="let section of sectionGroups"
+          [section]="section"
+          [isIndividualSelected]="isIndividualSelected"
+          [isMasterChecked]="isMasterChecked"
+          [hasDirtyRows]="hasDirtyRows"
+          [columns]="columns"
+          [scrollPercentage]="scrollPercentage"
+          [isScrollable]="isScrollable"
+          (toggleColumn)="toggleColumn.emit($event)"
+          (reorderColumn)="reorderColumn.emit($event)"
+          (resetColumns)="resetColumns.emit()"
+          (scrollTable)="scrollTable.emit($event)"
+          (actionSelect)="actionSelect.emit($event)"
+        ></dropdown-sections-component>
+      </ng-container>
+
+      <!-- Unpinned Sections (if any) placed on the right -->
+      <div class="ml-auto flex items-center flex-wrap gap-1.5 overflow-visible" *ngIf="unpinnedSectionGroups.length > 0">
+        <dropdown-sections-component
+          *ngFor="let section of unpinnedSectionGroups"
           [section]="section"
           [isIndividualSelected]="isIndividualSelected"
           [isMasterChecked]="isMasterChecked"
@@ -51,4 +67,16 @@ export class ActionPanelComponent {
   @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
   @Output() resetColumns = new EventEmitter<void>();
   @Output() scrollTable = new EventEmitter<'left' | 'right' | 'start' | 'end'>();
+
+  get pinnedSectionGroups(): SectionActionGroup[] {
+    return (this.sectionGroups || []).filter(
+      s => (s.pinned === true || String(s.pinned) === 'true') && s.actions && s.actions.length > 0
+    );
+  }
+
+  get unpinnedSectionGroups(): SectionActionGroup[] {
+    return (this.sectionGroups || []).filter(
+      s => s.pinned !== true && String(s.pinned) !== 'true' && s.actions && s.actions.length > 0
+    );
+  }
 }

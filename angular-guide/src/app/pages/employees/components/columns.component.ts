@@ -48,7 +48,8 @@ import { EnrichedColumn } from '../employees.types';
       <!-- Popover Dropdown -->
       <div
         *ngIf="isOpen"
-        class="absolute left-0 top-full mt-1.5 z-[110] w-64 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2"
+        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
+        class="absolute top-full mt-1.5 z-[110] w-64 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <div class="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -129,6 +130,7 @@ export class ColumnsComponent {
   @Output() resetColumns = new EventEmitter<void>();
 
   isOpen = false;
+  dropdownAlign: 'left' | 'right' = 'left';
   searchQuery = '';
 
   constructor(private readonly elRef: ElementRef) {}
@@ -145,6 +147,13 @@ export class ColumnsComponent {
 
   toggleOpen(e: MouseEvent): void {
     e.stopPropagation();
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 270;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+    }
     this.isOpen = !this.isOpen;
   }
 

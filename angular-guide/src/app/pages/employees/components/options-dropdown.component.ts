@@ -56,7 +56,8 @@ import { ActionDropdownOption } from '../employees.types';
       <!-- Popover Menu -->
       <div
         *ngIf="isOpen"
-        class="absolute left-0 top-full mt-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap"
+        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
+        class="absolute top-full mt-1.5 z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap max-h-[calc(100vh-100px)] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
@@ -88,11 +89,19 @@ export class OptionsDropdownComponent {
   @Output() optionSelect = new EventEmitter<{ actionKey: string; optionKey: string }>();
 
   isOpen = false;
+  dropdownAlign: 'left' | 'right' = 'left';
 
   constructor(private readonly elRef: ElementRef) {}
 
   toggleOpen(e: MouseEvent): void {
     e.stopPropagation();
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 220;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+    }
     this.isOpen = !this.isOpen;
   }
 

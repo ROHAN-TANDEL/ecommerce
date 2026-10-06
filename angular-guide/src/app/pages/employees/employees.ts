@@ -248,16 +248,25 @@ export class Employees implements OnInit {
         name: 'Actions',
         component: 'dropdown_sections_component',
         order: 1,
+        pinned: true,
       },
       section_2: {
         name: 'Views',
         component: 'dropdown_sections_component',
         order: 2,
+        pinned: true,
       },
       section_3: {
         name: 'More',
         component: 'dropdown_sections_component',
         order: 3,
+        pinned: true,
+      },
+      section_4: {
+        name: 'Exports',
+        component: 'dropdown_sections_component',
+        order: 4,
+        pinned: true,
       },
     },
     actions: {
@@ -368,7 +377,7 @@ export class Employees implements OnInit {
             info_note: 'csv download',
           },
         },
-        section: 'section_1',
+        section: 'section_4',
         order: 8,
       },
       download: {
@@ -386,7 +395,7 @@ export class Employees implements OnInit {
             info_note: 'csv download',
           },
         },
-        section: 'section_1',
+        section: 'section_4',
         order: 9,
       },
       fullscreen: {
@@ -934,9 +943,8 @@ export class Employees implements OnInit {
       const items = actionKeys
         .filter(aKey => {
           const item = actionsMap[aKey];
-          const isPinned = item.pinned === true || String(item.pinned) === 'true';
           const isActive = item.active === true || String(item.active) === 'true';
-          return item.section === sKey && !isPinned && isActive;
+          return item.section === sKey && isActive;
         })
         .map(aKey => ({ ...actionsMap[aKey], key: aKey }))
         .sort((a, b) => {
@@ -948,6 +956,7 @@ export class Employees implements OnInit {
         sectionKey: sKey,
         name: section.name,
         order: section.order,
+        pinned: section.pinned === true || String(section.pinned) === 'true',
         actions: items,
       };
     });

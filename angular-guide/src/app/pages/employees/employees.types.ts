@@ -113,6 +113,7 @@ export interface ActionSectionConfig {
   name: string;
   component: string;
   order: number;
+  pinned?: boolean;
 }
 
 export interface ActionPanelConfigPayload {
@@ -137,6 +138,7 @@ export interface SectionActionGroup {
   sectionKey: string;
   name: string;
   order: number;
+  pinned?: boolean;
   actions: Array<ActionItemConfig & { key: string }>;
 }
 

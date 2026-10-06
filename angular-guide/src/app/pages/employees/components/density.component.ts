@@ -11,7 +11,7 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
     <div class="relative inline-block text-left group">
       <button
         type="button"
-        (click)="isOpen = !isOpen"
+        (click)="toggleOpen($event)"
         [ngClass]="{
           'bg-slate-100 border-slate-300 text-slate-900': isOpen,
           'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
@@ -47,7 +47,8 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
       <!-- Dropdown Popover (Never clipped, z-[100]) -->
       <div
         *ngIf="isOpen"
-        class="absolute left-0 top-full mt-1.5 z-[100] w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap"
+        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
+        class="absolute top-full mt-1.5 z-[100] w-44 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap max-h-[calc(100vh-100px)] overflow-y-auto"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400">
           Row Density
@@ -76,6 +77,7 @@ export class DensityComponent {
   @Output() densityChange = new EventEmitter<TableDensity>();
 
   isOpen = false;
+  dropdownAlign: 'left' | 'right' = 'left';
 
   readonly options: { value: TableDensity; label: string }[] = [
     { value: 'compact', label: 'Compact' },
@@ -84,6 +86,18 @@ export class DensityComponent {
   ];
 
   constructor(private readonly elRef: ElementRef) {}
+
+  toggleOpen(e: MouseEvent): void {
+    e.stopPropagation();
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 190;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+    }
+    this.isOpen = !this.isOpen;
+  }
 
   selectDensity(v: TableDensity): void {
     this.density = v;
