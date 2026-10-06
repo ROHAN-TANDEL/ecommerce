@@ -8,7 +8,7 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="relative inline-block text-left">
+    <div class="relative inline-block text-left group">
       <button
         type="button"
         (click)="isOpen = !isOpen"
@@ -17,7 +17,7 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
           'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
         }"
         class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
-        title="Density"
+        [title]="infoNote || 'Density'"
       >
         <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -35,6 +35,14 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+
+      <!-- Hover Tooltip -->
+      <div
+        *ngIf="infoNote && !isOpen"
+        class="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[120] whitespace-nowrap rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white shadow-md"
+      >
+        {{ infoNote }}
+      </div>
 
       <!-- Dropdown Popover (Never clipped, z-[100]) -->
       <div
@@ -62,6 +70,8 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
   `,
 })
 export class DensityComponent {
+  @Input() label = 'Density';
+  @Input() infoNote?: string;
   @Input() density: TableDensity = 'comfortable';
   @Output() densityChange = new EventEmitter<TableDensity>();
 

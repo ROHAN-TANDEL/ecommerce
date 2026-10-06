@@ -50,12 +50,14 @@
         <refresh-component
           *ngIf="item.component === 'refresh_component'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           (refresh)="bootstrapTable()"
         ></refresh-component>
 
         <lock-component
           *ngIf="item.component === 'lock_component'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           [locked]="isLocked"
           (lockToggle)="onLockToggle($event)"
         ></lock-component>
@@ -63,6 +65,7 @@
         <edit-component
           *ngIf="item.component === 'edit_component'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           [editing]="isEditModeActive"
           (edit)="onEditClick()"
           (editToggle)="onEditToggle($event)"
@@ -71,12 +74,14 @@
         <save-component
           *ngIf="item.component === 'save_component'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           (save)="onSaveClick()"
         ></save-component>
 
         <density-component
           *ngIf="item.component === 'density_component'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           [density]="density"
           (densityChange)="onDensityChange($event)"
         ></density-component>
@@ -84,6 +89,7 @@
         <live-component
           *ngIf="item.component === 'live_component_option'"
           [label]="item.name"
+          [infoNote]="item.info_note"
           [active]="isLiveFeedActive"
           (liveToggle)="onLiveToggle($event)"
         ></live-component>
@@ -91,6 +97,7 @@
         <button-component
           *ngIf="item.component !== 'refresh_component' && item.component !== 'lock_component' && item.component !== 'edit_component' && item.component !== 'save_component' && item.component !== 'density_component' && item.component !== 'live_component_option'"
           [label]="item.name"
+          [title]="item.info_note || item.name"
           (btnClick)="onActionPanelSelect({ actionKey: item.key })"
         ></button-component>
       </ng-container>

@@ -11,19 +11,24 @@ import { CommonModule } from '@angular/common';
       [disabled]="disabled || loading"
       (click)="onClick($event)"
       [ngClass]="buttonClasses"
+      [title]="title || label || ''"
       class="inline-flex items-center justify-center gap-1.5 transition-all select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium text-xs rounded-lg"
     >
       <span *ngIf="loading" class="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+      <span *ngIf="label">{{ label }}</span>
       <ng-content></ng-content>
     </button>
   `,
 })
 export class ButtonComponent {
-  @Input() variant: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' = 'primary';
+  @Input() label?: string;
+  @Input() title?: string;
+  @Input() variant: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' = 'secondary';
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   @Input() disabled = false;
   @Input() loading = false;
   @Output() clicked = new EventEmitter<MouseEvent>();
+  @Output() btnClick = new EventEmitter<MouseEvent>();
 
   get buttonClasses(): Record<string, boolean> {
     return {
@@ -45,6 +50,7 @@ export class ButtonComponent {
   onClick(e: MouseEvent): void {
     if (!this.disabled && !this.loading) {
       this.clicked.emit(e);
+      this.btnClick.emit(e);
     }
   }
 }

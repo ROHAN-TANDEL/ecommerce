@@ -732,18 +732,28 @@ export class Employees implements OnInit {
     const actionsMap = this.rawActionPanelConfig.actions;
     const sectionsMap = this.rawActionPanelConfig.sections;
 
-    this.pinnedActions = Object.keys(actionsMap)
+    const actionKeys = Object.keys(actionsMap);
+
+    this.pinnedActions = actionKeys
       .filter(key => actionsMap[key].pinned === true && actionsMap[key].active === true)
       .map(key => ({ ...actionsMap[key], key }))
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => {
+        if (a.order !== b.order) return a.order - b.order;
+        return actionKeys.indexOf(a.key) - actionKeys.indexOf(b.key);
+      });
 
     const sectionKeys = Object.keys(sectionsMap).sort(
-      (a, b) => sectionsMap[a].order - sectionsMap[b].order
+      (a, b) => {
+        if (sectionsMap[a].order !== sectionsMap[b].order) {
+          return sectionsMap[a].order - sectionsMap[b].order;
+        }
+        return Object.keys(sectionsMap).indexOf(a) - Object.keys(sectionsMap).indexOf(b);
+      }
     );
 
     this.sectionGroups = sectionKeys.map(sKey => {
       const section = sectionsMap[sKey];
-      const items = Object.keys(actionsMap)
+      const items = actionKeys
         .filter(
           aKey =>
             actionsMap[aKey].section === sKey &&
@@ -751,7 +761,10 @@ export class Employees implements OnInit {
             actionsMap[aKey].active === true
         )
         .map(aKey => ({ ...actionsMap[aKey], key: aKey }))
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => {
+          if (a.order !== b.order) return a.order - b.order;
+          return actionKeys.indexOf(a.key) - actionKeys.indexOf(b.key);
+        });
 
       return {
         sectionKey: sKey,
