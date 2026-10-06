@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, inject, HostListener, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject, HostListener, Input, Output, EventEmitter, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmployeesApiService } from './employees-api.service';
@@ -468,8 +468,11 @@ export class Employees implements OnInit {
   // ADAPTER ENGINE STATE (Derived dynamically from configs)
   // ══════════════════════════════════════════════════════════════════════
   columnsList: EnrichedColumn[] = [];
+  allColumnsList: EnrichedColumn[] = [];
   pinnedActions: PinnedToolbarAction[] = [];
   sectionGroups: SectionActionGroup[] = [];
+
+  @ViewChild(TableComponent) tableComponent?: TableComponent;
 
   // Table Data & Pagination
   rows: Record<string, any>[] = [];
@@ -531,10 +534,20 @@ export class Employees implements OnInit {
   isMasterSelected = false;
   isSaving = false;
 
+  // 12 Actions Extended State
+  isFullscreen = false;
+  isTableCollapsed = false;
+  showDeleteConfirmModal = false;
+  deleteTargetRowIds: string[] = [];
+
   private readonly originalRowData = new Map<string, Record<string, any>>();
 
   get isSecondSectionActive(): boolean {
     return this.isEditModeActive && this.selectedRowIds.size > 0;
+  }
+
+  get isIndividualRowSelectionActive(): boolean {
+    return this.selectedRowIds.size > 0 && !this.isMasterCheckboxChecked && !this.isMasterSelected;
   }
 
   get modifiedRows(): { row: Record<string, any>; original: Record<string, any>; diff: Record<string, { from: any; to: any }> }[] {
@@ -543,13 +556,17 @@ export class Employees implements OnInit {
     this.rows.forEach(row => {
       const rowId = String(row['id']);
       const orig = this.originalRowData.get(rowId);
-      if (!orig) return;
+      if (!orig) {
+        // Newly copied / created row
+        list.push({ row, original: {}, diff: { _new: { from: null, to: true } } });
+        return;
+      }
 
       const diff: Record<string, { from: any; to: any }> = {};
       let isDirty = false;
 
-      this.columnsList.forEach(col => {
-        if (col.editable) {
+      this.allColumnsList.forEach(col => {
+        if (col.editable || col.key === 'status') {
           const currentVal = row[col.key];
           const origVal = orig[col.key];
           const normCurrent = currentVal === undefined || currentVal === null ? '' : String(currentVal).trim();
@@ -561,6 +578,11 @@ export class Employees implements OnInit {
           }
         }
       });
+
+      if (row['disabled'] !== orig['disabled']) {
+        diff['disabled'] = { from: orig['disabled'], to: row['disabled'] };
+        isDirty = true;
+      }
 
       if (isDirty) {
         list.push({ row, original: orig, diff });
@@ -812,6 +834,7 @@ export class Employees implements OnInit {
         return {
           ...item,
           key,
+          active: item.active !== false && String(item.active) !== 'false',
           editable: item.editable === true || String(item.editable).toLowerCase() === 'true',
           computedWidth: item.width || '180px',
           isFrozen: !!(item.freez && item.freez.freez_side === 'left'),
@@ -819,16 +842,22 @@ export class Employees implements OnInit {
       })
       .sort((a, b) => a.order - b.order);
 
+    this.recomputeColumnOffsets(list);
+    this.allColumnsList = list;
+    this.columnsList = list.filter(c => c.active !== false);
+  }
+
+  private recomputeColumnOffsets(list: EnrichedColumn[]): void {
     let currentLeftOffset = this.hasCheckboxColumn ? 50 : 0; // Checkbox column is 50px if active
     list.forEach(col => {
-      if (col.isFrozen) {
+      if (col.isFrozen && col.active !== false) {
         col.stickyLeft = `${currentLeftOffset}px`;
         const widthPx = parseInt(col.computedWidth.replace('px', ''), 10) || 180;
         currentLeftOffset += widthPx;
+      } else {
+        col.stickyLeft = undefined;
       }
     });
-
-    this.columnsList = list;
   }
 
   // ── Action Panel Adapter: Splits pinned vs. section groups ───────────
@@ -1103,15 +1132,14 @@ export class Employees implements OnInit {
       return;
     }
 
+    // Remove any unsaved copied rows
+    this.rows = this.rows.filter(r => this.originalRowData.has(String(r['id'])));
+
     // Revert all editable columns of all rows to originalRowData baseline
     this.rows.forEach(row => {
       const orig = this.originalRowData.get(String(row['id']));
       if (orig) {
-        this.columnsList.forEach(col => {
-          if (col.editable) {
-            row[col.key] = orig[col.key];
-          }
-        });
+        Object.assign(row, orig);
       }
     });
 
@@ -1122,6 +1150,11 @@ export class Employees implements OnInit {
     this.cdr.markForCheck();
   }
 
+  onCellValueChange(event: { key: string; value: any }): void {
+    this.actionClicked.emit({ actionKey: 'cell_change', optionKey: event.key, value: event.value });
+    this.cdr.markForCheck();
+  }
+
   onLiveToggle(active?: boolean): void {
     this.isLiveFeedActive = active !== undefined ? active : !this.isLiveFeedActive;
     this.actionClicked.emit({ actionKey: 'live', value: this.isLiveFeedActive });
@@ -1129,7 +1162,268 @@ export class Employees implements OnInit {
     this.cdr.markForCheck();
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // THE 12 ACTIONS IMPLEMENTATION METHODS
+  // ══════════════════════════════════════════════════════════════════════
+
+  onCopySelectedRows(): void {
+    if (!this.isIndividualRowSelectionActive) {
+      this.showToast('Copy Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+      return;
+    }
+
+    const copiedRows: Record<string, any>[] = [];
+    this.selectedRowIds.forEach(id => {
+      const target = this.rows.find(r => String(r['id']) === id);
+      if (target) {
+        const newId = `copy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const copy: Record<string, any> = {
+          ...target,
+          id: newId,
+          first_name: `${target['first_name'] || 'User'} (Copy)`,
+        };
+        copiedRows.push(copy);
+      }
+    });
+
+    if (copiedRows.length === 0) return;
+
+    this.rows = [...this.rows, ...copiedRows];
+    this.defaultMockRows.push(...copiedRows);
+    this.selectedRowIds.clear();
+    copiedRows.forEach(r => this.selectedRowIds.add(String(r['id'])));
+
+    this.actionClicked.emit({ actionKey: 'copy', value: copiedRows });
+    this.showToast('Rows Copied', `Duplicated ${copiedRows.length} row(s). Click Save to commit changes.`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onEnableSelectedRows(): void {
+    if (!this.isIndividualRowSelectionActive) {
+      this.showToast('Enable Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+      return;
+    }
+
+    let count = 0;
+    this.selectedRowIds.forEach(id => {
+      const target = this.rows.find(r => String(r['id']) === id);
+      if (target) {
+        target['status'] = 'active';
+        target['disabled'] = false;
+        count++;
+      }
+    });
+
+    this.actionClicked.emit({ actionKey: 'enable', value: Array.from(this.selectedRowIds) });
+    this.showToast('Rows Enabled', `Enabled ${count} row(s). Click Save to commit changes.`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onDisableSelectedRows(): void {
+    if (!this.isIndividualRowSelectionActive) {
+      this.showToast('Disable Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+      return;
+    }
+
+    let count = 0;
+    this.selectedRowIds.forEach(id => {
+      const target = this.rows.find(r => String(r['id']) === id);
+      if (target) {
+        target['status'] = 'inactive';
+        target['disabled'] = true;
+        count++;
+      }
+    });
+
+    this.actionClicked.emit({ actionKey: 'disable', value: Array.from(this.selectedRowIds) });
+    this.showToast('Rows Disabled', `Disabled ${count} row(s). Click Save to commit changes.`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onDeleteSelectedRows(): void {
+    if (!this.isIndividualRowSelectionActive) {
+      this.showToast('Delete Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+      return;
+    }
+
+    this.deleteTargetRowIds = Array.from(this.selectedRowIds);
+    this.showDeleteConfirmModal = true;
+    this.cdr.markForCheck();
+  }
+
+  confirmDeleteRows(): void {
+    const toDeleteSet = new Set(this.deleteTargetRowIds);
+    const count = toDeleteSet.size;
+
+    this.rows = this.rows.filter(r => !toDeleteSet.has(String(r['id'])));
+    for (let i = this.defaultMockRows.length - 1; i >= 0; i--) {
+      if (toDeleteSet.has(String(this.defaultMockRows[i]['id']))) {
+        this.defaultMockRows.splice(i, 1);
+      }
+    }
+    toDeleteSet.forEach(id => {
+      this.selectedRowIds.delete(id);
+      this.originalRowData.delete(id);
+    });
+
+    this.showDeleteConfirmModal = false;
+    this.deleteTargetRowIds = [];
+    this.actionClicked.emit({ actionKey: 'delete', value: Array.from(toDeleteSet) });
+    this.showToast('Rows Deleted', `Permanently deleted ${count} row(s)`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirmModal = false;
+    this.deleteTargetRowIds = [];
+    this.cdr.markForCheck();
+  }
+
+  getRowDisplayName(id: string): string {
+    const row = this.rows.find(r => String(r['id']) === id);
+    if (!row) return '';
+    return `${row['first_name'] || ''} ${row['last_name'] || ''}`.trim() || row['email'] || id;
+  }
+
+  toggleFullscreen(): void {
+    this.isFullscreen = !this.isFullscreen;
+    this.actionClicked.emit({ actionKey: 'fullscreen', value: this.isFullscreen });
+    this.showToast('Full Screen', this.isFullscreen ? 'Table expanded to full screen' : 'Table returned to normal view', 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  toggleTableCollapse(): void {
+    this.isTableCollapsed = !this.isTableCollapsed;
+    this.actionClicked.emit({ actionKey: 'collapse', value: this.isTableCollapsed });
+    this.showToast('Collapse', this.isTableCollapsed ? 'Table rows and pagination collapsed' : 'Table rows and pagination expanded', 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onResetAll(): void {
+    this.activeFilters = {};
+    this.sectionRowValues = {};
+    this.selectedRowIds.clear();
+    this.isMasterSelected = false;
+    this.isEditModeActive = false;
+    this.sortState = { first_name: 'asc' };
+
+    // Revert unsaved edits to baseline
+    this.rows.forEach(row => {
+      const orig = this.originalRowData.get(String(row['id']));
+      if (orig) {
+        Object.assign(row, orig);
+      }
+    });
+
+    this.processColumns();
+    this.fetchTableData(1, this.pagination.limit);
+    this.actionClicked.emit({ actionKey: 'reset' });
+    this.showToast('Table Reset', 'Cleared all filters, bulk edits, sorting, columns, and selections', 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  toggleColumnVisibility(colKey: string): void {
+    const col = this.allColumnsList.find(c => c.key === colKey);
+    if (!col) return;
+    col.active = !col.active;
+    if (this.rawColumnConfig[colKey]) {
+      this.rawColumnConfig[colKey].active = col.active;
+    }
+    this.recomputeColumnOffsets(this.allColumnsList);
+    this.columnsList = this.allColumnsList.filter(c => c.active !== false);
+    this.showToast('Column Visibility', `Column "${col.header_name}" is now ${col.active ? 'visible' : 'hidden'}`, 'dropdown');
+    this.actionClicked.emit({ actionKey: 'columns', optionKey: 'toggle', value: { colKey, active: col.active } });
+    this.cdr.markForCheck();
+  }
+
+  reorderColumn(colKey: string, direction: 'up' | 'down'): void {
+    const idx = this.allColumnsList.findIndex(c => c.key === colKey);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= this.allColumnsList.length) return;
+
+    const [moved] = this.allColumnsList.splice(idx, 1);
+    this.allColumnsList.splice(targetIdx, 0, moved);
+
+    this.allColumnsList.forEach((c, i) => {
+      c.order = i + 1;
+      if (this.rawColumnConfig[c.key]) {
+        this.rawColumnConfig[c.key].order = c.order;
+      }
+    });
+
+    this.recomputeColumnOffsets(this.allColumnsList);
+    this.columnsList = this.allColumnsList.filter(c => c.active !== false);
+    this.showToast('Column Reordered', `Moved "${moved.header_name}" ${direction}`, 'dropdown');
+    this.actionClicked.emit({ actionKey: 'columns', optionKey: 'reorder', value: { colKey, direction } });
+    this.cdr.markForCheck();
+  }
+
+  resetColumns(): void {
+    this.processColumns();
+    this.showToast('Columns Reset', 'Column visibility and ordering restored', 'dropdown');
+    this.actionClicked.emit({ actionKey: 'columns', optionKey: 'reset' });
+    this.cdr.markForCheck();
+  }
+
+  scrollTableHorizontally(direction: 'left' | 'right' | 'start' | 'end'): void {
+    this.tableComponent?.scrollTo(direction);
+    this.actionClicked.emit({ actionKey: 'scroller', optionKey: direction });
+  }
+
+  applySavedView(viewKey: string): void {
+    if (viewKey === 'default_view' || viewKey === 'reset_view') {
+      this.density = 'comfortable';
+      this.activeFilters = {};
+      this.sortState = { first_name: 'asc' };
+      this.fetchTableData(1, this.pagination.limit);
+      this.showToast('View: Default', 'Reset to default view configuration', 'dropdown');
+    } else if (viewKey === 'compact_view') {
+      this.density = 'compact';
+      this.showToast('View: Compact', 'Applied compact density view', 'dropdown');
+    } else if (viewKey === 'active_users') {
+      this.activeFilters['status'] = 'active';
+      this.fetchTableData(1, this.pagination.limit);
+      this.showToast('View: Active Users', 'Filtered to active users', 'dropdown');
+    } else if (viewKey === 'pending_users') {
+      this.activeFilters['status'] = 'pending';
+      this.fetchTableData(1, this.pagination.limit);
+      this.showToast('View: Pending Review', 'Filtered to pending accounts', 'dropdown');
+    } else if (viewKey === 'current_view') {
+      this.showToast('View Saved', 'Current view configuration saved as preset', 'dropdown');
+    }
+    this.actionClicked.emit({ actionKey: 'view', optionKey: viewKey });
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.isFullscreen) {
+      this.isFullscreen = false;
+      this.cdr.markForCheck();
+    }
+    if (this.showDeleteConfirmModal) {
+      this.cancelDelete();
+    }
+  }
+
   onActionPanelSelect(event: { actionKey: string; optionKey?: string }): void {
+    if (event.actionKey === 'copy') {
+      this.onCopySelectedRows();
+      return;
+    }
+    if (event.actionKey === 'enable') {
+      this.onEnableSelectedRows();
+      return;
+    }
+    if (event.actionKey === 'disable') {
+      this.onDisableSelectedRows();
+      return;
+    }
+    if (event.actionKey === 'delete') {
+      this.onDeleteSelectedRows();
+      return;
+    }
     if (event.actionKey === 'refresh') {
       this.bootstrapTable();
       return;
@@ -1159,10 +1453,19 @@ export class Employees implements OnInit {
       return;
     }
     if (event.actionKey === 'reset') {
-      this.activeFilters = {};
-      this.sortState = { first_name: 'asc' };
-      this.fetchTableData(1, this.pagination.limit);
-      this.showToast('Table Reset', 'Cleared all filters and sorting', 'dropdown');
+      this.onResetAll();
+      return;
+    }
+    if (event.actionKey === 'fullscreen') {
+      this.toggleFullscreen();
+      return;
+    }
+    if (event.actionKey === 'collapse') {
+      this.toggleTableCollapse();
+      return;
+    }
+    if (event.actionKey === 'view') {
+      this.applySavedView(event.optionKey || 'default_view');
       return;
     }
     if (event.actionKey === 'export') {
@@ -1173,21 +1476,6 @@ export class Employees implements OnInit {
     if (event.actionKey === 'download') {
       this.actionClicked.emit({ actionKey: 'download', optionKey: event.optionKey });
       this.showToast('Download Initiated', `Format: ${event.optionKey || 'xlsx'}`, 'dropdown');
-      return;
-    }
-    if (event.actionKey === 'fullscreen') {
-      this.actionClicked.emit({ actionKey: 'fullscreen' });
-      this.showToast('Full Screen', 'Toggled table fullscreen view', 'dropdown');
-      return;
-    }
-    if (event.actionKey === 'collapse') {
-      this.actionClicked.emit({ actionKey: 'collapse' });
-      this.showToast('Collapse', 'Collapsed all expanded row details', 'dropdown');
-      return;
-    }
-    if (event.actionKey === 'view') {
-      this.actionClicked.emit({ actionKey: 'view', optionKey: event.optionKey });
-      this.showToast('View Changed', `Selected: ${event.optionKey}`, 'dropdown');
       return;
     }
     this.actionClicked.emit({ actionKey: event.actionKey, optionKey: event.optionKey });

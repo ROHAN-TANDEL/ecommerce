@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../employees.types';
+import { FormsModule } from '@angular/forms';
+import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedColumn } from '../employees.types';
 
 @Component({
   selector: 'dropdown-sections-component',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="relative inline-block text-left" *ngIf="section && section.actions && section.actions.length > 0">
       <!-- Section Dropdown Trigger -->
@@ -31,7 +32,7 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
       <!-- Dropdown Popover Menu -->
       <div
         *ngIf="isOpen"
-        class="absolute right-0 top-full mt-1.5 z-[100] w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap"
+        class="absolute right-0 top-full mt-1.5 z-[100] w-60 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-400 border-b border-slate-100 mb-1">
           {{ section.name }} Menu
@@ -40,9 +41,14 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
         <div *ngFor="let action of section.actions" class="relative group">
           <button
             type="button"
+            [disabled]="isActionDisabled(action.key)"
             (click)="onActionItemClick(action, $event)"
-            class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
-            [title]="action.info_note || action.name"
+            [ngClass]="{
+              'opacity-40 cursor-not-allowed bg-slate-50/60 text-slate-400': isActionDisabled(action.key),
+              'text-slate-700 hover:bg-slate-100 cursor-pointer': !isActionDisabled(action.key)
+            }"
+            class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors text-left"
+            [title]="getActionTooltip(action)"
           >
             <div class="flex items-center gap-2">
               <ng-container [ngSwitch]="action.key">
@@ -68,11 +74,12 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
                 <svg *ngSwitchCase="'live'" class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.828a5 5 0 010-7.072m7.072 0a5 5 0 010 7.072M13 12a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
                 <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
               </ng-container>
-              <span class="font-medium">{{ action.name }}</span>
+              <span class="font-medium">{{ action.name || (action.key | titlecase) }}</span>
             </div>
 
+            <!-- Arrow for submenus -->
             <svg
-              *ngIf="action.dropdown_options || action.dynamic_dropdown"
+              *ngIf="action.dropdown_options || action.dynamic_dropdown || action.key === 'columns' || action.key === 'scroller' || action.key === 'view'"
               class="w-3 h-3 text-slate-400"
               fill="none"
               viewBox="0 0 24 24"
@@ -83,17 +90,174 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
             </svg>
           </button>
 
-          <!-- Hover Tooltip for unpinned item -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- SUBMENU 1: DYNAMIC COLUMNS (Search, Toggle, Reorder)        -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
           <div
-            *ngIf="action.info_note && !action.dropdown_options"
-            class="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[120] whitespace-nowrap rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white shadow-md"
+            *ngIf="activeSubmenuKey === action.key && (action.key === 'columns' || action.dynamic_dropdown)"
+            class="absolute right-full top-0 mr-1.5 z-[110] w-64 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2"
           >
-            {{ action.info_note }}
+            <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+              <span class="text-xs font-semibold text-slate-800">
+                Columns ({{ getVisibleColumnCount() }}/{{ columns.length }})
+              </span>
+              <button
+                type="button"
+                (click)="onResetColumnsClick($event)"
+                class="text-[10px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+              >
+                Reset
+              </button>
+            </div>
+
+            <!-- Search Columns Input -->
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="Search columns..."
+                [(ngModel)]="columnSearchQuery"
+                (click)="$event.stopPropagation()"
+                class="w-full h-6 rounded border border-slate-200 bg-slate-50 px-2 text-[11px] placeholder:text-slate-400 outline-none focus:border-slate-900 focus:bg-white"
+              />
+            </div>
+
+            <!-- Column Checkbox List with Up/Down Reordering -->
+            <div class="max-h-52 overflow-y-auto space-y-1 py-1">
+              <div
+                *ngFor="let col of getFilteredColumns(); let i = index; let first = first; let last = last"
+                class="flex items-center justify-between px-2 py-1 rounded hover:bg-slate-50 text-xs transition-colors group/item"
+                (click)="$event.stopPropagation()"
+              >
+                <label class="flex items-center gap-2 cursor-pointer flex-1 truncate select-none">
+                  <input
+                    type="checkbox"
+                    [checked]="col.active !== false"
+                    (change)="onToggleColumnClick(col.key, $event)"
+                    class="rounded border-slate-300 accent-slate-900 w-3.5 h-3.5 cursor-pointer"
+                  />
+                  <span class="truncate text-slate-700" [class.font-semibold]="col.active !== false">
+                    {{ col.header_name }}
+                  </span>
+                </label>
+
+                <!-- Reorder arrows -->
+                <div class="flex items-center gap-0.5 opacity-60 group-hover/item:opacity-100">
+                  <button
+                    type="button"
+                    [disabled]="first"
+                    (click)="onReorderClick(col.key, 'up', $event)"
+                    class="w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 text-slate-600 disabled:opacity-20 cursor-pointer text-[10px]"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    [disabled]="last"
+                    (click)="onReorderClick(col.key, 'down', $event)"
+                    class="w-4 h-4 flex items-center justify-center rounded hover:bg-slate-200 text-slate-600 disabled:opacity-20 cursor-pointer text-[10px]"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Submenu Flyout (for items like Export, Download, View, Density) -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- SUBMENU 2: SCROLLER CONTROLS (Left/Right/Start/End)         -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
           <div
-            *ngIf="activeSubmenuKey === action.key && action.dropdown_options"
+            *ngIf="activeSubmenuKey === action.key && action.key === 'scroller'"
+            class="absolute right-full top-0 mr-1.5 z-[110] w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-1"
+          >
+            <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
+              Table Horizontal Scroll
+            </div>
+            <button
+              type="button"
+              (click)="onScrollTableClick('start', $event)"
+              class="flex w-full items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span>⇤</span>
+              <span>Scroll to Start</span>
+            </button>
+            <button
+              type="button"
+              (click)="onScrollTableClick('left', $event)"
+              class="flex w-full items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span>◀</span>
+              <span>Scroll Left (250px)</span>
+            </button>
+            <button
+              type="button"
+              (click)="onScrollTableClick('right', $event)"
+              class="flex w-full items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span>▶</span>
+              <span>Scroll Right (250px)</span>
+            </button>
+            <button
+              type="button"
+              (click)="onScrollTableClick('end', $event)"
+              class="flex w-full items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span>⇥</span>
+              <span>Scroll to End</span>
+            </button>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- SUBMENU 3: SAVED VIEWS                                      -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <div
+            *ngIf="activeSubmenuKey === action.key && action.key === 'view'"
+            class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-1"
+          >
+            <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
+              Preset Views
+            </div>
+            <button
+              type="button"
+              (click)="onViewSelect('default', $event)"
+              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span class="font-medium">Default View</span>
+              <span class="text-[10px] text-slate-400">Standard</span>
+            </button>
+            <button
+              type="button"
+              (click)="onViewSelect('compact', $event)"
+              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span class="font-medium">Compact Density</span>
+              <span class="text-[10px] text-slate-400">Dense</span>
+            </button>
+            <button
+              type="button"
+              (click)="onViewSelect('active_only', $event)"
+              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span class="font-medium">Active Users Only</span>
+              <span class="text-[10px] text-emerald-600 font-semibold">Filter</span>
+            </button>
+            <button
+              type="button"
+              (click)="onViewSelect('pending_only', $event)"
+              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <span class="font-medium">Pending Review</span>
+              <span class="text-[10px] text-amber-600 font-semibold">Filter</span>
+            </button>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- SUBMENU 4: GENERIC OPTIONS (Density, Export, Download, etc) -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <div
+            *ngIf="activeSubmenuKey === action.key && action.dropdown_options && action.key !== 'columns' && action.key !== 'scroller' && action.key !== 'view'"
             class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
           >
             <div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
@@ -114,6 +278,7 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
               </div>
             </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -121,10 +286,20 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
 })
 export class DropdownSectionsComponent {
   @Input({ required: true }) section!: SectionActionGroup;
+  @Input() isIndividualSelected = false;
+  @Input() isMasterChecked = false;
+  @Input() hasDirtyRows = false;
+  @Input() columns: EnrichedColumn[] = [];
+
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
+  @Output() toggleColumn = new EventEmitter<string>();
+  @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
+  @Output() resetColumns = new EventEmitter<void>();
+  @Output() scrollTable = new EventEmitter<'left' | 'right' | 'start' | 'end'>();
 
   isOpen = false;
   activeSubmenuKey: string | null = null;
+  columnSearchQuery = '';
 
   constructor(private readonly elRef: ElementRef) {}
 
@@ -136,9 +311,35 @@ export class DropdownSectionsComponent {
     }
   }
 
+  isActionDisabled(actionKey: string): boolean {
+    if (actionKey === 'copy' || actionKey === 'enable' || actionKey === 'disable' || actionKey === 'delete') {
+      // Disabled on master level or when 0 rows are selected
+      return !this.isIndividualSelected;
+    }
+    if (actionKey === 'revert') {
+      return !this.hasDirtyRows;
+    }
+    return false;
+  }
+
+  getActionTooltip(action: ActionItemConfig & { key: string }): string {
+    if (action.key === 'copy' || action.key === 'enable' || action.key === 'disable' || action.key === 'delete') {
+      if (this.isMasterChecked) {
+        return `${action.name} is disabled when master checkbox is selected`;
+      }
+      if (!this.isIndividualSelected) {
+        return `Select 1 or more individual rows to ${action.name.toLowerCase()}`;
+      }
+    }
+    if (action.key === 'revert' && !this.hasDirtyRows) {
+      return 'No unsaved changes to revert';
+    }
+    return action.info_note || action.name;
+  }
+
   onActionItemClick(action: ActionItemConfig & { key: string }, e: MouseEvent): void {
     e.stopPropagation();
-    if (action.dropdown_options || action.dynamic_dropdown) {
+    if (isSubmenuAction(action)) {
       this.activeSubmenuKey = this.activeSubmenuKey === action.key ? null : action.key;
       return;
     }
@@ -159,6 +360,46 @@ export class DropdownSectionsComponent {
     this.actionSelect.emit({ actionKey: action.key, optionKey: optKey });
   }
 
+  // Column helpers
+  getVisibleColumnCount(): number {
+    return this.columns.filter(c => c.active !== false).length;
+  }
+
+  getFilteredColumns(): EnrichedColumn[] {
+    const q = this.columnSearchQuery.trim().toLowerCase();
+    if (!q) return this.columns;
+    return this.columns.filter(c => c.header_name.toLowerCase().includes(q));
+  }
+
+  onToggleColumnClick(colKey: string, e: Event): void {
+    e.stopPropagation();
+    this.toggleColumn.emit(colKey);
+  }
+
+  onReorderClick(colKey: string, direction: 'up' | 'down', e: MouseEvent): void {
+    e.stopPropagation();
+    this.reorderColumn.emit({ colKey, direction });
+  }
+
+  onResetColumnsClick(e: MouseEvent): void {
+    e.stopPropagation();
+    this.resetColumns.emit();
+  }
+
+  onScrollTableClick(direction: 'left' | 'right' | 'start' | 'end', e: MouseEvent): void {
+    e.stopPropagation();
+    this.isOpen = false;
+    this.activeSubmenuKey = null;
+    this.scrollTable.emit(direction);
+  }
+
+  onViewSelect(viewKey: string, e: MouseEvent): void {
+    e.stopPropagation();
+    this.isOpen = false;
+    this.activeSubmenuKey = null;
+    this.actionSelect.emit({ actionKey: 'view', optionKey: viewKey });
+  }
+
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (this.isOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
@@ -172,4 +413,14 @@ export class DropdownSectionsComponent {
     this.isOpen = false;
     this.activeSubmenuKey = null;
   }
+}
+
+function isSubmenuAction(action: ActionItemConfig & { key: string }): boolean {
+  return !!(
+    action.dropdown_options ||
+    action.dynamic_dropdown ||
+    action.key === 'columns' ||
+    action.key === 'scroller' ||
+    action.key === 'view'
+  );
 }

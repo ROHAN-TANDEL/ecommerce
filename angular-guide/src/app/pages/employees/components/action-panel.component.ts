@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SectionActionGroup, ActionItemConfig } from '../employees.types';
+import { SectionActionGroup, EnrichedColumn } from '../employees.types';
 import { DropdownSectionsComponent } from './dropdown-sections.component';
 
 @Component({
@@ -20,6 +20,14 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
         <dropdown-sections-component
           *ngFor="let section of sectionGroups"
           [section]="section"
+          [isIndividualSelected]="isIndividualSelected"
+          [isMasterChecked]="isMasterChecked"
+          [hasDirtyRows]="hasDirtyRows"
+          [columns]="columns"
+          (toggleColumn)="toggleColumn.emit($event)"
+          (reorderColumn)="reorderColumn.emit($event)"
+          (resetColumns)="resetColumns.emit()"
+          (scrollTable)="scrollTable.emit($event)"
           (actionSelect)="actionSelect.emit($event)"
         ></dropdown-sections-component>
       </div>
@@ -29,5 +37,14 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
 })
 export class ActionPanelComponent {
   @Input() sectionGroups: SectionActionGroup[] = [];
+  @Input() isIndividualSelected = false;
+  @Input() isMasterChecked = false;
+  @Input() hasDirtyRows = false;
+  @Input() columns: EnrichedColumn[] = [];
+
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
+  @Output() toggleColumn = new EventEmitter<string>();
+  @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
+  @Output() resetColumns = new EventEmitter<void>();
+  @Output() scrollTable = new EventEmitter<'left' | 'right' | 'start' | 'end'>();
 }

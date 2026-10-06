@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -18,7 +18,8 @@ import { CommonModule } from '@angular/common';
 
       <!-- Viewport Scroll Container with min/max height -->
       <div
-        class="overflow-auto relative"
+        #viewport
+        class="overflow-auto relative scroll-smooth"
         [style.min-height]="minHeight"
         [style.max-height]="maxHeight"
       >
@@ -34,4 +35,21 @@ export class TableComponent {
   @Input() isLoading = false;
   @Input() minHeight = '380px';
   @Input() maxHeight = 'calc(100vh - 240px)';
+
+  @ViewChild('viewport', { static: false }) viewportRef?: ElementRef<HTMLDivElement>;
+
+  scrollTo(direction: 'left' | 'right' | 'start' | 'end'): void {
+    if (!this.viewportRef?.nativeElement) return;
+    const el = this.viewportRef.nativeElement;
+    if (direction === 'start') {
+      el.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (direction === 'end') {
+      el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+    } else if (direction === 'left') {
+      el.scrollBy({ left: -260, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      el.scrollBy({ left: 260, behavior: 'smooth' });
+    }
+  }
 }
+

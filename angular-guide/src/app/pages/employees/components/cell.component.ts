@@ -20,16 +20,53 @@ import { EnrichedColumn } from '../employees.types';
       [class.bg-slate-50]="column.isFrozen && isEven && !isSelected"
       [class.bg-white]="column.isFrozen && !isEven && !isSelected"
       [class.bg-blue-50]="column.isFrozen && isSelected"
-      class="px-3.5 py-3 align-middle truncate"
+      [class.py-1.5]="density === 'compact'"
+      [class.py-2.5]="density === 'comfortable'"
+      [class.py-4]="density === 'spacious'"
+      [class.text-xs]="density === 'compact'"
+      [class.text-sm]="density !== 'compact'"
+      class="px-3.5 align-middle truncate transition-all duration-150"
     >
-      <!-- Edit Mode: Editable inline input -->
+      <!-- Edit Mode: Contextual inline edit control based on column type -->
       <ng-container *ngIf="isEditing && column.editable; else displayMode">
-        <input
-          type="text"
-          [(ngModel)]="row[column.key]"
-          (ngModelChange)="valueChange.emit({ key: column.key, value: $event })"
-          class="w-full h-7 rounded border border-slate-300 bg-white px-2 text-xs outline-none focus:border-slate-900"
-        />
+
+        <!-- Case 1: Dropdown / List Editor (e.g. Status) -->
+        <div *ngIf="column.filter_type === 'list' && column.filter_data && column.filter_data.length > 0; else dateOrTextEditor" class="w-full">
+          <select
+            [ngModel]="getSelectedOptionKey()"
+            (ngModelChange)="onModelChange($event)"
+            class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs font-medium text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 cursor-pointer shadow-2xs transition-colors"
+          >
+            <option *ngFor="let opt of column.filter_data" [value]="opt.key">
+              {{ opt.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Case 2: Date Selector (filter_type === 'date_range') -->
+        <ng-template #dateOrTextEditor>
+          <div *ngIf="column.filter_type === 'date_range'; else textEditor" class="w-full relative">
+            <input
+              type="text"
+              placeholder="YYYY-MM-DD"
+              [ngModel]="row[column.key]"
+              (ngModelChange)="onModelChange($event)"
+              class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs font-mono transition-colors"
+            />
+          </div>
+        </ng-template>
+
+        <!-- Case 3: Search / Text Editor (search, multi_search, plain text) -->
+        <ng-template #textEditor>
+          <input
+            type="text"
+            [placeholder]="'Enter ' + column.header_name"
+            [ngModel]="row[column.key]"
+            (ngModelChange)="onModelChange($event)"
+            class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+          />
+        </ng-template>
+
       </ng-container>
 
       <!-- Display Mode: Formatted according to cell_mode -->
@@ -86,5 +123,20 @@ export class CellComponent {
   @Input() isEven = false;
   @Input() isSelected = false;
   @Input() isEditing = false;
+  @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Output() valueChange = new EventEmitter<{ key: string; value: any }>();
+
+  getSelectedOptionKey(): string {
+    const raw = String(this.row[this.column.key] || '').toLowerCase().trim();
+    if (!this.column.filter_data || this.column.filter_data.length === 0) return raw;
+    const found = this.column.filter_data.find(
+      opt => opt.key.toLowerCase() === raw || opt.name.toLowerCase() === raw
+    );
+    return found ? found.key : this.row[this.column.key];
+  }
+
+  onModelChange(newVal: any): void {
+    this.row[this.column.key] = newVal;
+    this.valueChange.emit({ key: this.column.key, value: newVal });
+  }
 }
