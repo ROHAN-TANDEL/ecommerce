@@ -1,7 +1,7 @@
 export const UserTableConfig = {
     "table_key" : "users_table_1234",
     "display_name" : "User Management",
-
+    "readonly" : false,
     "table_api" : {
 
         "paginated_data_api" : "/identity/management/users",

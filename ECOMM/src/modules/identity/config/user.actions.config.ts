@@ -14,6 +14,11 @@ export const UserActionsConfig = {
             name: "More",
             component: "dropdown_sections_component",
             order: 3
+        },
+        section_4: {
+            name: "Exports",
+            component: "dropdown_sections_component",
+            order: 4
         }
     },
 
@@ -136,7 +141,7 @@ export const UserActionsConfig = {
                     info_note: "csv download"
                 }
             },
-            section: "section_1",
+            section: "section_4",
             order: 8
         },
 
@@ -155,7 +160,7 @@ export const UserActionsConfig = {
                     info_note: "csv download"
                 }
             },
-            section: "section_1",
+            section: "section_4",
             order: 9
         },
 
@@ -206,12 +211,15 @@ export const UserActionsConfig = {
             dropdown_default_value: "comfortable",
             dropdown_options: {
                 comfortable: {
+                    info_note: "Adjust spacing between rows",
                     display_name: "Comfortable"
                 },
                 spacious: {
+                    info_note: "Adjust spacing between rows",
                     display_name: "Spacious"
                 },
                 compact: {
+                    info_note: "Adjust spacing between rows",
                     display_name: "Compact"
                 }
             },
@@ -225,6 +233,7 @@ export const UserActionsConfig = {
             active: true,
             info_note: "Columns view, reorder & configuration",
             dynamic_dropdown: true,
+            info_note: "Adjust spacing between rows",
             section: "section_3",
             order: 1
         },
@@ -234,6 +243,7 @@ export const UserActionsConfig = {
             active: true,
             component: "scroller_component",
             info_note: "Scroller horozontally",
+            info_note: "Adjust spacing between rows",
             section: "section_3",
             order: 2
         },
@@ -242,6 +252,7 @@ export const UserActionsConfig = {
             name: "Live",
             component: "live_component_option",
             active: true,
+            info_note: "Adjust spacing between rows",
             info_note: "Show live panel feed",
             pinned: true,
             section: "section_3",
