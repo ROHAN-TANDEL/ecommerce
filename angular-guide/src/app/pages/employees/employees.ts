@@ -615,16 +615,22 @@ export class Employees implements OnInit {
     Object.keys(this.activeFilters).forEach(key => {
       const val = this.activeFilters[key];
       if (val !== undefined && val !== null && val !== '') {
+        const colDef = this.columnsList.find(c => c.filter_key === key || c.key === key);
+        const rowProp = colDef ? colDef.key : key;
+
         if (Array.isArray(val)) {
           if (val.length > 0) {
             dataset = dataset.filter(r => {
-              const cellStr = String(r[key] ?? '').toLowerCase();
+              const cellStr = String(r[rowProp] ?? r[key] ?? '').toLowerCase();
               return val.some(entry => cellStr.includes(String(entry).trim().toLowerCase()));
             });
           }
         } else {
           const query = String(val).toLowerCase();
-          dataset = dataset.filter(r => String(r[key] ?? '').toLowerCase().includes(query));
+          dataset = dataset.filter(r => {
+            const cellStr = String(r[rowProp] ?? r[key] ?? '').toLowerCase();
+            return cellStr.includes(query);
+          });
         }
       }
     });
