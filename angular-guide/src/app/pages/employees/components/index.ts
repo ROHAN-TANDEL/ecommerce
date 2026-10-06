@@ -17,6 +17,11 @@ export { TableComponent } from './table.component';
 export { PaginationComponent } from './pagination.component';
 export { SectionRowComponent } from './section-row.component';
 export { LiveComponent } from './live.component';
-export { DropdownSectionsComponent } from './dropdown-sections.component';
 export { ScrollerComponent } from './scroller.component';
+export { DropdownSectionsComponent } from './dropdown-sections.component';
+export { ColumnsComponent } from './columns.component';
+export { ViewComponent } from './view.component';
+export { OptionsDropdownComponent } from './options-dropdown.component';
+export { ActionBtnComponent } from './action-btn.component';
+
 

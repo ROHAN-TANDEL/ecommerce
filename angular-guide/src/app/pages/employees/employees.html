@@ -123,19 +123,51 @@
 
         <!-- Scroller Component (Exact match to Image 2) -->
         <scroller-component
-          *ngIf="item.component === 'scroller_component'"
+          *ngIf="item.component === 'scroller_component' || item.key === 'scroller'"
           [percentage]="scrollPercentage"
           [totalColumns]="columnsList.length || 12"
           [isScrollable]="isTableScrollable"
           (scroll)="onScrollerScroll($event)"
         ></scroller-component>
 
-        <button-component
-          *ngIf="item.component !== 'refresh_component' && item.component !== 'lock_component' && item.component !== 'edit_component' && item.component !== 'save_component' && item.component !== 'density_component' && item.component !== 'live_component_option' && item.component !== 'scroller_component'"
+        <!-- Columns Dropdown Component -->
+        <columns-component
+          *ngIf="item.component === 'column_component' || item.key === 'columns'"
           [label]="item.name"
-          [title]="item.info_note || item.name"
+          [infoNote]="item.info_note"
+          [columns]="allColumnsList"
+          (toggleColumn)="toggleColumnVisibility($event)"
+          (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
+          (resetColumns)="resetColumns()"
+        ></columns-component>
+
+        <!-- View Dropdown Component -->
+        <view-component
+          *ngIf="item.component === 'view_component' || item.key === 'view'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          (viewSelect)="onActionPanelSelect({ actionKey: 'view', optionKey: $event })"
+        ></view-component>
+
+        <!-- Options Dropdown Component (e.g. Export, Download) -->
+        <options-dropdown-component
+          *ngIf="item.dropdown_options && item.key !== 'view' && item.key !== 'columns'"
+          [label]="item.name"
+          [actionKey]="item.key"
+          [infoNote]="item.info_note"
+          [options]="item.dropdown_options"
+          (optionSelect)="onActionPanelSelect($event)"
+        ></options-dropdown-component>
+
+        <!-- Action Button Component (delete, enable, disable, revert, copy, fullscreen, collapse, expand, reset, etc.) -->
+        <action-btn-component
+          *ngIf="item.component !== 'refresh_component' && item.key !== 'refresh' && item.component !== 'lock_component' && item.key !== 'lock' && item.component !== 'edit_component' && item.key !== 'edit' && item.component !== 'save_component' && item.key !== 'save' && item.component !== 'density_component' && item.key !== 'density' && item.component !== 'live_component_option' && item.key !== 'live' && item.component !== 'scroller_component' && item.key !== 'scroller' && item.component !== 'column_component' && item.key !== 'columns' && item.component !== 'view_component' && item.key !== 'view' && !item.dropdown_options"
+          [actionKey]="item.key"
+          [label]="item.name"
+          [infoNote]="getActionTooltip(item)"
+          [disabled]="isActionDisabled(item.key)"
           (btnClick)="onActionPanelSelect({ actionKey: item.key })"
-        ></button-component>
+        ></action-btn-component>
       </ng-container>
     </action-panel-component>
 

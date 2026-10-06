@@ -39,6 +39,10 @@ import {
   LiveComponent,
   DropdownSectionsComponent,
   ScrollerComponent,
+  ColumnsComponent,
+  ViewComponent,
+  OptionsDropdownComponent,
+  ActionBtnComponent,
 } from './components';
 
 @Component({
@@ -58,6 +62,10 @@ import {
     LiveComponent,
     DropdownSectionsComponent,
     ScrollerComponent,
+    ColumnsComponent,
+    ViewComponent,
+    OptionsDropdownComponent,
+    ActionBtnComponent,
     TableComponent,
     TableHeaderComponent,
     MasterComponent,
@@ -553,6 +561,33 @@ export class Employees implements OnInit {
 
   get isIndividualRowSelectionActive(): boolean {
     return this.selectedRowIds.size > 0 && !this.isMasterCheckboxChecked && !this.isMasterSelected;
+  }
+
+  isActionDisabled(actionKey: string): boolean {
+    if (actionKey === 'copy' || actionKey === 'enable' || actionKey === 'disable' || actionKey === 'delete') {
+      return !this.isIndividualRowSelectionActive;
+    }
+    if (actionKey === 'revert') {
+      return !this.hasDirtyRows;
+    }
+    return false;
+  }
+
+  getActionTooltip(action: any): string {
+    if (!action) return '';
+    const key = action.key || '';
+    if (key === 'copy' || key === 'enable' || key === 'disable' || key === 'delete') {
+      if (this.isMasterCheckboxChecked || this.isMasterSelected) {
+        return `${action.name || key} is disabled when master checkbox is selected`;
+      }
+      if (!this.isIndividualRowSelectionActive) {
+        return `Select 1 or more individual rows to ${(action.name || key).toLowerCase()}`;
+      }
+    }
+    if (key === 'revert' && !this.hasDirtyRows) {
+      return 'No unsaved changes to revert';
+    }
+    return action.info_note || action.name || key;
   }
 
   get modifiedRows(): { row: Record<string, any>; original: Record<string, any>; diff: Record<string, { from: any; to: any }> }[] {

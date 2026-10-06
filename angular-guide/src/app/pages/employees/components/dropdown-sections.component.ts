@@ -47,22 +47,15 @@ import { ScrollerComponent } from './scroller.component';
           <!-- Special Case: Scroller action item replaced with interactive scroller control -->
           <div
             *ngIf="action.key === 'scroller' || action.component === 'scroller_component'; else defaultActionBtn"
-            class="flex items-center justify-between rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors select-none"
+            class="flex items-center justify-center rounded-lg px-2 py-1 hover:bg-slate-50 transition-colors select-none"
             (click)="$event.stopPropagation()"
           >
-            <div class="flex items-center justify-between w-full">
-              <span class="w-3 h-3 flex items-center justify-center shrink-0">
-                <svg class="w-3 h-3 text-red-500 fill-red-500" viewBox="0 0 24 24">
-                  <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6l.8.8.8-.8v-6H18v-2l-2-2z"/>
-                </svg>
-              </span>
-              <scroller-component
-                [percentage]="scrollPercentage"
-                [totalColumns]="getVisibleColumnCount()"
-                [isScrollable]="isScrollable"
-                (scroll)="scrollTable.emit($event)"
-              ></scroller-component>
-            </div>
+            <scroller-component
+              [percentage]="scrollPercentage"
+              [totalColumns]="getVisibleColumnCount()"
+              [isScrollable]="isScrollable"
+              (scroll)="scrollTable.emit($event)"
+            ></scroller-component>
           </div>
 
           <ng-template #defaultActionBtn>
@@ -78,12 +71,6 @@ import { ScrollerComponent } from './scroller.component';
               [title]="getActionTooltip(action)"
             >
               <div class="flex items-center gap-2">
-                <!-- Red pushpin icon matching Image 3 -->
-                <span class="w-3 h-3 flex items-center justify-center shrink-0">
-                  <svg class="w-3 h-3 text-red-500 fill-red-500" viewBox="0 0 24 24">
-                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6l.8.8.8-.8v-6H18v-2l-2-2z"/>
-                  </svg>
-                </span>
                 <ng-container [ngSwitch]="action.key">
                   <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
