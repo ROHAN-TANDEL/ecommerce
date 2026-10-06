@@ -38,6 +38,7 @@ import {
   SectionRowComponent,
   LiveComponent,
   DropdownSectionsComponent,
+  ScrollerComponent,
 } from './components';
 
 @Component({
@@ -56,6 +57,7 @@ import {
     DensityComponent,
     LiveComponent,
     DropdownSectionsComponent,
+    ScrollerComponent,
     TableComponent,
     TableHeaderComponent,
     MasterComponent,
@@ -539,6 +541,7 @@ export class Employees implements OnInit {
   isTableCollapsed = false;
   showDeleteConfirmModal = false;
   deleteTargetRowIds: string[] = [];
+  scrollPercentage = 0;
 
   private readonly originalRowData = new Map<string, Record<string, any>>();
 
@@ -1369,6 +1372,36 @@ export class Employees implements OnInit {
   scrollTableHorizontally(direction: 'left' | 'right' | 'start' | 'end'): void {
     this.tableComponent?.scrollTo(direction);
     this.actionClicked.emit({ actionKey: 'scroller', optionKey: direction });
+  }
+
+  onTableScrollProgress(pct: number): void {
+    this.scrollPercentage = pct;
+    this.cdr.markForCheck();
+  }
+
+  onScrollerScroll(direction: 'left' | 'right'): void {
+    this.scrollTableHorizontally(direction);
+  }
+
+  onClearMasterFilters(): void {
+    this.sectionRowValues = {};
+    this.applyBulkEdits();
+    this.showToast('Master Filters Cleared', 'Cleared all master filter values and restored rows', 'toolbar');
+    this.cdr.markForCheck();
+  }
+
+  onApplyMasterFilters(): void {
+    const hasValues = Object.keys(this.sectionRowValues).some(
+      k => this.sectionRowValues[k] !== undefined && this.sectionRowValues[k] !== ''
+    );
+    if (!hasValues) {
+      this.showToast('No Filter Values', 'Enter values in master filter row before applying', 'toolbar');
+      return;
+    }
+    this.applyBulkEdits();
+    const count = this.selectedRowIds.size;
+    this.showToast('Master Filters Applied', `Applied bulk edits across ${count} selected row(s). Click Save to commit.`, 'toolbar');
+    this.cdr.markForCheck();
   }
 
   applySavedView(viewKey: string): void {

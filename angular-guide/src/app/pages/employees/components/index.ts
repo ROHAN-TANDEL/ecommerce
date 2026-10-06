@@ -18,3 +18,5 @@ export { PaginationComponent } from './pagination.component';
 export { SectionRowComponent } from './section-row.component';
 export { LiveComponent } from './live.component';
 export { DropdownSectionsComponent } from './dropdown-sections.component';
+export { ScrollerComponent } from './scroller.component';
+

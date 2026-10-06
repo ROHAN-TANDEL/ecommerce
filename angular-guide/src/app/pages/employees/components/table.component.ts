@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common';
       <!-- Viewport Scroll Container with min/max height -->
       <div
         #viewport
+        (scroll)="onViewportScroll()"
         class="overflow-auto relative scroll-smooth"
         [style.min-height]="minHeight"
         [style.max-height]="maxHeight"
@@ -36,7 +37,25 @@ export class TableComponent {
   @Input() minHeight = '380px';
   @Input() maxHeight = 'calc(100vh - 240px)';
 
+  @Output() scrollProgress = new EventEmitter<number>();
+
   @ViewChild('viewport', { static: false }) viewportRef?: ElementRef<HTMLDivElement>;
+
+  currentPercentage = 0;
+
+  onViewportScroll(): void {
+    if (!this.viewportRef?.nativeElement) return;
+    const el = this.viewportRef.nativeElement;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 0) {
+      this.currentPercentage = 0;
+      this.scrollProgress.emit(0);
+      return;
+    }
+    const pct = Math.round((el.scrollLeft / maxScroll) * 100);
+    this.currentPercentage = Math.min(100, Math.max(0, pct));
+    this.scrollProgress.emit(this.currentPercentage);
+  }
 
   scrollTo(direction: 'left' | 'right' | 'start' | 'end'): void {
     if (!this.viewportRef?.nativeElement) return;
@@ -50,6 +69,7 @@ export class TableComponent {
     } else if (direction === 'right') {
       el.scrollBy({ left: 260, behavior: 'smooth' });
     }
+    setTimeout(() => this.onViewportScroll(), 200);
   }
 }
 

@@ -16,9 +16,9 @@ import { EnrichedColumn } from '../employees.types';
         *ngIf="hasCheckboxColumn"
         style="width: 50px; min-width: 50px; max-width: 50px;"
         class="w-[50px] min-w-[50px] max-w-[50px] px-2 py-1.5 bg-blue-50/90 sticky left-0 z-30 border-r border-blue-200 text-center"
-        title="Bulk Edit Row"
+        title="Master Edit Filter Active"
       >
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-blue-600 text-white font-bold text-[10px] shadow-2xs select-none" title="Bulk Update Row">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs shadow-2xs select-none" title="Master Edit Filter Active">
           ✎
         </span>
       </th>
@@ -46,7 +46,7 @@ import { EnrichedColumn } from '../employees.types';
             <select
               [value]="values[col.key] || ''"
               (change)="onSelectChange(col, $any($event.target).value)"
-              class="w-full h-7 rounded-md border border-blue-300 bg-white px-2 text-[11px] font-medium text-slate-700 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 cursor-pointer shadow-2xs transition-colors"
+              class="w-full h-8 rounded-lg border border-blue-400 bg-white px-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs transition-colors"
             >
               <option value="">Apply {{ col.header_name }}...</option>
               <option *ngFor="let opt of col.filter_data" [value]="opt.key">
@@ -55,7 +55,7 @@ import { EnrichedColumn } from '../employees.types';
             </select>
           </div>
 
-          <!-- Case 2: Clean single text input (No multi-search; applies directly to following cells) -->
+          <!-- Case 2: Clean single text input (Image 1: rounded-lg border border-blue-400) -->
           <ng-template #textInputBlock>
             <div class="relative flex items-center w-full">
               <input
@@ -63,14 +63,14 @@ import { EnrichedColumn } from '../employees.types';
                 [placeholder]="'Apply ' + col.header_name + '...'"
                 [value]="values[col.key] || ''"
                 (input)="onInputChange(col, $any($event.target).value)"
-                class="w-full h-7 rounded-md border border-blue-300 bg-white px-2 pr-6 text-[11px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-normal transition-colors shadow-2xs"
+                class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 pr-6 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-normal transition-colors shadow-2xs"
               />
               <button
                 *ngIf="values[col.key]"
                 type="button"
                 (click)="clearValue(col, $event)"
-                class="absolute right-1.5 text-slate-400 hover:text-slate-700 text-xs font-bold leading-none cursor-pointer p-0.5"
-                title="Clear bulk value"
+                class="absolute right-2 text-slate-400 hover:text-slate-700 text-xs font-bold leading-none cursor-pointer p-0.5"
+                title="Clear filter value"
               >
                 &times;
               </button>
@@ -81,22 +81,36 @@ import { EnrichedColumn } from '../employees.types';
 
         <!-- NON-EDITABLE COLUMN (col.editable !== true) -->
         <ng-template #nonEditableCell>
-          <div class="flex items-center justify-center h-7 text-slate-300 font-mono text-xs select-none" [title]="col.header_name + ' is read-only'">
+          <div class="flex items-center justify-center h-8 text-slate-300 font-mono text-xs select-none" [title]="col.header_name + ' is read-only'">
             —
           </div>
         </ng-template>
       </th>
 
-      <!-- Action Column Placeholder (Sticky right, z-30, opaque) -->
+      <!-- Action Column: Clear and Apply for Master Filters (Image 4) -->
       <th
         *ngIf="hasActionColumn"
-        style="width: 110px; min-width: 110px; max-width: 110px;"
-        class="w-[110px] min-w-[110px] max-w-[110px] px-2 py-1.5 bg-blue-50/90 sticky right-0 z-30 border-l border-blue-200 text-center"
+        style="width: 120px; min-width: 120px; max-width: 120px;"
+        class="w-[120px] min-w-[120px] max-w-[120px] px-2 py-1.5 bg-blue-50/90 sticky right-0 z-30 border-l border-blue-200 text-center"
       >
-        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 uppercase tracking-wider">
-          <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
-          Bulk Edit
-        </span>
+        <div class="flex items-center justify-center gap-1.5">
+          <button
+            type="button"
+            (click)="onClearAll($event)"
+            class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 shadow-2xs transition-colors cursor-pointer"
+            title="Clear all master edit filters"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            (click)="onApplyAll($event)"
+            class="px-3 py-1 rounded-lg bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
+            title="Apply master filters to selected rows"
+          >
+            Apply
+          </button>
+        </div>
       </th>
 
     </tr>
@@ -109,6 +123,8 @@ export class SectionRowComponent {
   @Input() hasActionColumn = true;
   @Output() sectionChange = new EventEmitter<{ col: EnrichedColumn; value: string }>();
   @Output() sectionAction = new EventEmitter<{ col: EnrichedColumn; action: string }>();
+  @Output() clearMasterFilters = new EventEmitter<void>();
+  @Output() applyMasterFilters = new EventEmitter<void>();
 
   onInputChange(col: EnrichedColumn, val: string): void {
     this.sectionChange.emit({ col, value: val });
@@ -122,4 +138,15 @@ export class SectionRowComponent {
     if (e) e.stopPropagation();
     this.sectionChange.emit({ col, value: '' });
   }
+
+  onClearAll(e: MouseEvent): void {
+    e.stopPropagation();
+    this.clearMasterFilters.emit();
+  }
+
+  onApplyAll(e: MouseEvent): void {
+    e.stopPropagation();
+    this.applyMasterFilters.emit();
+  }
 }
+

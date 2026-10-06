@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EnrichedColumn } from '../employees.types';
@@ -14,33 +14,55 @@ import { EnrichedColumn } from '../employees.types';
       [style.min-width]="column.computedWidth"
       [style.left]="column.stickyLeft || null"
       [class.sticky]="column.isFrozen"
-      [class.z-10]="column.isFrozen"
+      [class.z-20]="column.isFrozen && isDropdownOpen"
+      [class.z-10]="column.isFrozen && !isDropdownOpen"
       [class.border-r]="column.isFrozen"
       [class.border-slate-200]="column.isFrozen"
       [class.bg-slate-50]="column.isFrozen && isEven && !isSelected"
       [class.bg-white]="column.isFrozen && !isEven && !isSelected"
       [class.bg-blue-50]="column.isFrozen && isSelected"
       [class.py-1.5]="density === 'compact'"
-      [class.py-2.5]="density === 'comfortable'"
-      [class.py-4]="density === 'spacious'"
+      [class.py-2]="density === 'comfortable'"
+      [class.py-3.5]="density === 'spacious'"
       [class.text-xs]="density === 'compact'"
       [class.text-sm]="density !== 'compact'"
-      class="px-3.5 align-middle truncate transition-all duration-150"
+      class="px-3.5 align-middle truncate transition-all duration-150 overflow-visible relative"
     >
-      <!-- Edit Mode: Contextual inline edit control based on column type -->
+      <!-- Edit Mode: Contextual inline edit control matching table theme (Image 1) -->
       <ng-container *ngIf="isEditing && column.editable; else displayMode">
 
-        <!-- Case 1: Dropdown / List Editor (e.g. Status) -->
-        <div *ngIf="column.filter_type === 'list' && column.filter_data && column.filter_data.length > 0; else dateOrTextEditor" class="w-full">
-          <select
-            [ngModel]="getSelectedOptionKey()"
-            (ngModelChange)="onModelChange($event)"
-            class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs font-medium text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 cursor-pointer shadow-2xs transition-colors"
+        <!-- Case 1: Custom Dark Dropdown / List Editor (Image 1) -->
+        <div *ngIf="column.filter_type === 'list' && column.filter_data && column.filter_data.length > 0; else dateOrTextEditor" class="w-full relative" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            (click)="toggleDropdown($event)"
+            class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs flex items-center justify-between text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer text-left transition-colors"
           >
-            <option *ngFor="let opt of column.filter_data" [value]="opt.key">
-              {{ opt.name }}
-            </option>
-          </select>
+            <span class="capitalize truncate font-medium">{{ getSelectedOptionName() }}</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1 transition-transform" [class.rotate-180]="isDropdownOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Custom Dark Dropdown Popover (Image 1) -->
+          <div
+            *ngIf="isDropdownOpen"
+            class="absolute left-0 top-full mt-1.5 z-50 min-w-[125px] rounded-xl bg-[#2D3748] p-1 shadow-2xl border border-slate-700/60 space-y-0.5 animate-slide-up"
+          >
+            <button
+              *ngFor="let opt of column.filter_data"
+              type="button"
+              (click)="selectOption(opt.key, $event)"
+              [ngClass]="{
+                'bg-[#3B82F6] text-white font-medium': isOptionSelected(opt.key),
+                'text-white/90 hover:bg-slate-700/80 font-normal': !isOptionSelected(opt.key)
+              }"
+              class="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-colors text-left"
+            >
+              <span *ngIf="isOptionSelected(opt.key)" class="font-bold text-[11px] leading-none shrink-0">✓</span>
+              <span class="capitalize">{{ opt.name }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- Case 2: Date Selector (filter_type === 'date_range') -->
@@ -51,19 +73,19 @@ import { EnrichedColumn } from '../employees.types';
               placeholder="YYYY-MM-DD"
               [ngModel]="row[column.key]"
               (ngModelChange)="onModelChange($event)"
-              class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs font-mono transition-colors"
+              class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs font-mono transition-colors"
             />
           </div>
         </ng-template>
 
-        <!-- Case 3: Search / Text Editor (search, multi_search, plain text) -->
+        <!-- Case 3: Search / Text Editor (Image 1: rounded-lg, border-blue-400, bg-white) -->
         <ng-template #textEditor>
           <input
             type="text"
             [placeholder]="'Enter ' + column.header_name"
             [ngModel]="row[column.key]"
             (ngModelChange)="onModelChange($event)"
-            class="w-full h-7 rounded-md border border-blue-400 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-2xs transition-colors"
+            class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs transition-colors"
           />
         </ng-template>
 
@@ -126,6 +148,40 @@ export class CellComponent {
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
   @Output() valueChange = new EventEmitter<{ key: string; value: any }>();
 
+  isDropdownOpen = false;
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.isDropdownOpen = false;
+  }
+
+  toggleDropdown(e: MouseEvent): void {
+    e.stopPropagation();
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  selectOption(optKey: string, e: MouseEvent): void {
+    e.stopPropagation();
+    this.isDropdownOpen = false;
+    this.onModelChange(optKey);
+  }
+
+  isOptionSelected(optKey: string): boolean {
+    const raw = String(this.row[this.column.key] || '').toLowerCase().trim();
+    return raw === optKey.toLowerCase();
+  }
+
+  getSelectedOptionName(): string {
+    const raw = String(this.row[this.column.key] || '').toLowerCase().trim();
+    if (!this.column.filter_data || this.column.filter_data.length === 0) {
+      return this.row[this.column.key] || 'Select...';
+    }
+    const found = this.column.filter_data.find(
+      opt => opt.key.toLowerCase() === raw || opt.name.toLowerCase() === raw
+    );
+    return found ? found.name : (this.row[this.column.key] || 'Select...');
+  }
+
   getSelectedOptionKey(): string {
     const raw = String(this.row[this.column.key] || '').toLowerCase().trim();
     if (!this.column.filter_data || this.column.filter_data.length === 0) return raw;
@@ -140,3 +196,4 @@ export class CellComponent {
     this.valueChange.emit({ key: this.column.key, value: newVal });
   }
 }
+

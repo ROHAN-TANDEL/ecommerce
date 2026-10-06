@@ -16,6 +16,10 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedCol
         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
         [title]="section.name + ' Section'"
       >
+        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
         <span>{{ section.name }}</span>
         <svg
           class="w-3 h-3 text-slate-400 transition-transform"
@@ -51,6 +55,12 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedCol
             [title]="getActionTooltip(action)"
           >
             <div class="flex items-center gap-2">
+              <!-- Red pushpin icon matching Image 3 -->
+              <span class="w-3 h-3 flex items-center justify-center shrink-0">
+                <svg class="w-3 h-3 text-red-500 fill-red-500" viewBox="0 0 24 24">
+                  <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6l.8.8.8-.8v-6H18v-2l-2-2z"/>
+                </svg>
+              </span>
               <ng-container [ngSwitch]="action.key">
                 <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
@@ -77,17 +87,20 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedCol
               <span class="font-medium">{{ action.name || (action.key | titlecase) }}</span>
             </div>
 
-            <!-- Arrow for submenus -->
-            <svg
-              *ngIf="action.dropdown_options || action.dynamic_dropdown || action.key === 'columns' || action.key === 'scroller' || action.key === 'view'"
-              class="w-3 h-3 text-slate-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+            <!-- Submenu indicator or accessory (Image 3) -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span *ngIf="action.key === 'refresh'" class="text-[10px] text-slate-400 font-mono">5s</span>
+              <svg
+                *ngIf="action.dropdown_options || action.dynamic_dropdown || action.key === 'columns' || action.key === 'scroller' || action.key === 'view' || action.key === 'refresh'"
+                class="w-3 h-3 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </div>
           </button>
 
           <!-- ═══════════════════════════════════════════════════════════ -->
@@ -212,44 +225,44 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedCol
           <!-- ═══════════════════════════════════════════════════════════ -->
           <!-- SUBMENU 3: SAVED VIEWS                                      -->
           <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- SUBMENU 3: SAVED VIEWS (Exact match to Image 3)            -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
           <div
             *ngIf="activeSubmenuKey === action.key && action.key === 'view'"
-            class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-1"
+            class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5"
           >
-            <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
-              Preset Views
+            <div class="px-2.5 py-1 text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
+              SAVED VIEWS
             </div>
+
             <button
               type="button"
-              (click)="onViewSelect('default', $event)"
-              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+              (click)="onViewSelect('default_view', $event)"
+              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer text-left"
             >
-              <span class="font-medium">Default View</span>
-              <span class="text-[10px] text-slate-400">Standard</span>
+              <span class="text-blue-600 font-bold text-xs leading-none">✓</span>
+              <span class="font-medium">Default</span>
             </button>
+
             <button
               type="button"
-              (click)="onViewSelect('compact', $event)"
-              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+              (click)="onViewSelect('current_view', $event)"
+              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
             >
-              <span class="font-medium">Compact Density</span>
-              <span class="text-[10px] text-slate-400">Dense</span>
+              <span class="text-slate-400 text-sm leading-none font-medium">+</span>
+              <span class="font-medium">Save current view</span>
             </button>
+
             <button
               type="button"
-              (click)="onViewSelect('active_only', $event)"
-              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+              (click)="onViewSelect('reset_view', $event)"
+              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
             >
-              <span class="font-medium">Active Users Only</span>
-              <span class="text-[10px] text-emerald-600 font-semibold">Filter</span>
-            </button>
-            <button
-              type="button"
-              (click)="onViewSelect('pending_only', $event)"
-              class="flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
-            >
-              <span class="font-medium">Pending Review</span>
-              <span class="text-[10px] text-amber-600 font-semibold">Filter</span>
+              <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" />
+              </svg>
+              <span class="font-medium">Reset view</span>
             </button>
           </div>
 

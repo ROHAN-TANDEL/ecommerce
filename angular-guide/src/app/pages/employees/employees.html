@@ -119,8 +119,15 @@
           (liveToggle)="onLiveToggle($event)"
         ></live-component>
 
+        <!-- Scroller Component (Exact match to Image 2) -->
+        <scroller-component
+          *ngIf="item.component === 'scroller_component'"
+          [percentage]="scrollPercentage"
+          (scroll)="onScrollerScroll($event)"
+        ></scroller-component>
+
         <button-component
-          *ngIf="item.component !== 'refresh_component' && item.component !== 'lock_component' && item.component !== 'edit_component' && item.component !== 'save_component' && item.component !== 'density_component' && item.component !== 'live_component_option'"
+          *ngIf="item.component !== 'refresh_component' && item.component !== 'lock_component' && item.component !== 'edit_component' && item.component !== 'save_component' && item.component !== 'density_component' && item.component !== 'live_component_option' && item.component !== 'scroller_component'"
           [label]="item.name"
           [title]="item.info_note || item.name"
           (btnClick)="onActionPanelSelect({ actionKey: item.key })"
@@ -135,6 +142,7 @@
       [isLoading]="isDataLoading"
       [minHeight]="tableMinHeight"
       [maxHeight]="tableMaxHeight"
+      (scrollProgress)="onTableScrollProgress($event)"
     >
       <!-- Table Header Wrapper -->
       <table-header-component *ngIf="tableConfig.show_table_headers" class="contents">
@@ -157,13 +165,13 @@
             (sortChange)="onHeaderSortClick($event)"
           ></header-component>
 
-          <!-- Action column header -->
+          <!-- Action column header (Matching Image 4: Actions in bold navy) -->
           <th
             *ngIf="tableConfig.action_column.active"
-            style="width: 110px; min-width: 110px; max-width: 110px;"
-            class="w-[110px] min-w-[110px] max-w-[110px] px-3 py-3 bg-slate-50 sticky right-0 z-30 border-l border-slate-200 text-center text-[11px] font-semibold text-slate-700 uppercase tracking-wider"
+            style="width: 120px; min-width: 120px; max-width: 120px;"
+            class="w-[120px] min-w-[120px] max-w-[120px] px-3 py-3 bg-slate-50 sticky right-0 z-30 border-l border-slate-200 text-center text-xs font-bold text-[#0F172A] tracking-tight uppercase"
           >
-            Action
+            Actions
           </th>
         </tr>
 
@@ -179,7 +187,7 @@
           (filterTrigger)="onFilterTrigger($event)"
         ></filter-row-component>
 
-        <!-- Row 3: Secondary Section Row (Active & visible when rows are selected) -->
+        <!-- Row 3: Secondary Section Row (Active & visible when rows are selected, Image 4) -->
         <section-row-component
           *ngIf="isSecondSectionActive"
           class="contents"
@@ -189,6 +197,8 @@
           [hasActionColumn]="tableConfig.action_column.active"
           (sectionChange)="onSectionRowChange($event)"
           (sectionAction)="onSectionRowAction($event)"
+          (clearMasterFilters)="onClearMasterFilters()"
+          (applyMasterFilters)="onApplyMasterFilters()"
         ></section-row-component>
       </table-header-component>
 
@@ -242,8 +252,8 @@
           <!-- Sticky Action Column Cell with Kebab Popover -->
           <td
             *ngIf="tableConfig.action_column.active"
-            style="width: 110px; min-width: 110px; max-width: 110px;"
-            class="w-[110px] min-w-[110px] max-w-[110px] px-3 text-center sticky right-0 border-l border-slate-200"
+            style="width: 120px; min-width: 120px; max-width: 120px;"
+            class="w-[120px] min-w-[120px] max-w-[120px] px-3 text-center sticky right-0 border-l border-slate-200"
             [class.z-40]="activeRowActionId === row['id']"
             [class.z-10]="activeRowActionId !== row['id']"
             [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
