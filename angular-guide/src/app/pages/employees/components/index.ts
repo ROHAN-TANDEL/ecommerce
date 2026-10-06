@@ -16,3 +16,5 @@ export { TableFooterComponent } from './table-footer.component';
 export { TableComponent } from './table.component';
 export { PaginationComponent } from './pagination.component';
 export { SectionRowComponent } from './section-row.component';
+export { LiveComponent } from './live.component';
+export { DropdownSectionsComponent } from './dropdown-sections.component';

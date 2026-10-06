@@ -1,0 +1,47 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'live-component',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <button
+      type="button"
+      [disabled]="disabled"
+      (click)="onClick($event)"
+      [ngClass]="{
+        'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100': active,
+        'bg-white text-slate-700 border-slate-200 hover:bg-slate-50': !active
+      }"
+      class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+      [title]="label + ' Feed'"
+    >
+      <span class="relative flex h-2 w-2">
+        <span
+          *ngIf="active"
+          class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"
+        ></span>
+        <span
+          class="relative inline-flex rounded-full h-2 w-2"
+          [ngClass]="active ? 'bg-emerald-500' : 'bg-slate-400'"
+        ></span>
+      </span>
+      <span>{{ label }}</span>
+    </button>
+  `,
+})
+export class LiveComponent {
+  @Input() label = 'Live';
+  @Input() disabled = false;
+  @Input() active = false;
+  @Output() liveToggle = new EventEmitter<boolean>();
+
+  onClick(e: MouseEvent): void {
+    e.stopPropagation();
+    if (!this.disabled) {
+      this.active = !this.active;
+      this.liveToggle.emit(this.active);
+    }
+  }
+}

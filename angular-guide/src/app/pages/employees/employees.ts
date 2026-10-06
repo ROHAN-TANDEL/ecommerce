@@ -36,6 +36,8 @@ import {
   TableFooterComponent,
   PaginationComponent,
   SectionRowComponent,
+  LiveComponent,
+  DropdownSectionsComponent,
 } from './components';
 
 @Component({
@@ -52,6 +54,8 @@ import {
     EditComponent,
     LockComponent,
     DensityComponent,
+    LiveComponent,
+    DropdownSectionsComponent,
     TableComponent,
     TableHeaderComponent,
     MasterComponent,
@@ -227,11 +231,24 @@ export class Employees implements OnInit {
   };
 
   // Fallback / Initial Action Panel Config
+  // Fallback / Initial Action Panel Config (http://localhost:3000/identity/management/users/config/actions)
   rawActionPanelConfig: ActionPanelConfigPayload = {
     sections: {
-      section_1: { name: 'Actions', component: 'dropdown_sections_component', order: 1 },
-      section_2: { name: 'Views', component: 'dropdown_sections_component', order: 2 },
-      section_3: { name: 'More', component: 'dropdown_sections_component', order: 3 },
+      section_1: {
+        name: 'Actions',
+        component: 'dropdown_sections_component',
+        order: 1,
+      },
+      section_2: {
+        name: 'Views',
+        component: 'dropdown_sections_component',
+        order: 2,
+      },
+      section_3: {
+        name: 'More',
+        component: 'dropdown_sections_component',
+        order: 3,
+      },
     },
     actions: {
       refresh: {
@@ -239,7 +256,7 @@ export class Employees implements OnInit {
         component: 'refresh_component',
         active: true,
         info_note: 'Refresh rows',
-        pinned: true,
+        pinned: false,
         section: 'section_2',
         order: 1,
       },
@@ -248,7 +265,7 @@ export class Employees implements OnInit {
         active: true,
         component: 'lock_component',
         pinned: true,
-        info_note: 'Lock table',
+        info_note: 'Lock table for 60s',
         section: 'section_2',
         order: 2,
       },
@@ -306,7 +323,7 @@ export class Employees implements OnInit {
         name: 'Expand',
         active: true,
         component: 'expand_component',
-        info_note: '',
+        info_note: 'Expand selected rows',
         section: 'section_1',
         order: 6,
       },
@@ -314,7 +331,7 @@ export class Employees implements OnInit {
         name: 'Copy',
         active: true,
         component: 'copy_component',
-        info_note: '',
+        info_note: 'Copy selected rows',
         section: 'section_1',
         order: 7,
       },
@@ -322,7 +339,7 @@ export class Employees implements OnInit {
         name: 'Reset',
         active: true,
         component: 'reset_component',
-        info_note: '',
+        info_note: 'reset & clear all the filters',
         section: 'section_3',
         order: 1,
       },
@@ -330,10 +347,16 @@ export class Employees implements OnInit {
         name: 'Export',
         active: true,
         component: 'export_component',
-        info_note: '',
+        info_note: 'Export rows',
         dropdown_options: {
-          excel: { display_name: 'Excel (.xlsx)', info_note: 'Download max 10k rows' },
-          csv: { display_name: 'CSV (.csv)', info_note: 'Standard CSV file' },
+          excel: {
+            display_name: 'excel .xlsx',
+            info_note: 'download max 10k rows',
+          },
+          csv: {
+            display_name: 'csv download',
+            info_note: 'csv download',
+          },
         },
         section: 'section_1',
         order: 8,
@@ -342,10 +365,16 @@ export class Employees implements OnInit {
         name: 'Download',
         active: true,
         component: 'download_component',
-        info_note: '',
+        info_note: 'Download data',
         dropdown_options: {
-          excel: { display_name: 'Excel (.xlsx)', info_note: 'Download max 10k rows' },
-          csv: { display_name: 'CSV (.csv)', info_note: 'Standard CSV file' },
+          excel: {
+            display_name: 'excel .xlsx',
+            info_note: 'download max 10k rows',
+          },
+          csv: {
+            display_name: 'csv download',
+            info_note: 'csv download',
+          },
         },
         section: 'section_1',
         order: 9,
@@ -354,7 +383,7 @@ export class Employees implements OnInit {
         name: 'Full Screen',
         active: true,
         component: 'fullscreen_component',
-        info_note: '',
+        info_note: 'Maximize & Minimize table',
         section: 'section_2',
         order: 10,
       },
@@ -362,7 +391,7 @@ export class Employees implements OnInit {
         name: 'Collapse',
         active: true,
         component: 'collapse_component',
-        info_note: '',
+        info_note: 'Collapse rows',
         section: 'section_2',
         order: 11,
       },
@@ -370,12 +399,18 @@ export class Employees implements OnInit {
         name: 'View',
         active: true,
         component: 'view_component',
-        info_note: '',
+        info_note: 'load saved filters',
         dropdown_default_value: 'default_view',
         dropdown_options: {
-          default_view: { display_name: 'Default View' },
-          current_view: { display_name: 'Save Current View' },
-          reset_view: { display_name: 'Reset View' },
+          default_view: {
+            display_name: 'Default',
+          },
+          current_view: {
+            display_name: 'Save current view',
+          },
+          reset_view: {
+            display_name: 'Reset view',
+          },
         },
         section: 'section_2',
         order: 12,
@@ -384,12 +419,18 @@ export class Employees implements OnInit {
         name: 'Density',
         component: 'density_component',
         active: true,
-        info_note: '',
+        info_note: 'Adjust spacing between rows',
         dropdown_default_value: 'comfortable',
         dropdown_options: {
-          comfortable: { display_name: 'Comfortable' },
-          spacious: { display_name: 'Spacious' },
-          compact: { display_name: 'Compact' },
+          comfortable: {
+            display_name: 'Comfortable',
+          },
+          spacious: {
+            display_name: 'Spacious',
+          },
+          compact: {
+            display_name: 'Compact',
+          },
         },
         section: 'section_2',
         order: 14,
@@ -398,24 +439,25 @@ export class Employees implements OnInit {
         name: 'Columns',
         component: 'column_component',
         active: true,
-        info_note: '',
+        info_note: 'Columns view, reorder & configuration',
         dynamic_dropdown: true,
         section: 'section_3',
         order: 1,
       },
       scroller: {
-        name: 'Column Navigator',
+        name: '',
         active: true,
         component: 'scroller_component',
-        info_note: '',
+        info_note: 'Scroller horozontally',
         section: 'section_3',
         order: 2,
       },
       live: {
-        name: 'Live Collaboration',
+        name: 'Live',
         component: 'live_component_option',
         active: true,
-        info_note: '',
+        info_note: 'Show live panel feed',
+        pinned: true,
         section: 'section_3',
         order: 3,
       },
@@ -485,6 +527,7 @@ export class Employees implements OnInit {
   selectedRowIds = new Set<string>();
   isEditModeActive = false;
   isLocked = false;
+  isLiveFeedActive = false;
 
   // Getter/setter for backward compatibility with template checkmark
   get selectedDensity(): 'compact' | 'comfortable' | 'spacious' {
@@ -885,7 +928,38 @@ export class Employees implements OnInit {
     this.showToast('Save Triggered', 'Saving in-place table modifications via API', 'toolbar');
   }
 
+  onLiveToggle(active?: boolean): void {
+    this.isLiveFeedActive = active !== undefined ? active : !this.isLiveFeedActive;
+    this.actionClicked.emit({ actionKey: 'live', value: this.isLiveFeedActive });
+    this.showToast(this.isLiveFeedActive ? 'Live Feed Enabled' : 'Live Feed Paused', 'Live panel stream toggled', 'toolbar');
+    this.cdr.markForCheck();
+  }
+
   onActionPanelSelect(event: { actionKey: string; optionKey?: string }): void {
+    if (event.actionKey === 'refresh') {
+      this.bootstrapTable();
+      return;
+    }
+    if (event.actionKey === 'density' && event.optionKey) {
+      this.onDensityChange(event.optionKey as TableDensity);
+      return;
+    }
+    if (event.actionKey === 'lock') {
+      this.onLockToggle(!this.isLocked);
+      return;
+    }
+    if (event.actionKey === 'edit') {
+      this.onEditClick();
+      return;
+    }
+    if (event.actionKey === 'save') {
+      this.onSaveClick();
+      return;
+    }
+    if (event.actionKey === 'live') {
+      this.onLiveToggle();
+      return;
+    }
     if (event.actionKey === 'reset') {
       this.activeFilters = {};
       this.sortState = { first_name: 'asc' };
@@ -893,6 +967,32 @@ export class Employees implements OnInit {
       this.showToast('Table Reset', 'Cleared all filters and sorting', 'dropdown');
       return;
     }
+    if (event.actionKey === 'export') {
+      this.actionClicked.emit({ actionKey: 'export', optionKey: event.optionKey });
+      this.showToast('Export Initiated', `Format: ${event.optionKey || 'xlsx'}`, 'dropdown');
+      return;
+    }
+    if (event.actionKey === 'download') {
+      this.actionClicked.emit({ actionKey: 'download', optionKey: event.optionKey });
+      this.showToast('Download Initiated', `Format: ${event.optionKey || 'xlsx'}`, 'dropdown');
+      return;
+    }
+    if (event.actionKey === 'fullscreen') {
+      this.actionClicked.emit({ actionKey: 'fullscreen' });
+      this.showToast('Full Screen', 'Toggled table fullscreen view', 'dropdown');
+      return;
+    }
+    if (event.actionKey === 'collapse') {
+      this.actionClicked.emit({ actionKey: 'collapse' });
+      this.showToast('Collapse', 'Collapsed all expanded row details', 'dropdown');
+      return;
+    }
+    if (event.actionKey === 'view') {
+      this.actionClicked.emit({ actionKey: 'view', optionKey: event.optionKey });
+      this.showToast('View Changed', `Selected: ${event.optionKey}`, 'dropdown');
+      return;
+    }
+    this.actionClicked.emit({ actionKey: event.actionKey, optionKey: event.optionKey });
     this.showToast(`[Action] ${event.actionKey}`, event.optionKey ? `Option: ${event.optionKey}` : undefined, 'dropdown');
   }
 

@@ -45,12 +45,55 @@
       [sectionGroups]="sectionGroups"
       (actionSelect)="onActionPanelSelect($event)"
     >
-      <!-- Projected Pinned Action Components -->
-      <refresh-component (refresh)="bootstrapTable()"></refresh-component>
-      <lock-component [locked]="isLocked" (lockToggle)="onLockToggle($event)"></lock-component>
-      <edit-component [editing]="isEditModeActive" (edit)="onEditClick()" (editToggle)="onEditToggle($event)"></edit-component>
-      <save-component (save)="onSaveClick()"></save-component>
-      <density-component [density]="density" (densityChange)="onDensityChange($event)"></density-component>
+      <!-- Config-Driven Pinned Action Components (Driven by actions API pinned: true) -->
+      <ng-container *ngFor="let item of pinnedActions">
+        <refresh-component
+          *ngIf="item.component === 'refresh_component'"
+          [label]="item.name"
+          (refresh)="bootstrapTable()"
+        ></refresh-component>
+
+        <lock-component
+          *ngIf="item.component === 'lock_component'"
+          [label]="item.name"
+          [locked]="isLocked"
+          (lockToggle)="onLockToggle($event)"
+        ></lock-component>
+
+        <edit-component
+          *ngIf="item.component === 'edit_component'"
+          [label]="item.name"
+          [editing]="isEditModeActive"
+          (edit)="onEditClick()"
+          (editToggle)="onEditToggle($event)"
+        ></edit-component>
+
+        <save-component
+          *ngIf="item.component === 'save_component'"
+          [label]="item.name"
+          (save)="onSaveClick()"
+        ></save-component>
+
+        <density-component
+          *ngIf="item.component === 'density_component'"
+          [label]="item.name"
+          [density]="density"
+          (densityChange)="onDensityChange($event)"
+        ></density-component>
+
+        <live-component
+          *ngIf="item.component === 'live_component_option'"
+          [label]="item.name"
+          [active]="isLiveFeedActive"
+          (liveToggle)="onLiveToggle($event)"
+        ></live-component>
+
+        <button-component
+          *ngIf="item.component !== 'refresh_component' && item.component !== 'lock_component' && item.component !== 'edit_component' && item.component !== 'save_component' && item.component !== 'density_component' && item.component !== 'live_component_option'"
+          [label]="item.name"
+          (btnClick)="onActionPanelSelect({ actionKey: item.key })"
+        ></button-component>
+      </ng-container>
     </action-panel-component>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
