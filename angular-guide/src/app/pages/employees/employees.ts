@@ -615,8 +615,17 @@ export class Employees implements OnInit {
     Object.keys(this.activeFilters).forEach(key => {
       const val = this.activeFilters[key];
       if (val !== undefined && val !== null && val !== '') {
-        const query = String(val).toLowerCase();
-        dataset = dataset.filter(r => String(r[key] ?? '').toLowerCase().includes(query));
+        if (Array.isArray(val)) {
+          if (val.length > 0) {
+            dataset = dataset.filter(r => {
+              const cellStr = String(r[key] ?? '').toLowerCase();
+              return val.some(entry => cellStr.includes(String(entry).trim().toLowerCase()));
+            });
+          }
+        } else {
+          const query = String(val).toLowerCase();
+          dataset = dataset.filter(r => String(r[key] ?? '').toLowerCase().includes(query));
+        }
       }
     });
 
@@ -869,14 +878,15 @@ export class Employees implements OnInit {
     this.showToast(`[Action] ${event.actionKey}`, event.optionKey ? `Option: ${event.optionKey}` : undefined, 'dropdown');
   }
 
-  onFilterChange(event: { col: EnrichedColumn; value: string }): void {
-    if (event.value) {
+  onFilterChange(event: { col: EnrichedColumn; value: string | string[] }): void {
+    if (event.value && (typeof event.value === 'string' ? event.value.length > 0 : event.value.length > 0)) {
       this.activeFilters[event.col.filter_key] = event.value;
     } else {
       delete this.activeFilters[event.col.filter_key];
     }
     this.fetchTableData(1, this.pagination.limit);
-    this.showToast(`Filter Applied: ${event.col.header_name}`, event.value ? `Value: "${event.value}"` : 'Filter Cleared', 'filter');
+    const displayVal = Array.isArray(event.value) ? event.value.join(', ') : event.value;
+    this.showToast(`Filter Applied: ${event.col.header_name}`, displayVal ? `Value: "${displayVal}"` : 'Filter Cleared', 'filter');
   }
 
   onFilterTrigger(event: { col: EnrichedColumn; action: string }): void {
@@ -903,10 +913,19 @@ export class Employees implements OnInit {
     this.showToast(`Search Applied: ${col.header_name}`, `Query: "${value}"`, 'filter');
   }
 
-  onHeaderSortClick(col: EnrichedColumn): void {
-    if (!col.sorting) return;
-    const current = this.sortState[col.key];
-    const next: 'asc' | 'desc' | null = current === 'asc' ? 'desc' : current === 'desc' ? null : 'asc';
+  onHeaderSortClick(event: EnrichedColumn | { columnKey: string; direction?: 'asc' | 'desc' | null }): void {
+    const colKey = 'columnKey' in event ? event.columnKey : event.key;
+    const col = this.columnsList.find(c => c.key === colKey) || (event as EnrichedColumn);
+    if (!col || !col.sorting) return;
+
+    let next: 'asc' | 'desc' | null;
+    if ('direction' in event && event.direction !== undefined) {
+      next = event.direction;
+    } else {
+      const current = this.sortState[col.key];
+      next = current === 'asc' ? 'desc' : current === 'desc' ? null : 'asc';
+    }
+
     this.sortState = { [col.key]: next };
     this.fetchTableData(1, this.pagination.limit);
     this.showToast(`Sort: ${col.header_name}`, next ? `Direction: ${next.toUpperCase()}` : 'Cleared', 'header');

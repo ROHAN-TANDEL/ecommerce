@@ -7,15 +7,15 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="relative flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs">
+    <div class="relative z-30 flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
 
-      <!-- Left: Pinned Toolbar Actions Slot -->
-      <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+      <!-- Left: Pinned Toolbar Actions Slot (Never clipped, overflow-visible) -->
+      <div class="flex items-center flex-wrap gap-1.5 overflow-visible">
         <ng-content select="[pinned], refresh-component, save-component, edit-component, lock-component, density-component, button-component"></ng-content>
       </div>
 
       <!-- Right: Main ⚙ Actions Menu -->
-      <div *ngIf="showMenu && sectionGroups && sectionGroups.length > 0" class="relative" (click)="$event.stopPropagation()">
+      <div *ngIf="showMenu && sectionGroups && sectionGroups.length > 0" class="relative">
         <button
           type="button"
           (click)="actionsMenuOpen = !actionsMenuOpen"
@@ -34,7 +34,7 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
         <!-- Dropdown Popover: Grouped by Sections -->
         <div
           *ngIf="actionsMenuOpen"
-          class="absolute right-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl divide-y divide-slate-100"
+          class="absolute right-0 top-full mt-1.5 z-[100] w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl divide-y divide-slate-100"
         >
           <div *ngFor="let section of sectionGroups" class="py-1 first:pt-0 last:pb-0">
             <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-400">
@@ -57,7 +57,7 @@ import { SectionActionGroup, ActionItemConfig, ActionDropdownOption } from '../e
                 <!-- Submenu Popover -->
                 <div
                   *ngIf="activeSubmenuKey === action.key && action.dropdown_options"
-                  class="absolute right-full top-0 mr-1.5 z-60 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
+                  class="absolute right-full top-0 mr-1.5 z-[110] w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
                 >
                   <div class="px-2 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400">
                     {{ action.name }} Options
@@ -114,6 +114,14 @@ export class ActionPanelComponent {
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (this.actionsMenuOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
+      this.actionsMenuOpen = false;
+      this.activeSubmenuKey = null;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.actionsMenuOpen) {
       this.actionsMenuOpen = false;
       this.activeSubmenuKey = null;
     }

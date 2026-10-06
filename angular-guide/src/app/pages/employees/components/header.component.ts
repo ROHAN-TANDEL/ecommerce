@@ -13,7 +13,7 @@ import { EnrichedColumn } from '../employees.types';
       [style.min-width]="column.computedWidth"
       [style.left]="column.stickyLeft || null"
       [class.sticky]="column.isFrozen"
-      [class.z-25]="column.isFrozen"
+      [class.z-20]="column.isFrozen"
       [class.border-r]="column.isFrozen"
       [class.border-slate-200]="column.isFrozen"
       [class.bg-slate-100]="column.isFrozen"
