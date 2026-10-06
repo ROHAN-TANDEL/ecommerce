@@ -529,11 +529,67 @@ export class Employees implements OnInit {
   isLocked = false;
   isLiveFeedActive = false;
   isMasterSelected = false;
+  isSaving = false;
 
   private readonly originalRowData = new Map<string, Record<string, any>>();
 
   get isSecondSectionActive(): boolean {
-    return this.selectedRowIds.size > 0;
+    return this.isEditModeActive && this.selectedRowIds.size > 0;
+  }
+
+  get modifiedRows(): { row: Record<string, any>; original: Record<string, any>; diff: Record<string, { from: any; to: any }> }[] {
+    const list: { row: Record<string, any>; original: Record<string, any>; diff: Record<string, { from: any; to: any }> }[] = [];
+
+    this.rows.forEach(row => {
+      const rowId = String(row['id']);
+      const orig = this.originalRowData.get(rowId);
+      if (!orig) return;
+
+      const diff: Record<string, { from: any; to: any }> = {};
+      let isDirty = false;
+
+      this.columnsList.forEach(col => {
+        if (col.editable) {
+          const currentVal = row[col.key];
+          const origVal = orig[col.key];
+          const normCurrent = currentVal === undefined || currentVal === null ? '' : String(currentVal).trim();
+          const normOrig = origVal === undefined || origVal === null ? '' : String(origVal).trim();
+
+          if (normCurrent !== normOrig) {
+            diff[col.key] = { from: origVal, to: currentVal };
+            isDirty = true;
+          }
+        }
+      });
+
+      if (isDirty) {
+        list.push({ row, original: orig, diff });
+      }
+    });
+
+    return list;
+  }
+
+  get hasDirtyRows(): boolean {
+    return this.modifiedRows.length > 0;
+  }
+
+  get dirtyRowCount(): number {
+    return this.modifiedRows.length;
+  }
+
+  get editButtonTooltip(): string {
+    if (this.selectedRowIds.size === 0) {
+      return 'Select at least one row to edit';
+    }
+    return this.isEditModeActive ? 'Close master edit filter' : 'Edit selected rows';
+  }
+
+  get saveButtonTooltip(): string {
+    if (!this.hasDirtyRows) {
+      return 'No pending changes to save';
+    }
+    return `Save ${this.dirtyRowCount} modified row(s)`;
   }
 
   get selectableRows(): Record<string, any>[] {
@@ -756,6 +812,7 @@ export class Employees implements OnInit {
         return {
           ...item,
           key,
+          editable: item.editable === true || String(item.editable).toLowerCase() === 'true',
           computedWidth: item.width || '180px',
           isFrozen: !!(item.freez && item.freez.freez_side === 'left'),
         };
@@ -976,21 +1033,93 @@ export class Employees implements OnInit {
   }
 
   onEditClick(): void {
-    this.actionClicked.emit({ actionKey: 'edit' });
-    this.showToast('[Edit Event Emitted]', 'Edit event emitted for external consumer', 'toolbar');
+    this.isEditModeActive = !this.isEditModeActive;
+    this.actionClicked.emit({ actionKey: 'edit', value: this.isEditModeActive });
+
+    if (this.isEditModeActive) {
+      if (this.selectedRowIds.size > 0) {
+        this.showToast('Edit Mode Active', `Master edit filter opened for ${this.selectedRowIds.size} selected row(s)`, 'toolbar');
+      } else {
+        this.showToast('Edit Mode Active', 'Select row(s) or master checkbox to display master edit filter', 'toolbar');
+      }
+    } else {
+      this.showToast('Edit Mode Closed', 'Master edit filter closed', 'toolbar');
+    }
+    this.cdr.markForCheck();
   }
 
   onEditToggle(editing?: boolean): void {
-    // Actions are deferred to another phase; do not alter table inline edit mode
-    this.isEditModeActive = false;
-    this.actionClicked.emit({ actionKey: 'edit', value: editing });
-    this.showToast('[Edit Event Emitted]', 'Edit event emitted for external consumer', 'toolbar');
+    if (editing !== undefined) {
+      this.isEditModeActive = editing;
+    } else {
+      this.isEditModeActive = !this.isEditModeActive;
+    }
+    this.actionClicked.emit({ actionKey: 'edit', value: this.isEditModeActive });
     this.cdr.markForCheck();
   }
 
   onSaveClick(): void {
-    this.actionClicked.emit({ actionKey: 'save' });
-    this.showToast('Save Triggered', 'Saving in-place table modifications via API', 'toolbar');
+    if (!this.hasDirtyRows) {
+      this.showToast('No Changes', 'No modified rows to save', 'toolbar');
+      return;
+    }
+
+    const modified = this.modifiedRows;
+    this.isSaving = true;
+
+    // Emit event with modified rows and structured diffs
+    this.actionClicked.emit({
+      actionKey: 'save',
+      value: {
+        modifiedRows: modified.map(m => ({ ...m.row })),
+        diffs: modified.map(m => ({ id: m.row['id'], diff: m.diff })),
+        count: modified.length,
+      },
+    });
+
+    // Commit baseline state into originalRowData and defaultMockRows
+    modified.forEach(m => {
+      const idStr = String(m.row['id']);
+      this.originalRowData.set(idStr, { ...m.row });
+
+      const mockRow = this.defaultMockRows.find(r => String(r['id']) === idStr);
+      if (mockRow) {
+        Object.assign(mockRow, m.row);
+      }
+    });
+
+    this.sectionRowValues = {};
+    this.isEditModeActive = false;
+    this.isSaving = false;
+
+    this.showToast('Changes Saved', `Successfully committed changes for ${modified.length} row(s)`, 'toolbar');
+    this.cdr.markForCheck();
+  }
+
+  onRevertClick(): void {
+    const count = this.dirtyRowCount;
+    if (count === 0) {
+      this.showToast('No Changes', 'No modified rows to revert', 'dropdown');
+      return;
+    }
+
+    // Revert all editable columns of all rows to originalRowData baseline
+    this.rows.forEach(row => {
+      const orig = this.originalRowData.get(String(row['id']));
+      if (orig) {
+        this.columnsList.forEach(col => {
+          if (col.editable) {
+            row[col.key] = orig[col.key];
+          }
+        });
+      }
+    });
+
+    this.sectionRowValues = {};
+    this.isEditModeActive = false;
+    this.actionClicked.emit({ actionKey: 'revert', value: { count } });
+    this.showToast('Changes Reverted', `Rolled back uncommitted changes for ${count} row(s)`, 'dropdown');
+    this.cdr.markForCheck();
   }
 
   onLiveToggle(active?: boolean): void {
@@ -1019,6 +1148,10 @@ export class Employees implements OnInit {
     }
     if (event.actionKey === 'save') {
       this.onSaveClick();
+      return;
+    }
+    if (event.actionKey === 'revert') {
+      this.onRevertClick();
       return;
     }
     if (event.actionKey === 'live') {
@@ -1223,15 +1356,16 @@ export class Employees implements OnInit {
     if (this.isMasterCheckboxChecked) {
       this.selectedRowIds.clear();
       this.isMasterSelected = false;
+      this.isEditModeActive = false;
       this.sectionRowValues = {};
       this.applyBulkEdits();
-      this.showToast('Selection Cleared', 'All rows deselected (Bulk edit row hidden)', 'header');
+      this.showToast('Selection Cleared', 'All rows deselected (Master edit filter hidden)', 'header');
     } else {
       this.selectedRowIds.clear();
       this.selectableRows.forEach(r => this.selectedRowIds.add(String(r['id'])));
       this.isMasterSelected = true;
       this.applyBulkEdits();
-      this.showToast('Master Selected', `${this.selectedRowIds.size} rows selected in read-only mode`, 'header');
+      this.showToast('Master Selected', `${this.selectedRowIds.size} rows selected. Click Edit to open master edit filter.`, 'header');
     }
     this.selectionChange.emit(Array.from(this.selectedRowIds));
     this.cdr.markForCheck();
@@ -1250,13 +1384,14 @@ export class Employees implements OnInit {
       this.showToast('Row Excluded', `Row ${strId} excluded from changes (restored original)`, 'row');
     } else {
       this.selectedRowIds.add(strId);
-      this.showToast('Row Selected', `Row ${strId} included in bulk changes`, 'row');
+      this.showToast('Row Selected', `Row ${strId} selected. Click Edit to open master edit filter.`, 'row');
     }
 
     if (this.selectedRowIds.size === this.selectableRowCount && this.selectableRowCount > 0) {
       this.isMasterSelected = true;
     } else if (this.selectedRowIds.size === 0) {
       this.isMasterSelected = false;
+      this.isEditModeActive = false;
       this.sectionRowValues = {};
     }
 

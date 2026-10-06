@@ -11,13 +11,22 @@ import { CommonModule } from '@angular/common';
         type="button"
         [disabled]="disabled || saving"
         (click)="onClick($event)"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer disabled:opacity-50"
+        [ngClass]="{
+          'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-xs cursor-pointer': !disabled && !saving,
+          'bg-white text-slate-400 border-slate-200 opacity-50 cursor-not-allowed': disabled,
+          'bg-slate-100 text-slate-500 border-slate-200 cursor-wait': saving
+        }"
+        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors"
         [title]="infoNote || label"
       >
-        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <span *ngIf="saving" class="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+        <svg *ngIf="!saving" class="w-3.5 h-3.5" [class.text-white]="!disabled" [class.text-slate-400]="disabled" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
         </svg>
         <span>{{ label }}</span>
+        <span *ngIf="!disabled && dirtyCount > 0" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-white/25 text-white">
+          {{ dirtyCount }}
+        </span>
       </button>
 
       <!-- Hover Tooltip -->
@@ -35,11 +44,12 @@ export class SaveComponent {
   @Input() infoNote?: string;
   @Input() disabled = false;
   @Input() saving = false;
+  @Input() dirtyCount = 0;
   @Output() save = new EventEmitter<void>();
 
   onClick(e: MouseEvent): void {
     e.stopPropagation();
-    if (!this.disabled) {
+    if (!this.disabled && !this.saving) {
       this.save.emit();
     }
   }

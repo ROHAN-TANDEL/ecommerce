@@ -65,16 +65,19 @@
         <edit-component
           *ngIf="item.component === 'edit_component'"
           [label]="item.name"
-          [infoNote]="item.info_note"
+          [infoNote]="editButtonTooltip"
+          [disabled]="selectedRowIds.size === 0"
           [editing]="isEditModeActive"
           (edit)="onEditClick()"
-          (editToggle)="onEditToggle($event)"
         ></edit-component>
 
         <save-component
           *ngIf="item.component === 'save_component'"
           [label]="item.name"
-          [infoNote]="item.info_note"
+          [infoNote]="saveButtonTooltip"
+          [disabled]="!hasDirtyRows"
+          [saving]="isSaving"
+          [dirtyCount]="dirtyRowCount"
           (save)="onSaveClick()"
         ></save-component>
 
@@ -209,7 +212,7 @@
             [row]="row"
             [isEven]="even"
             [isSelected]="selectedRowIds.has(row['id'])"
-            [isEditing]="isEditModeActive && !isMasterCheckboxChecked && !isMasterSelected && isRowEditable(row)"
+            [isEditing]="isEditModeActive && !isMasterCheckboxChecked && !isMasterSelected && selectedRowIds.has(row['id']) && isRowEditable(row)"
           ></cell-component>
 
           <!-- Sticky Action Column Cell with Kebab Popover -->
