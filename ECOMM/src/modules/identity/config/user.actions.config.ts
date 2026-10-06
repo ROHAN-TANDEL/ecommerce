@@ -3,22 +3,32 @@ export const UserActionsConfig = {
         section_1: {
             name: "Actions",
             component: "dropdown_sections_component",
-            order: 1
+            order: 1,
+            pinned : true
         },
         section_2: {
             name: "Views",
             component: "dropdown_sections_component",
-            order: 2
+            order: 2,
+            pinned : true
         },
         section_3: {
             name: "More",
             component: "dropdown_sections_component",
-            order: 3
+            order: 3,
+            pinned : true
         },
         section_4: {
             name: "Exports",
             component: "dropdown_sections_component",
-            order: 4
+            order: 4,
+            pinned : true
+        },
+        section_5: {
+            name: "AI",
+            component: "dropdown_sections_component",
+            order: 5,
+            pinned : true
         }
     },
 
@@ -28,7 +38,7 @@ export const UserActionsConfig = {
             component: "refresh_component",
             active: true,
             info_note: "Refresh rows",
-            pinned: false,
+            pinned: true,
             section: "section_2",
             order: 1
         },
@@ -66,6 +76,7 @@ export const UserActionsConfig = {
         "delete": {
             name: "Delete",
             active: true,
+            pinned : true,
             component: "delete_component",
             info_note: "Delete selected rows",
             section: "section_1",
@@ -75,6 +86,7 @@ export const UserActionsConfig = {
         enable: {
             name: "Enable",
             active: true,
+            pinned : false,
             component: "enable_component",
             info_note: "Enable selected rows",
             section: "section_1",
@@ -84,6 +96,7 @@ export const UserActionsConfig = {
         disable: {
             name: "Disable",
             active: true,
+            pinned : false,
             component: "disable_component",
             info_note: "Disable selected rows",
             section: "section_1",
@@ -93,6 +106,7 @@ export const UserActionsConfig = {
         revert: {
             name: "Revert",
             active: true,
+            pinned : false,
             component: "revert_component",
             info_note: "Revert selected rows",
             section: "section_2",
@@ -102,6 +116,7 @@ export const UserActionsConfig = {
         expand: {
             name: "Expand",
             active: true,
+            pinned : false,
             component: "expand_component",
             info_note: "Expand selected rows",
             section: "section_1",
@@ -111,6 +126,7 @@ export const UserActionsConfig = {
         copy: {
             name: "Copy",
             active: true,
+            pinned : false,
             component: "copy_component",
             info_note: "Copy selected rows",
             section: "section_1",
@@ -120,6 +136,7 @@ export const UserActionsConfig = {
         reset: {
             name: "Reset",
             active: true,
+            pinned : false,
             component: "reset_component",
             info_note: "reset & clear all the filters",
             section: "section_3",
@@ -129,6 +146,7 @@ export const UserActionsConfig = {
         export: {
             name: "Export",
             active: true,
+            pinned : false,
             component: "export_component",
             info_note: "Export rows",
             dropdown_options: {
@@ -148,6 +166,7 @@ export const UserActionsConfig = {
         download: {
             name: "Download",
             active: true,
+            pinned : false,
             component: "download_component",
             info_note: "Download data",
             dropdown_options: {
@@ -167,6 +186,7 @@ export const UserActionsConfig = {
         fullscreen: {
             name: "Full Screen",
             active: true,
+            pinned : false,
             component: "fullscreen_component",
             info_note: "Maximize & Minimize table",
             section: "section_2",
@@ -176,6 +196,7 @@ export const UserActionsConfig = {
         collapse: {
             name: "Collapse",
             active: true,
+            pinned : true,
             component: "collapse_component",
             info_note: "Collapse rows",
             section: "section_2",
@@ -185,6 +206,7 @@ export const UserActionsConfig = {
         view: {
             name: "View",
             active: true,
+            pinned : false,
             component: "view_component",
             info_note: "load saved filters",
             dropdown_default_value: "default_view",
@@ -205,6 +227,7 @@ export const UserActionsConfig = {
 
         density: {
             name: "Density",
+            pinned : false,
             component: "density_component",
             active: true,
             info_note: "Adjust spacing between rows",
@@ -231,6 +254,7 @@ export const UserActionsConfig = {
             name: "Columns",
             component: "column_component",
             active: true,
+            pinned : false,
             info_note: "Columns view, reorder & configuration",
             dynamic_dropdown: true,
             info_note: "Adjust spacing between rows",
@@ -241,6 +265,7 @@ export const UserActionsConfig = {
         scroller: {
             name: "",
             active: true,
+            pinned : false,
             component: "scroller_component",
             info_note: "Scroller horozontally",
             info_note: "Adjust spacing between rows",
@@ -254,9 +279,50 @@ export const UserActionsConfig = {
             active: true,
             info_note: "Adjust spacing between rows",
             info_note: "Show live panel feed",
-            pinned: true,
+            pinned: false,
             section: "section_3",
             order: 3
+        },
+
+        ai_summary: {
+            name: "AI Summary",
+            component: "live_component_option",
+            active: true,
+            info_note: "Selected Row/s level summary",
+            pinned: false,
+            section: "section_5",
+            order: 1
+        },
+
+        prevalidate_data: {
+            name: "Pre Validate",
+            component: "live_component_option",
+            active: true,
+            info_note: "Prevalidate the data",
+            pinned: false,
+            section: "section_5",
+            order: 2
+        },
+
+        generate_view: {
+            name: "Gen / Store Views",
+            component: "live_component_option",
+            active: true,
+            info_note: "Generate & store Views",
+            pinned: false,
+            section: "section_5",
+            order: 3
+        },
+
+        ai_chat: {
+            name: "Interact with AI",
+            component: "live_component_option",
+            active: true,
+            info_note: "Interact with AI",
+            info_note: "Interact with AI",
+            pinned: false,
+            section: "section_5",
+            order: 4
         }
     }
 };
