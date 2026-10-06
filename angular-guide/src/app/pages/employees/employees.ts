@@ -35,6 +35,7 @@ import {
   CellComponent,
   TableFooterComponent,
   PaginationComponent,
+  SectionRowComponent,
 } from './components';
 
 @Component({
@@ -56,6 +57,7 @@ import {
     MasterComponent,
     HeaderComponent,
     FilterRowComponent,
+    SectionRowComponent,
     TableBodyComponent,
     CellComponent,
     TableFooterComponent,
@@ -438,6 +440,7 @@ export class Employees implements OnInit {
 
   // Filter & Sort state
   activeFilters: Record<string, any> = {};
+  sectionRowValues: Record<string, any> = {};
   sortState: Record<string, 'asc' | 'desc' | null> = { first_name: 'asc' };
 
   // Component Inputs & Outputs (Event boundaries)
@@ -906,6 +909,24 @@ export class Employees implements OnInit {
 
   onFilterTrigger(event: { col: EnrichedColumn; action: string }): void {
     this.showToast(`[Filter: ${event.action}]`, `Opened filter selector for ${event.col.header_name}`, 'filter');
+  }
+
+  onSectionRowChange(event: { col: EnrichedColumn; value: string | string[] }): void {
+    if (event.value && (typeof event.value === 'string' ? event.value.length > 0 : event.value.length > 0)) {
+      this.sectionRowValues[event.col.filter_key] = event.value;
+    } else {
+      delete this.sectionRowValues[event.col.filter_key];
+    }
+    const displayVal = Array.isArray(event.value) ? event.value.join(', ') : event.value;
+    this.actionClicked.emit({ actionKey: 'section_row_change', optionKey: event.col.key, value: event.value });
+    this.showToast(`[Section Row] ${event.col.header_name}`, displayVal ? `Value: "${displayVal}"` : 'Cleared', 'row');
+    this.cdr.markForCheck();
+  }
+
+  onSectionRowAction(event: { col: EnrichedColumn; action: string }): void {
+    this.actionClicked.emit({ actionKey: 'section_row_action', optionKey: event.col.key, value: event.action });
+    this.showToast(`[Section Row Action] ${event.col.header_name}`, `Action: ${event.action}`, 'row');
+    this.cdr.markForCheck();
   }
 
   toggleFilterDropdown(e: MouseEvent, colKey: string): void {

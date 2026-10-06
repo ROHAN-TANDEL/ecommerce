@@ -102,6 +102,17 @@
           (filterChange)="onFilterChange($event)"
           (filterTrigger)="onFilterTrigger($event)"
         ></filter-row-component>
+
+        <!-- Row 3: Secondary Section Row (Directly below Filter Section) -->
+        <section-row-component
+          class="contents"
+          [columns]="columnsList"
+          [values]="sectionRowValues"
+          [hasCheckboxColumn]="hasCheckboxColumn"
+          [hasActionColumn]="tableConfig.action_column.active"
+          (sectionChange)="onSectionRowChange($event)"
+          (sectionAction)="onSectionRowAction($event)"
+        ></section-row-component>
       </table-header-component>
 
       <!-- Table Body Component -->

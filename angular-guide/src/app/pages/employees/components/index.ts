@@ -15,3 +15,4 @@ export { TableBodyComponent } from './table-body.component';
 export { TableFooterComponent } from './table-footer.component';
 export { TableComponent } from './table.component';
 export { PaginationComponent } from './pagination.component';
+export { SectionRowComponent } from './section-row.component';
