@@ -28,12 +28,13 @@ export class EditComponent {
   @Input() label = 'Edit';
   @Input() disabled = false;
   @Input() editing = false;
+  @Output() edit = new EventEmitter<void>();
   @Output() editToggle = new EventEmitter<boolean>();
 
   onClick(e: MouseEvent): void {
     e.stopPropagation();
     if (!this.disabled) {
-      this.editing = !this.editing;
+      this.edit.emit();
       this.editToggle.emit(this.editing);
     }
   }

@@ -38,15 +38,36 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
         <!-- ═══════════════════════════════════════════════════════════════ -->
         <!-- 1. SIMPLE SEARCH: One single input text box                     -->
         <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- 1. SIMPLE SEARCH: Single search item as pill with cancel         -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
         <div *ngIf="col.filter_type === 'search'" class="w-full">
-          <input
-            type="text"
-            [placeholder]="'Filter ' + col.header_name"
-            [value]="getSimpleSearchValue(col.filter_key)"
-            (keyup.enter)="onSimpleSearch(col, $any($event.target).value)"
-            (blur)="onSimpleSearch(col, $any($event.target).value)"
-            class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 font-normal transition-colors"
-          />
+          <div
+            *ngIf="getSimpleSearchValue(col.filter_key); else emptySimpleSearch"
+            class="flex items-center w-full h-7 rounded-md border border-slate-200 bg-white px-1.5"
+          >
+            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-500 text-white truncate shadow-2xs">
+              <span class="truncate">{{ getSimpleSearchValue(col.filter_key) }}</span>
+              <button
+                type="button"
+                (click)="clearSimpleSearch(col, $event)"
+                class="text-blue-100 hover:text-white cursor-pointer ml-0.5 leading-none font-bold text-xs"
+                title="Clear filter"
+              >
+                &times;
+              </button>
+            </span>
+          </div>
+
+          <ng-template #emptySimpleSearch>
+            <input
+              type="text"
+              [placeholder]="'Filter ' + col.header_name"
+              (keydown.enter)="onSimpleSearch(col, $any($event.target).value)"
+              (blur)="onSimpleSearch(col, $any($event.target).value)"
+              class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 font-normal transition-colors"
+            />
+          </ng-template>
         </div>
 
         <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -410,6 +431,13 @@ export class FilterRowComponent {
     if (trimmed !== this.getSimpleSearchValue(col.filter_key)) {
       this.filterChange.emit({ col, value: trimmed });
     }
+  }
+
+  clearSimpleSearch(col: EnrichedColumn, e?: Event): void {
+    if (e) {
+      e.stopPropagation();
+    }
+    this.filterChange.emit({ col, value: '' });
   }
 
   // ── Multi Search Component ────────────────────────────────────────────────

@@ -48,7 +48,7 @@
       <!-- Projected Pinned Action Components -->
       <refresh-component (refresh)="bootstrapTable()"></refresh-component>
       <lock-component [locked]="isLocked" (lockToggle)="onLockToggle($event)"></lock-component>
-      <edit-component [editing]="isEditModeActive" (editToggle)="onEditToggle($event)"></edit-component>
+      <edit-component [editing]="isEditModeActive" (edit)="onEditClick()" (editToggle)="onEditToggle($event)"></edit-component>
       <save-component (save)="onSaveClick()"></save-component>
       <density-component [density]="density" (densityChange)="onDensityChange($event)"></density-component>
     </action-panel-component>

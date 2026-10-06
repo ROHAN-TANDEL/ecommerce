@@ -859,17 +859,26 @@ export class Employees implements OnInit {
 
   onLockToggle(locked: boolean): void {
     this.isLocked = locked;
+    this.actionClicked.emit({ actionKey: 'lock', value: locked });
     this.showToast(locked ? 'Table Locked' : 'Table Unlocked', locked ? 'Table is now in read-only lock state' : 'Lock released', 'toolbar');
     this.cdr.markForCheck();
   }
 
-  onEditToggle(editing: boolean): void {
-    this.isEditModeActive = editing;
-    this.showToast(editing ? 'Edit Mode Activated' : 'Edit Mode Deactivated', editing ? 'Cells are now editable inline' : 'Read-only view restored', 'toolbar');
+  onEditClick(): void {
+    this.actionClicked.emit({ actionKey: 'edit' });
+    this.showToast('[Edit Event Emitted]', 'Edit event emitted for external consumer', 'toolbar');
+  }
+
+  onEditToggle(editing?: boolean): void {
+    // Actions are deferred to another phase; do not alter table inline edit mode
+    this.isEditModeActive = false;
+    this.actionClicked.emit({ actionKey: 'edit', value: editing });
+    this.showToast('[Edit Event Emitted]', 'Edit event emitted for external consumer', 'toolbar');
     this.cdr.markForCheck();
   }
 
   onSaveClick(): void {
+    this.actionClicked.emit({ actionKey: 'save' });
     this.showToast('Save Triggered', 'Saving in-place table modifications via API', 'toolbar');
   }
 
@@ -965,14 +974,8 @@ export class Employees implements OnInit {
     }
 
     if (optionKey === 'edit') {
-      this.editForm = {
-        id: String(row['id']),
-        first_name: row['first_name'] || '',
-        last_name: row['last_name'] || '',
-        email: row['email'] || '',
-        status: row['status'] || 'active',
-      };
-      this.showEditModal = true;
+      this.actionClicked.emit({ actionKey: 'edit', value: row });
+      this.showToast(`[Row Action] edit`, `Row: ${row['first_name']} ${row['last_name']}`, 'row');
       return;
     }
 
