@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
         *ngIf="showCheckbox"
         type="checkbox"
         [checked]="checked"
+        [indeterminate]="indeterminate"
         [disabled]="disabled"
         (change)="onToggle($event)"
         class="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer disabled:cursor-not-allowed"
@@ -26,6 +27,7 @@ import { CommonModule } from '@angular/common';
 })
 export class MasterComponent {
   @Input() checked = false;
+  @Input() indeterminate = false;
   @Input() disabled = false;
   @Input() showCheckbox = true;
   @Output() masterToggle = new EventEmitter<boolean>();

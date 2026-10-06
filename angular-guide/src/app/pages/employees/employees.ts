@@ -528,6 +528,45 @@ export class Employees implements OnInit {
   isEditModeActive = false;
   isLocked = false;
   isLiveFeedActive = false;
+  isMasterSelected = false;
+
+  private readonly originalRowData = new Map<string, Record<string, any>>();
+
+  get isSecondSectionActive(): boolean {
+    return this.selectedRowIds.size > 0;
+  }
+
+  get selectableRows(): Record<string, any>[] {
+    return this.rows.filter(r => !this.isRowDisabled(r));
+  }
+
+  get selectableRowCount(): number {
+    return this.selectableRows.length;
+  }
+
+  get isMasterCheckboxChecked(): boolean {
+    return this.selectableRowCount > 0 && this.selectedRowIds.size === this.selectableRowCount;
+  }
+
+  get isMasterCheckboxIndeterminate(): boolean {
+    return this.selectedRowIds.size > 0 && this.selectedRowIds.size < this.selectableRowCount;
+  }
+
+  isRowEditable(row: Record<string, any>): boolean {
+    if (!row) return false;
+    if (row['editable'] === false || String(row['editable']).toLowerCase() === 'false') {
+      return false;
+    }
+    if (row['disabled'] === true || String(row['disabled']).toLowerCase() === 'true') {
+      return false;
+    }
+    return true;
+  }
+
+  isRowDisabled(row: Record<string, any>): boolean {
+    if (!row) return false;
+    return row['disabled'] === true || String(row['disabled']).toLowerCase() === 'true';
+  }
 
   // Getter/setter for backward compatibility with template checkmark
   get selectedDensity(): 'compact' | 'comfortable' | 'spacious' {
@@ -552,9 +591,9 @@ export class Employees implements OnInit {
     { id: '1', first_name: 'Liam', last_name: 'Walker', email: 'liam.walker@enterprise.io', status: 'active', created_at: '2026-09-12 10:45 AM' },
     { id: '2', first_name: 'Olivia', last_name: 'Brooks', email: 'olivia.brooks@enterprise.io', status: 'pending', created_at: '2026-09-14 02:18 PM' },
     { id: '3', first_name: 'Ethan', last_name: 'Hayes', email: 'ethan.hayes@enterprise.io', status: 'active', created_at: '2026-09-16 11:30 AM' },
-    { id: '4', first_name: 'Sophia', last_name: 'Bennett', email: 'sophia.bennett@enterprise.io', status: 'inactive', created_at: '2026-09-18 09:12 AM' },
+    { id: '4', first_name: 'Sophia', last_name: 'Bennett', email: 'sophia.bennett@enterprise.io', status: 'inactive', created_at: '2026-09-18 09:12 AM', editable: false },
     { id: '5', first_name: 'Noah', last_name: 'Carter', email: 'noah.carter@enterprise.io', status: 'active', created_at: '2026-09-20 04:55 PM' },
-    { id: '6', first_name: 'Ava', last_name: 'Mitchell', email: 'ava.mitchell@enterprise.io', status: 'pending', created_at: '2026-09-22 01:20 PM' },
+    { id: '6', first_name: 'Ava', last_name: 'Mitchell', email: 'ava.mitchell@enterprise.io', status: 'pending', created_at: '2026-09-22 01:20 PM', disabled: true },
     { id: '7', first_name: 'Lucas', last_name: 'Sullivan', email: 'lucas.sullivan@enterprise.io', status: 'active', created_at: '2026-09-24 08:40 AM' },
     { id: '8', first_name: 'Mia', last_name: 'Reynolds', email: 'mia.reynolds@enterprise.io', status: 'inactive', created_at: '2026-09-26 03:15 PM' },
   ];
@@ -639,6 +678,10 @@ export class Employees implements OnInit {
           if (result.isLive && result.rows.length > 0) {
             this.rows = result.rows;
             this.pagination = result.pagination;
+            this.captureOriginalRowData();
+            if (this.selectedRowIds.size > 0) {
+              this.applyBulkEdits();
+            }
           } else {
             // Apply client-side fallback slicing & filtering
             this.applyLocalDataFilter(page, limit);
@@ -699,6 +742,10 @@ export class Employees implements OnInit {
 
     this.rows = dataset.slice(start, start + limit);
     this.pagination = { page: safePage, limit, total, totalPages };
+    this.captureOriginalRowData();
+    if (this.selectedRowIds.size > 0) {
+      this.applyBulkEdits();
+    }
   }
 
   // ── Column Adapter: Computes orders, freeze left offsets & widths ────
@@ -1029,15 +1076,60 @@ export class Employees implements OnInit {
     this.showToast(`[Filter: ${event.action}]`, `Opened filter selector for ${event.col.header_name}`, 'filter');
   }
 
-  onSectionRowChange(event: { col: EnrichedColumn; value: string | string[] }): void {
-    if (event.value && (typeof event.value === 'string' ? event.value.length > 0 : event.value.length > 0)) {
-      this.sectionRowValues[event.col.filter_key] = event.value;
+  private captureOriginalRowData(): void {
+    this.originalRowData.clear();
+    this.rows.forEach(r => {
+      this.originalRowData.set(String(r['id']), { ...r });
+    });
+  }
+
+  private applyBulkEdits(): void {
+    this.rows.forEach(row => {
+      const rowId = String(row['id']);
+      const orig = this.originalRowData.get(rowId);
+      if (!orig) return;
+
+      const isSelected = this.selectedRowIds.has(rowId);
+      const canEdit = this.isRowEditable(row);
+
+      if (isSelected && canEdit) {
+        // Apply values from sectionRowValues for editable columns
+        this.columnsList.forEach(col => {
+          if (col.editable) {
+            const bulkVal = this.sectionRowValues[col.key];
+            if (bulkVal !== undefined && bulkVal !== '') {
+              row[col.key] = bulkVal;
+            } else {
+              row[col.key] = orig[col.key];
+            }
+          }
+        });
+      } else {
+        // Row is excluded (unchecked) or not editable: restore baseline
+        this.columnsList.forEach(col => {
+          if (col.editable) {
+            row[col.key] = orig[col.key];
+          }
+        });
+      }
+    });
+    this.cdr.markForCheck();
+  }
+
+  onSectionRowChange(event: { col: EnrichedColumn; value: string }): void {
+    const colKey = event.col.key;
+    if (event.value !== undefined && event.value !== null && event.value !== '') {
+      this.sectionRowValues[colKey] = event.value;
     } else {
-      delete this.sectionRowValues[event.col.filter_key];
+      delete this.sectionRowValues[colKey];
     }
-    const displayVal = Array.isArray(event.value) ? event.value.join(', ') : event.value;
-    this.actionClicked.emit({ actionKey: 'section_row_change', optionKey: event.col.key, value: event.value });
-    this.showToast(`[Section Row] ${event.col.header_name}`, displayVal ? `Value: "${displayVal}"` : 'Cleared', 'row');
+    this.applyBulkEdits();
+    this.actionClicked.emit({ actionKey: 'section_row_change', optionKey: colKey, value: event.value });
+    this.showToast(
+      `Bulk Applied: ${event.col.header_name}`,
+      event.value ? `"${event.value}" updated across ${this.selectedRowIds.size} row(s)` : 'Value cleared',
+      'row'
+    );
     this.cdr.markForCheck();
   }
 
@@ -1128,12 +1220,18 @@ export class Employees implements OnInit {
   }
 
   toggleSelectAll(): void {
-    if (this.selectedRowIds.size === this.rows.length) {
+    if (this.isMasterCheckboxChecked) {
       this.selectedRowIds.clear();
-      this.showToast('Selection Cleared', 'All rows deselected', 'header');
+      this.isMasterSelected = false;
+      this.sectionRowValues = {};
+      this.applyBulkEdits();
+      this.showToast('Selection Cleared', 'All rows deselected (Bulk edit row hidden)', 'header');
     } else {
-      this.rows.forEach(r => this.selectedRowIds.add(String(r['id'])));
-      this.showToast('Selected All Rows', `${this.rows.length} rows selected`, 'header');
+      this.selectedRowIds.clear();
+      this.selectableRows.forEach(r => this.selectedRowIds.add(String(r['id'])));
+      this.isMasterSelected = true;
+      this.applyBulkEdits();
+      this.showToast('Master Selected', `${this.selectedRowIds.size} rows selected in read-only mode`, 'header');
     }
     this.selectionChange.emit(Array.from(this.selectedRowIds));
     this.cdr.markForCheck();
@@ -1142,13 +1240,28 @@ export class Employees implements OnInit {
   toggleRowSelect(e: MouseEvent, rowId: string): void {
     e.stopPropagation();
     const strId = String(rowId);
+    const targetRow = this.rows.find(r => String(r['id']) === strId);
+    if (targetRow && this.isRowDisabled(targetRow)) {
+      return;
+    }
+
     if (this.selectedRowIds.has(strId)) {
       this.selectedRowIds.delete(strId);
+      this.showToast('Row Excluded', `Row ${strId} excluded from changes (restored original)`, 'row');
     } else {
       this.selectedRowIds.add(strId);
+      this.showToast('Row Selected', `Row ${strId} included in bulk changes`, 'row');
     }
+
+    if (this.selectedRowIds.size === this.selectableRowCount && this.selectableRowCount > 0) {
+      this.isMasterSelected = true;
+    } else if (this.selectedRowIds.size === 0) {
+      this.isMasterSelected = false;
+      this.sectionRowValues = {};
+    }
+
+    this.applyBulkEdits();
     this.selectionChange.emit(Array.from(this.selectedRowIds));
-    this.showToast('Row Selection Changed', `${this.selectedRowIds.size} row(s) selected`, 'row');
     this.cdr.markForCheck();
   }
 
