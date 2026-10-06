@@ -1,4 +1,14 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -32,20 +42,53 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
 })
-export class TableComponent {
+export class TableComponent implements AfterViewInit, OnDestroy {
   @Input() isLoading = false;
   @Input() minHeight = '380px';
   @Input() maxHeight = 'calc(100vh - 240px)';
 
   @Output() scrollProgress = new EventEmitter<number>();
+  @Output() scrollableChange = new EventEmitter<boolean>();
 
   @ViewChild('viewport', { static: false }) viewportRef?: ElementRef<HTMLDivElement>;
 
   currentPercentage = 0;
+  isScrollable = false;
+  private resizeObserver?: ResizeObserver;
+
+  ngAfterViewInit(): void {
+    if (this.viewportRef?.nativeElement && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.checkScrollability();
+      });
+      this.resizeObserver.observe(this.viewportRef.nativeElement);
+    }
+    setTimeout(() => this.checkScrollability(), 50);
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.checkScrollability();
+  }
 
   onViewportScroll(): void {
+    this.checkScrollability();
+  }
+
+  checkScrollability(): void {
     if (!this.viewportRef?.nativeElement) return;
     const el = this.viewportRef.nativeElement;
+    const canScroll = el.scrollWidth > el.clientWidth + 2;
+
+    if (this.isScrollable !== canScroll) {
+      this.isScrollable = canScroll;
+      this.scrollableChange.emit(canScroll);
+    }
+
     const maxScroll = el.scrollWidth - el.clientWidth;
     if (maxScroll <= 0) {
       this.currentPercentage = 0;
@@ -69,7 +112,8 @@ export class TableComponent {
     } else if (direction === 'right') {
       el.scrollBy({ left: 260, behavior: 'smooth' });
     }
-    setTimeout(() => this.onViewportScroll(), 200);
+    setTimeout(() => this.checkScrollability(), 200);
   }
 }
+
 

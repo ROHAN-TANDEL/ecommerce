@@ -24,6 +24,8 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           [isMasterChecked]="isMasterChecked"
           [hasDirtyRows]="hasDirtyRows"
           [columns]="columns"
+          [scrollPercentage]="scrollPercentage"
+          [isScrollable]="isScrollable"
           (toggleColumn)="toggleColumn.emit($event)"
           (reorderColumn)="reorderColumn.emit($event)"
           (resetColumns)="resetColumns.emit()"
@@ -41,6 +43,8 @@ export class ActionPanelComponent {
   @Input() isMasterChecked = false;
   @Input() hasDirtyRows = false;
   @Input() columns: EnrichedColumn[] = [];
+  @Input() scrollPercentage = 0;
+  @Input() isScrollable = false;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
   @Output() toggleColumn = new EventEmitter<string>();

@@ -61,6 +61,8 @@
       [isMasterChecked]="isMasterCheckboxChecked || isMasterSelected"
       [hasDirtyRows]="hasDirtyRows"
       [columns]="allColumnsList"
+      [scrollPercentage]="scrollPercentage"
+      [isScrollable]="isTableScrollable"
       (actionSelect)="onActionPanelSelect($event)"
       (toggleColumn)="toggleColumnVisibility($event)"
       (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
@@ -123,6 +125,8 @@
         <scroller-component
           *ngIf="item.component === 'scroller_component'"
           [percentage]="scrollPercentage"
+          [totalColumns]="columnsList.length || 12"
+          [isScrollable]="isTableScrollable"
           (scroll)="onScrollerScroll($event)"
         ></scroller-component>
 
@@ -143,6 +147,7 @@
       [minHeight]="tableMinHeight"
       [maxHeight]="tableMaxHeight"
       (scrollProgress)="onTableScrollProgress($event)"
+      (scrollableChange)="onTableScrollableChange($event)"
     >
       <!-- Table Header Wrapper -->
       <table-header-component *ngIf="tableConfig.show_table_headers" class="contents">

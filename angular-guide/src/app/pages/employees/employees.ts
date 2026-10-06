@@ -447,10 +447,11 @@ export class Employees implements OnInit {
         order: 1,
       },
       scroller: {
-        name: '',
+        name: 'Scroller',
         active: true,
         component: 'scroller_component',
-        info_note: 'Scroller horozontally',
+        info_note: 'Horizontal scroller',
+        pinned: false,
         section: 'section_3',
         order: 2,
       },
@@ -542,6 +543,7 @@ export class Employees implements OnInit {
   showDeleteConfirmModal = false;
   deleteTargetRowIds: string[] = [];
   scrollPercentage = 0;
+  isTableScrollable = false;
 
   private readonly originalRowData = new Map<string, Record<string, any>>();
 
@@ -1376,6 +1378,11 @@ export class Employees implements OnInit {
 
   onTableScrollProgress(pct: number): void {
     this.scrollPercentage = pct;
+    this.cdr.markForCheck();
+  }
+
+  onTableScrollableChange(canScroll: boolean): void {
+    this.isTableScrollable = canScroll;
     this.cdr.markForCheck();
   }
 

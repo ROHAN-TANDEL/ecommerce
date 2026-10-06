@@ -6,12 +6,14 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="inline-flex items-center gap-2.5 px-2 py-0.5 select-none">
-      <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">COLUMNS</span>
+    <div class="inline-flex items-center gap-3 px-1 py-0.5 select-none">
       <button
         type="button"
         (click)="onScrollLeft()"
-        class="w-8 h-8 rounded-xl border border-slate-200 bg-white shadow-2xs flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer active:scale-95"
+        [disabled]="!isScrollable || percentage === 0"
+        [class.opacity-30]="!isScrollable || percentage === 0"
+        [class.cursor-not-allowed]="!isScrollable || percentage === 0"
+        class="w-8 h-8 rounded-xl border border-slate-200 bg-white shadow-2xs flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer active:scale-95 disabled:active:scale-100"
         title="Scroll Left"
       >
         <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -19,14 +21,17 @@ import { CommonModule } from '@angular/common';
         </svg>
       </button>
 
-      <span class="text-sm font-bold text-slate-700 min-w-[38px] text-center font-sans tracking-tight">
-        {{ percentage }}%
+      <span class="text-sm font-semibold text-slate-700 min-w-[36px] text-center font-sans tracking-tight whitespace-nowrap">
+        {{ displayText }}
       </span>
 
       <button
         type="button"
         (click)="onScrollRight()"
-        class="w-8 h-8 rounded-xl border border-slate-200 bg-white shadow-2xs flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer active:scale-95"
+        [disabled]="!isScrollable || percentage >= 100"
+        [class.opacity-30]="!isScrollable || percentage >= 100"
+        [class.cursor-not-allowed]="!isScrollable || percentage >= 100"
+        class="w-8 h-8 rounded-xl border border-slate-200 bg-white shadow-2xs flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer active:scale-95 disabled:active:scale-100"
         title="Scroll Right"
       >
         <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -38,13 +43,27 @@ import { CommonModule } from '@angular/common';
 })
 export class ScrollerComponent {
   @Input() percentage = 0;
+  @Input() totalColumns = 12;
+  @Input() isScrollable = false;
   @Output() scroll = new EventEmitter<'left' | 'right'>();
 
+  get displayText(): string {
+    if (!this.isScrollable) {
+      return `${this.totalColumns} column${this.totalColumns === 1 ? '' : 's'}`;
+    }
+    return `${this.percentage}%`;
+  }
+
   onScrollLeft(): void {
-    this.scroll.emit('left');
+    if (this.isScrollable && this.percentage > 0) {
+      this.scroll.emit('left');
+    }
   }
 
   onScrollRight(): void {
-    this.scroll.emit('right');
+    if (this.isScrollable && this.percentage < 100) {
+      this.scroll.emit('right');
+    }
   }
 }
+
