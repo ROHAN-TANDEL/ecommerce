@@ -12,7 +12,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
 
       <!-- Left: Pinned Toolbar Actions Slot (Driven dynamically by config pinned: true) -->
       <div class="flex items-center flex-wrap gap-1.5 overflow-visible">
-        <ng-content select="[pinned], refresh-component, save-component, edit-component, lock-component, density-component, live-component, button-component"></ng-content>
+        <ng-content></ng-content>
       </div>
 
       <!-- Right: Config-driven Dropdown Section Components (Actions, Views, More) -->

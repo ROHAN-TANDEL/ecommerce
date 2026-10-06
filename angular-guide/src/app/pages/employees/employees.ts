@@ -735,7 +735,12 @@ export class Employees implements OnInit {
     const actionKeys = Object.keys(actionsMap);
 
     this.pinnedActions = actionKeys
-      .filter(key => actionsMap[key].pinned === true && actionsMap[key].active === true)
+      .filter(key => {
+        const item = actionsMap[key];
+        const isPinned = item.pinned === true || String(item.pinned) === 'true';
+        const isActive = item.active === true || String(item.active) === 'true';
+        return isPinned && isActive;
+      })
       .map(key => ({ ...actionsMap[key], key }))
       .sort((a, b) => {
         if (a.order !== b.order) return a.order - b.order;
@@ -754,12 +759,12 @@ export class Employees implements OnInit {
     this.sectionGroups = sectionKeys.map(sKey => {
       const section = sectionsMap[sKey];
       const items = actionKeys
-        .filter(
-          aKey =>
-            actionsMap[aKey].section === sKey &&
-            actionsMap[aKey].pinned !== true &&
-            actionsMap[aKey].active === true
-        )
+        .filter(aKey => {
+          const item = actionsMap[aKey];
+          const isPinned = item.pinned === true || String(item.pinned) === 'true';
+          const isActive = item.active === true || String(item.active) === 'true';
+          return item.section === sKey && !isPinned && isActive;
+        })
         .map(aKey => ({ ...actionsMap[aKey], key: aKey }))
         .sort((a, b) => {
           if (a.order !== b.order) return a.order - b.order;
