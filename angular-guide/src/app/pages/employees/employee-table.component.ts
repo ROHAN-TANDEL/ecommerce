@@ -190,6 +190,13 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       filter_key: 'first_name',
       columns: { users: 'first_name' },
       order: 1,
+      modal: {
+        order: 1,
+        horizontal_section: 'h_section_1',
+        required: true,
+        error_note: 'First name is required',
+        info_note: 'enter user name',
+      },
       filter_type: 'multi_search',
       editable: true,
       sorting: true,
@@ -208,6 +215,13 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       columns: { users: 'last_name' },
       filter_type: 'search',
       editable: false,
+      modal: {
+        order: 2,
+        horizontal_section: 'h_section_1',
+        required: true,
+        error_note: 'Last name is required',
+        info_note: 'enter user name',
+      },
       order: 2,
       sorting: true,
       info_note: 'User last name',
@@ -226,6 +240,13 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       filter_type: 'search',
       editable: true,
       sorting: true,
+      modal: {
+        order: 1,
+        horizontal_section: 'h_section_2',
+        required: true,
+        error_note: 'Email address is required',
+        info_note: 'enter user email',
+      },
       info_note: 'User email address',
       elipsis: 'text_elipsis',
       active: true,
@@ -242,6 +263,13 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       filter_type: 'list',
       editable: true,
       sorting: true,
+      modal: {
+        order: 1,
+        horizontal_section: 'h_section_3',
+        required: true,
+        error_note: 'Status is required',
+        info_note: 'enter user status',
+      },
       info_note: 'Current user status',
       elipsis: 'text_elipsis',
       cell_mode: 'text_code_3100',
@@ -769,8 +797,41 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // Modals for End-to-End CRUD
   showCreateModal = false;
   showEditModal = false;
-  createForm = { first_name: '', last_name: '', email: '', password_hash: 'Password123!', status: 'active' };
+  createForm: Record<string, any> = {};
+  createFormErrors: Record<string, string> = {};
   editForm = { id: '', first_name: '', last_name: '', email: '', status: 'active' };
+
+  modalSections: { sectionKey: string; fields: EnrichedColumn[] }[] = [];
+
+  rebuildModalSections(): void {
+    const fieldsWithModal = this.allColumnsList.filter(col => !!col.modal);
+
+    const groupsMap = new Map<string, EnrichedColumn[]>();
+    fieldsWithModal.forEach(col => {
+      const sectionKey = col.modal?.horizontal_section || 'h_section_default';
+      if (!groupsMap.has(sectionKey)) {
+        groupsMap.set(sectionKey, []);
+      }
+      groupsMap.get(sectionKey)!.push(col);
+    });
+
+    const result: { sectionKey: string; fields: EnrichedColumn[] }[] = [];
+    groupsMap.forEach((fields, sectionKey) => {
+      fields.sort((a, b) => (a.modal?.order ?? 99) - (b.modal?.order ?? 99));
+      result.push({ sectionKey, fields });
+    });
+
+    result.sort((a, b) => a.sectionKey.localeCompare(b.sectionKey, undefined, { numeric: true }));
+    this.modalSections = result;
+  }
+
+  trackBySectionKey(_index: number, item: { sectionKey: string }): string {
+    return item.sectionKey;
+  }
+
+  trackByColKey(_index: number, col: EnrichedColumn): string {
+    return col.key;
+  }
 
   // Floating Toast Stack
   toasts: ToastMessage[] = [];
@@ -858,7 +919,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         this.processColumns();
         this.processActions();
         this.fetchTableData(1, this.tableConfig.pagination.default_page_size || 10);
-        this.loadSavedViews();
+        this.loadSavedViews(true);
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -867,7 +928,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         this.processColumns();
         this.processActions();
         this.fetchTableData(1, 10);
-        this.loadSavedViews();
+        this.loadSavedViews(true);
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -986,6 +1047,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.recomputeColumnOffsets(list);
     this.allColumnsList = list;
     this.columnsList = list.filter(c => c.active !== false);
+    this.rebuildModalSections();
   }
 
   private recomputeColumnOffsets(list: EnrichedColumn[]): void {
@@ -1092,13 +1154,52 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   onHeaderAddDataClick(): void {
+    this.createFormErrors = {};
+    const initialForm: Record<string, any> = {
+      password_hash: 'Password123!',
+    };
+
+    // Initialize defaults based on column config
+    this.allColumnsList.forEach(col => {
+      if (col.modal) {
+        if (col.filter_data && col.filter_data.length > 0) {
+          const defaultOpt = col.filter_data.find(d => d.default);
+          initialForm[col.key] = defaultOpt ? defaultOpt.key : col.filter_data[0].key;
+        } else {
+          initialForm[col.key] = '';
+        }
+      }
+    });
+
+    if (!initialForm['status']) {
+      initialForm['status'] = 'active';
+    }
+
+    this.rebuildModalSections();
+    this.createForm = initialForm;
     this.showCreateModal = true;
-    this.createForm = { first_name: '', last_name: '', email: '', password_hash: 'Password123!', status: 'active' };
+    this.cdr.markForCheck();
   }
 
   submitCreateUser(): void {
-    if (!this.createForm.first_name || !this.createForm.email) {
-      this.showToast('Validation Error', 'First name and email are required.', 'header');
+    this.createFormErrors = {};
+    let hasValidationError = false;
+
+    // Validate fields according to their modal config
+    this.allColumnsList.forEach(col => {
+      if (col.modal && col.modal.required) {
+        const val = this.createForm[col.key];
+        if (val === undefined || val === null || String(val).trim() === '') {
+          this.createFormErrors[col.key] = col.modal.error_note || `${col.header_name} is required`;
+          hasValidationError = true;
+        }
+      }
+    });
+
+    if (hasValidationError) {
+      const firstError = Object.values(this.createFormErrors)[0] || 'Please complete required fields';
+      this.showToast('Validation Error', firstError, 'header');
+      this.cdr.markForCheck();
       return;
     }
 
@@ -1116,10 +1217,11 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           'CREATE',
           true,
           'New User Created',
-          `Created user ${this.createForm.first_name} ${this.createForm.last_name} (${this.createForm.email})`
+          `Created user ${this.createForm['first_name'] || ''} ${this.createForm['last_name'] || ''}`.trim()
         );
         this.showToast('User Created', res?.message || 'New user record created successfully via API', 'header');
         this.showCreateModal = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         const newRecord = {
@@ -1133,10 +1235,11 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           'CREATE',
           true,
           'New User Created',
-          `Created user ${this.createForm.first_name} ${this.createForm.last_name} (${this.createForm.email})`
+          `Created user ${this.createForm['first_name'] || ''} ${this.createForm['last_name'] || ''}`.trim()
         );
-        this.showToast('User Created (Shared)', `${this.createForm.first_name} added — updated across both tables`, 'header');
+        this.showToast('User Created (Shared)', `${this.createForm['first_name'] || 'User'} added — updated across both tables`, 'header');
         this.showCreateModal = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -1617,7 +1720,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  loadSavedViews(): void {
+  loadSavedViews(autoApplyDefault = false): void {
     const listApi = this.tableConfig?.table_api?.list_view_api || '/identity/management/view/users/list';
     const tableKey = this.tableConfig?.table_key || 'users_table_1234';
     this.isLoadingViews = true;
@@ -1631,6 +1734,17 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           this.savedViews = this.apiService.getMockSavedViews();
         }
         this.isLoadingViews = false;
+
+        // If fresh load requests default view auto-apply and a default view exists, apply it automatically
+        if (autoApplyDefault && this.activeViewId === 'default_view') {
+          const defaultPreset = this.savedViews.find(v => v.is_default);
+          if (defaultPreset) {
+            this.applySavedView(defaultPreset.id || defaultPreset.name, false);
+            this.cdr.markForCheck();
+            return;
+          }
+        }
+
         if (this.activeViewId !== 'default_view') {
           const active = this.savedViews.find(v => String(v.id || v.name) === String(this.activeViewId));
           if (active) {
@@ -1645,12 +1759,22 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       error: () => {
         this.savedViews = this.apiService.getMockSavedViews();
         this.isLoadingViews = false;
+
+        if (autoApplyDefault && this.activeViewId === 'default_view') {
+          const defaultPreset = this.savedViews.find(v => v.is_default);
+          if (defaultPreset) {
+            this.applySavedView(defaultPreset.id || defaultPreset.name, false);
+            this.cdr.markForCheck();
+            return;
+          }
+        }
+
         this.cdr.markForCheck();
       }
     });
   }
 
-  applySavedView(viewKey: string | number): void {
+  applySavedView(viewKey: string | number, notifyUser = true): void {
     const keyStr = String(viewKey || '');
 
     if (keyStr === 'current_view') {
@@ -1681,7 +1805,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
       this.activeViewId = 'default_view';
       this.activeViewName = 'Default';
-      this.showToast('View: Default', 'Reset to default view configuration', 'dropdown');
+      if (notifyUser) {
+        this.showToast('View: Default', 'Reset to default view configuration', 'dropdown');
+      }
       this.actionClicked.emit({ actionKey: 'view', optionKey: 'default_view' });
       this.cdr.markForCheck();
       return;
@@ -1689,7 +1815,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
     const foundView = this.savedViews.find(v => String(v.id || v.name) === keyStr);
     if (!foundView) {
-      this.showToast('View Not Found', `Saved view "${keyStr}" could not be located`, 'dropdown');
+      if (notifyUser) {
+        this.showToast('View Not Found', `Saved view "${keyStr}" could not be located`, 'dropdown');
+      }
       return;
     }
 
@@ -1753,13 +1881,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
     this.activeViewId = String(foundView.id || foundView.name);
     this.activeViewName = foundView.name;
-    this.broadcastAction(
-      'VIEW_PRESET',
-      false,
-      'View Preset Applied',
-      `Applied view preset "${this.activeViewName}" on ${this.instanceLabel}`
-    );
-    this.showToast(`View Loaded: ${foundView.name}`, 'Filters, pagination, pins & density applied', 'dropdown');
+    if (notifyUser) {
+      this.broadcastAction(
+        'VIEW_PRESET',
+        false,
+        'View Preset Applied',
+        `Applied view preset "${this.activeViewName}" on ${this.instanceLabel}`
+      );
+      this.showToast(`View Loaded: ${foundView.name}`, 'Filters, pagination, pins & density applied', 'dropdown');
+    }
     this.actionClicked.emit({ actionKey: 'view', optionKey: String(foundView.id || foundView.name) });
     this.cdr.markForCheck();
   }

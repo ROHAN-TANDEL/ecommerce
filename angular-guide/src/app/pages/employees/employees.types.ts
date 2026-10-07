@@ -113,11 +113,20 @@ export interface ColumnFreezeConfig {
   active?: boolean;
 }
 
+export interface ColumnModalConfig {
+  order?: number;
+  horizontal_section?: string;
+  required?: boolean;
+  error_note?: string;
+  info_note?: string;
+}
+
 export interface ColumnConfigItem {
   header_name: string;
   filter_key: string;
   columns: Record<string, string>;
   order: number;
+  modal?: ColumnModalConfig;
   filter_type: 'search' | 'multi_search' | 'list' | 'date_range' | string;
   editable: boolean;
   sorting: boolean;
