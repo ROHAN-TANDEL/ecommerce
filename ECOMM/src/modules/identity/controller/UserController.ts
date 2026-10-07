@@ -68,7 +68,29 @@ export class UserController {
 
     async createAllUsers(req, res)
     {
-        return res.status(200).json({message: "Working!"});
+        try {
+            const users = this.userValidator.createAllUsers
+                ? this.userValidator.createAllUsers(req)
+                : this.userValidator.createBulkUsers(req);
+
+            const result = await this.userService.createAllUsers(users);
+
+            return res.status(200).json({
+                data: result,
+                message: "all users created successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (errors: any) {
+            console.log({error: errors});
+
+            return res.status(400).json({
+                data: null,
+                message: errors?.message ?? "all users failed to create",
+                status: "failed",
+                code: 400
+            });
+        }
     }
 
     async getUsers(req, res)
@@ -522,6 +544,50 @@ export class UserController {
         }
     }
 
-    async importCreateUsers(req, res) {}
+    async importCreateUsers(req, res)
+    {
+        try {
+            const { users, options, duplicates, invalidRows } = this.userValidator.importCreateUsers(req);
+            const inserted = await this.userService.importUsers(users, options);
+            const insertedList: any[] = Array.isArray(inserted) ? inserted : (inserted?.rows || []);
+
+            const insertedEmails = new Set(insertedList.map((u: any) => u.email?.toLowerCase()));
+            const dbDuplicates = users
+                .filter((u: any) => !insertedEmails.has(u.email?.toLowerCase()))
+                .map((u: any) => ({
+                    row: u.rowNumber,
+                    email: u.email,
+                    reason: "User with this email already exists in database"
+                }));
+
+            const allDuplicates = [...(duplicates || []), ...dbDuplicates];
+            const skippedCount = allDuplicates.length;
+            const importedCount = insertedList.length;
+
+            return res.status(200).json({
+                data: {
+                    imported_count: importedCount,
+                    skipped_count: skippedCount,
+                    failed_count: (invalidRows || []).length,
+                    users: insertedList,
+                    duplicates: allDuplicates,
+                    errors: invalidRows || [],
+                    options
+                },
+                message: `Successfully imported ${importedCount} user(s)${skippedCount > 0 ? `, skipped ${skippedCount} duplicate(s)` : ''}`,
+                status: "success",
+                code: 200
+            });
+        } catch (errors: any) {
+            console.log({ error: errors });
+
+            return res.status(400).json({
+                data: null,
+                message: errors?.message ?? "failed to import users",
+                status: "failed",
+                code: 400
+            });
+        }
+    }
     async importUpdateUsers(req, res) {}
 }

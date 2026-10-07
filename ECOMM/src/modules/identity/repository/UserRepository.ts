@@ -189,14 +189,44 @@ export class UserRepository {
             const valueStrings = [];
             let i = 1;
             users.forEach(user => {
-                valueStrings.push(`(${i++}, ${i++}, ${i++}, ${i++}, ${i++})`);
+                valueStrings.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
                 values.push(...user);
             });
-            query += valueStrings.join(', ') + ' RETURNING id';
+            query += valueStrings.join(', ') + ' RETURNING id, first_name, last_name, email, status';
             const result = await db.master.query(query, values);
             return result?.rows;
-        } catch (error) {
+        } catch (error: any) {
             console.log({error});
+            if (error?.code === "23505") {
+                throw new Error('user already exists');
+            }
+            throw error;
+        }
+    }
+
+    async importUsers(users: any[], options: { skip_duplicates?: boolean } = {}) {
+        try {
+            if (!users || users.length === 0) return [];
+            const onConflictClause = options.skip_duplicates
+                ? ' ON CONFLICT (email) DO NOTHING'
+                : '';
+
+            let query = 'INSERT INTO master.users (first_name, last_name, email, password_hash, status) VALUES ';
+            const values: any[] = [];
+            const valueStrings: string[] = [];
+            let i = 1;
+            users.forEach(u => {
+                valueStrings.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
+                values.push(u.first_name, u.last_name, u.email, u.password_hash, u.status);
+            });
+            query += valueStrings.join(', ') + onConflictClause + ' RETURNING id, first_name, last_name, email, status';
+            const result = await db.master.query(query, values);
+            return result?.rows || [];
+        } catch (error: any) {
+            console.log({error});
+            if (error?.code === "23505") {
+                throw new Error('one or more users already exist in database');
+            }
             throw error;
         }
     }
@@ -298,8 +328,6 @@ export class UserRepository {
             throw error;
         }
     }
-
-    importUsers() {}
 
     async getViews(tableKey = 'users_table_1234', userId = null) {
         try {

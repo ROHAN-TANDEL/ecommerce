@@ -62,7 +62,7 @@ export default class RouteRegister {
                 if (routerData !== undefined) {
                     const registerRoute = (new routerData()).route(dbs);
 
-                    // router.use(productDetail.identification, clientContext, facadeMiddleware(dbs), registerRoute);
+                    //router.use(productDetail.identification, clientContext, facadeMiddleware(dbs), registerRoute);
 
                     router.use(productDetail.identification, facadeMiddleware(dbs), registerRoute);
 

@@ -46,7 +46,7 @@ export const UserTableConfig = {
 
     "enable_add_data_button" : true,
 
-    "add_data_button_name" : "+ Add User New",
+    "add_data_button_name" : "+ Add User",
 
     "show_table_headers" : true,
 

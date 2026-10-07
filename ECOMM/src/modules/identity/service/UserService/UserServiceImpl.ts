@@ -94,6 +94,14 @@ export class UserServiceImpl implements UserService {
         return await this.userRepo.createBulkUsers(users);
     }
 
+    async createAllUsers(users) {
+        return await this.userRepo.createBulkUsers(users);
+    }
+
+    async importUsers(users: any[], options: any = {}) {
+        return await this.userRepo.importUsers(users, options);
+    }
+
     async updateBulkUsers(updates) {
         return await this.userRepo.updateBulkUsers(updates);
     }
@@ -113,8 +121,6 @@ export class UserServiceImpl implements UserService {
     async deleteAllUsers(ids) {
         return await this.userRepo.deleteAllUsers(ids);
     }
-
-    importUsers() {}
 
     async getViews(tableKey = 'users_table_1234', userId = null) {
         return await this.userRepo.getViews(tableKey, userId);

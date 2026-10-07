@@ -5,7 +5,9 @@ export default class UserService {
     deleteUser();
     updateUser();
     createUser();
-    importUsers();
+    createBulkUsers(users?: any);
+    createAllUsers(users?: any);
+    importUsers(users?: any, options?: any);
     updateUserStatus();
     getViews(tableKey?: string, userId?: any);
     saveView(data: any);
