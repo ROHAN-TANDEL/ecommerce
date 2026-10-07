@@ -169,4 +169,49 @@ export class EmployeesApiService {
     const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
     return this.http.delete<any>(fullUrl);
   }
+
+  /**
+   * Fetch Saved Views via list_view_api
+   */
+  fetchSavedViews(
+    apiUrl: string,
+    tableKey = 'users_table_1234',
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any[]> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    const params = new HttpParams().set('table_key', tableKey);
+    return this.http.get<any>(fullUrl, { params }).pipe(
+      map(res => {
+        const list = res?.data ?? (Array.isArray(res) ? res : []);
+        return Array.isArray(list) ? list : [];
+      }),
+      catchError(err => {
+        console.warn(`[EmployeesApiService] Failed to fetch saved views from ${fullUrl}:`, err);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Save View via save_view_api
+   */
+  saveView(apiUrl: string, payload: any, baseUrl = this.defaultBaseUrl): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.post<any>(fullUrl, payload);
+  }
+
+  /**
+   * Delete View via delete_view_api
+   */
+  deleteView(
+    apiTemplate: string,
+    id: string | number,
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const resolvedPath = apiTemplate.includes(':id')
+      ? apiTemplate.replace(':id', String(id))
+      : `${apiTemplate.replace(/\/+$/, '')}/${id}`;
+    const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
+    return this.http.delete<any>(fullUrl);
+  }
 }

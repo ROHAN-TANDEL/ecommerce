@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SectionActionGroup, EnrichedColumn } from '../employees.types';
+import { SectionActionGroup, EnrichedColumn, SavedTableView } from '../employees.types';
 import { DropdownSectionsComponent } from './dropdown-sections.component';
 
 @Component({
@@ -24,6 +24,9 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           [scrollPercentage]="scrollPercentage"
           [isScrollable]="isScrollable"
           [density]="density"
+          [savedViews]="savedViews"
+          [activeView]="activeView"
+          [isLoadingViews]="isLoadingViews"
           (toggleColumn)="toggleColumn.emit($event)"
           (reorderColumn)="reorderColumn.emit($event)"
           (resetColumns)="resetColumns.emit()"
@@ -44,6 +47,9 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           [scrollPercentage]="scrollPercentage"
           [isScrollable]="isScrollable"
           [density]="density"
+          [savedViews]="savedViews"
+          [activeView]="activeView"
+          [isLoadingViews]="isLoadingViews"
           (toggleColumn)="toggleColumn.emit($event)"
           (reorderColumn)="reorderColumn.emit($event)"
           (resetColumns)="resetColumns.emit()"
@@ -64,6 +70,9 @@ export class ActionPanelComponent {
   @Input() scrollPercentage = 0;
   @Input() isScrollable = false;
   @Input() density?: string;
+  @Input() savedViews: SavedTableView[] = [];
+  @Input() activeView?: string | number;
+  @Input() isLoadingViews = false;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
   @Output() toggleColumn = new EventEmitter<string>();

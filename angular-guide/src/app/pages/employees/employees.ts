@@ -15,6 +15,7 @@ import {
   FilterDataItem,
   ActionDropdownOption,
   PaginationState,
+  SavedTableView,
 } from './employees.types';
 import {
   ButtonComponent,
@@ -119,8 +120,11 @@ export class Employees implements OnInit {
       lock_status_api: '/identity/management/lock/users',
       export_data_api: '/identity/management/export/users',
       download_data_api: '/identity/management/download/users',
-      get_view_api: '/identity/management/view/users',
+      list_view_api: '/identity/management/view/users/list',
       save_view_api: '/identity/management/view/users/save',
+      get_view_api: '/identity/management/view/users/:id',
+      delete_view_api: '/identity/management/view/users/:id',
+      default_view_api: '/identity/management/view/users/:id/default',
       live_talk_api: '/identity/management/talk/users',
       live_listen_api: '/identity/management/listen/users',
     },
@@ -420,6 +424,7 @@ export class Employees implements OnInit {
         component: 'view_component',
         info_note: 'load saved filters',
         dropdown_default_value: 'default_view',
+        dynamic_dropdown: true,
         dropdown_options: {
           default_view: {
             display_name: 'Default',
@@ -427,8 +432,8 @@ export class Employees implements OnInit {
           current_view: {
             display_name: 'Save current view',
           },
-          reset_view: {
-            display_name: 'Reset view',
+          delete_view: {
+            display_name: 'Delete current view',
           },
         },
         section: 'section_2',
@@ -507,6 +512,16 @@ export class Employees implements OnInit {
   activeFilters: Record<string, any> = {};
   sectionRowValues: Record<string, any> = {};
   sortState: Record<string, 'asc' | 'desc' | null> = { first_name: 'asc' };
+
+  // Saved Table Views state
+  savedViews: SavedTableView[] = [];
+  activeViewId: string | number = 'default_view';
+  activeViewName = 'Default';
+  isLoadingViews = false;
+  isSaveViewModalOpen = false;
+  newViewName = '';
+  newViewIsDefault = false;
+  isSavingView = false;
 
   // Component Inputs & Outputs (Event boundaries)
   @Input() density: 'compact' | 'comfortable' | 'spacious' = 'comfortable';
@@ -765,6 +780,7 @@ export class Employees implements OnInit {
         this.processColumns();
         this.processActions();
         this.fetchTableData(1, this.tableConfig.pagination.default_page_size || 10);
+        this.loadSavedViews();
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -773,6 +789,7 @@ export class Employees implements OnInit {
         this.processColumns();
         this.processActions();
         this.fetchTableData(1, 10);
+        this.loadSavedViews();
         this.isLoading = false;
         this.cdr.markForCheck();
       },
@@ -1455,29 +1472,240 @@ export class Employees implements OnInit {
     this.cdr.markForCheck();
   }
 
-  applySavedView(viewKey: string): void {
-    if (viewKey === 'default_view' || viewKey === 'reset_view') {
+  loadSavedViews(): void {
+    const listApi = this.tableConfig?.table_api?.list_view_api || '/identity/management/view/users/list';
+    const tableKey = this.tableConfig?.table_key || 'users_table_1234';
+    this.isLoadingViews = true;
+    this.cdr.markForCheck();
+
+    this.apiService.fetchSavedViews(listApi, tableKey, this.apiBaseUrl).subscribe({
+      next: views => {
+        this.savedViews = views || [];
+        this.isLoadingViews = false;
+        if (this.activeViewId !== 'default_view') {
+          const active = this.savedViews.find(v => String(v.id || v.name) === String(this.activeViewId));
+          if (active) {
+            this.activeViewName = active.name;
+          } else {
+            this.activeViewId = 'default_view';
+            this.activeViewName = 'Default';
+          }
+        }
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.warn('Failed to load views:', err);
+        this.isLoadingViews = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  applySavedView(viewKey: string | number): void {
+    const keyStr = String(viewKey || '');
+
+    if (keyStr === 'current_view') {
+      this.openSaveViewModal();
+      return;
+    }
+
+    if (keyStr === 'delete_view' || keyStr === 'reset_view') {
+      this.deleteCurrentView();
+      return;
+    }
+
+    if (keyStr === 'default_view' || !keyStr) {
       this.density = 'comfortable';
+      this.densityChange.emit('comfortable');
       this.activeFilters = {};
       this.sortState = { first_name: 'asc' };
-      this.fetchTableData(1, this.pagination.limit);
+      this.selectedRowIds.clear();
+
+      Object.keys(this.rawColumnConfig).forEach(colKey => {
+        this.rawColumnConfig[colKey].active = true;
+        this.rawColumnConfig[colKey].freez = undefined;
+      });
+      this.processColumns();
+
+      const defaultLimit = this.tableConfig?.pagination?.default_page_size || 10;
+      this.fetchTableData(1, defaultLimit);
+
+      this.activeViewId = 'default_view';
+      this.activeViewName = 'Default';
       this.showToast('View: Default', 'Reset to default view configuration', 'dropdown');
-    } else if (viewKey === 'compact_view') {
-      this.density = 'compact';
-      this.showToast('View: Compact', 'Applied compact density view', 'dropdown');
-    } else if (viewKey === 'active_users') {
-      this.activeFilters['status'] = 'active';
-      this.fetchTableData(1, this.pagination.limit);
-      this.showToast('View: Active Users', 'Filtered to active users', 'dropdown');
-    } else if (viewKey === 'pending_users') {
-      this.activeFilters['status'] = 'pending';
-      this.fetchTableData(1, this.pagination.limit);
-      this.showToast('View: Pending Review', 'Filtered to pending accounts', 'dropdown');
-    } else if (viewKey === 'current_view') {
-      this.showToast('View Saved', 'Current view configuration saved as preset', 'dropdown');
+      this.actionClicked.emit({ actionKey: 'view', optionKey: 'default_view' });
+      this.cdr.markForCheck();
+      return;
     }
-    this.actionClicked.emit({ actionKey: 'view', optionKey: viewKey });
+
+    const foundView = this.savedViews.find(v => String(v.id || v.name) === keyStr);
+    if (!foundView) {
+      this.showToast('View Not Found', `Saved view "${keyStr}" could not be located`, 'dropdown');
+      return;
+    }
+
+    const state = foundView.view_state || (foundView as any);
+
+    // 1. Restore Density
+    if (state.density) {
+      this.density = state.density as TableDensity;
+      this.densityChange.emit(this.density);
+    }
+
+    // 2. Restore Pagination Limit
+    const newLimit = state.pagination?.limit || this.pagination.limit;
+
+    // 3. Restore Filters
+    this.activeFilters = state.filters ? { ...state.filters } : {};
+
+    // 4. Restore Column Pins, Order & Visibility
+    if (state.columns && Array.isArray(state.columns)) {
+      const pinnedLeft = new Set(state.column_pins?.left || []);
+      state.columns.forEach((sc: any) => {
+        if (this.rawColumnConfig[sc.key]) {
+          if (sc.order !== undefined) this.rawColumnConfig[sc.key].order = sc.order;
+          if (sc.active !== undefined) this.rawColumnConfig[sc.key].active = sc.active !== false;
+          if (sc.isFrozen || pinnedLeft.has(sc.key)) {
+            this.rawColumnConfig[sc.key].freez = { freez_side: 'left', order: sc.order || 1, active: true };
+          } else {
+            this.rawColumnConfig[sc.key].freez = undefined;
+          }
+        }
+      });
+      this.processColumns();
+    } else if (state.column_pins?.left) {
+      const pinnedLeft = new Set(state.column_pins.left);
+      Object.keys(this.rawColumnConfig).forEach(colKey => {
+        if (pinnedLeft.has(colKey)) {
+          this.rawColumnConfig[colKey].freez = { freez_side: 'left', order: this.rawColumnConfig[colKey].order || 1, active: true };
+        } else {
+          this.rawColumnConfig[colKey].freez = undefined;
+        }
+      });
+      this.processColumns();
+    }
+
+    // 5. Restore Row Pins / selection
+    if (state.row_pins?.pinned_row_ids && Array.isArray(state.row_pins.pinned_row_ids)) {
+      this.selectedRowIds = new Set(state.row_pins.pinned_row_ids.map(String));
+    }
+
+    // 6. Restore Sort
+    if (state.sort) {
+      if (typeof state.sort === 'object' && 'col' in state.sort && 'order' in state.sort) {
+        this.sortState = { [(state.sort as any).col]: (state.sort as any).order };
+      } else {
+        this.sortState = { ...(state.sort as Record<string, 'asc' | 'desc' | null>) };
+      }
+    }
+
+    // Fetch data with new settings
+    this.fetchTableData(1, newLimit);
+
+    this.activeViewId = String(foundView.id || foundView.name);
+    this.activeViewName = foundView.name;
+    this.showToast(`View Loaded: ${foundView.name}`, 'Filters, pagination, pins & density applied', 'dropdown');
+    this.actionClicked.emit({ actionKey: 'view', optionKey: String(foundView.id || foundView.name) });
     this.cdr.markForCheck();
+  }
+
+  openSaveViewModal(): void {
+    this.newViewName = `View ${this.savedViews.length + 1}`;
+    this.newViewIsDefault = false;
+    this.isSaveViewModalOpen = true;
+    this.cdr.markForCheck();
+  }
+
+  closeSaveViewModal(): void {
+    this.isSaveViewModalOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  onSaveViewSubmit(): void {
+    if (!this.newViewName.trim() || this.isSavingView) return;
+
+    this.isSavingView = true;
+    this.cdr.markForCheck();
+
+    const saveApi = this.tableConfig?.table_api?.save_view_api || '/identity/management/view/users/save';
+    const payload = {
+      name: this.newViewName.trim(),
+      table_key: this.tableConfig?.table_key || 'users_table_1234',
+      is_default: this.newViewIsDefault,
+      view_state: {
+        density: this.density,
+        pagination: {
+          limit: this.pagination.limit,
+          page: this.pagination.page,
+        },
+        filters: { ...this.activeFilters },
+        column_pins: {
+          left: this.columnsList.filter(c => c.isFrozen).map(c => c.key),
+          right: [],
+        },
+        row_pins: {
+          top: this.tableConfig.rows?.freez ? 2 : 0,
+          bottom: 0,
+          pinned_row_ids: Array.from(this.selectedRowIds),
+        },
+        columns: this.allColumnsList.map(c => ({
+          key: c.key,
+          order: c.order,
+          active: c.active !== false,
+          width: c.computedWidth,
+          isFrozen: c.isFrozen,
+        })),
+        sort: { ...this.sortState },
+      },
+    };
+
+    this.apiService.saveView(saveApi, payload, this.apiBaseUrl).subscribe({
+      next: res => {
+        this.isSavingView = false;
+        this.isSaveViewModalOpen = false;
+        const savedItem = res?.data || res;
+        this.loadSavedViews();
+        this.activeViewId = String(savedItem?.id || payload.name);
+        this.activeViewName = payload.name;
+        this.showToast(`View Saved: ${payload.name}`, 'Current configuration saved to database', 'dropdown');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error('Failed to save view:', err);
+        this.isSavingView = false;
+        this.showToast('Save View Failed', err?.message || 'Could not persist view to database', 'dropdown');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  deleteCurrentView(): void {
+    if (this.activeViewId === 'default_view') {
+      this.showToast('Default View', 'Default view cannot be deleted', 'dropdown');
+      return;
+    }
+
+    const deleteApi = this.tableConfig?.table_api?.delete_view_api || '/identity/management/view/users/:id';
+    this.apiService.deleteView(deleteApi, this.activeViewId, this.apiBaseUrl).subscribe({
+      next: () => {
+        const deletedName = this.activeViewName;
+        this.showToast('View Deleted', `Saved view "${deletedName}" was removed from database`, 'dropdown');
+        this.loadSavedViews();
+        this.applySavedView('default_view');
+      },
+      error: err => {
+        console.error('Failed to delete view:', err);
+        this.showToast('Delete Failed', err?.message || 'Could not delete view from database', 'dropdown');
+      }
+    });
+  }
+
+  getActiveFilterCount(): number {
+    return Object.keys(this.activeFilters || {}).length;
+  }
+
+  getPinnedColumnCount(): number {
+    return (this.columnsList || []).filter(c => c.isFrozen).length;
   }
 
   @HostListener('document:keydown.escape')

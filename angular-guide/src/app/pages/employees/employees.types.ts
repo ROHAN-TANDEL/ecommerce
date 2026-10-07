@@ -22,10 +22,51 @@ export interface TableApiRegistry {
   lock_status_api: string;
   export_data_api: string;
   download_data_api: string;
-  get_view_api: string;
+  list_view_api: string;
   save_view_api: string;
+  get_view_api: string;
+  delete_view_api: string;
+  default_view_api?: string;
   live_talk_api: string;
   live_listen_api: string;
+}
+
+export interface SavedTableView {
+  id?: number | string;
+  table_key?: string;
+  user_id?: number | string | null;
+  name: string;
+  description?: string | null;
+  is_default?: boolean;
+  is_shared?: boolean;
+  is_locked?: boolean;
+  view_state: {
+    density?: string;
+    pagination?: {
+      limit: number;
+      page?: number;
+    };
+    filters?: Record<string, any>;
+    column_pins?: {
+      left?: string[];
+      right?: string[];
+    };
+    row_pins?: {
+      top?: number;
+      bottom?: number;
+      pinned_row_ids?: (string | number)[];
+    };
+    columns?: Array<{
+      key: string;
+      active?: boolean;
+      order?: number;
+      width?: string;
+      isFrozen?: boolean;
+    }>;
+    sort?: Record<string, 'asc' | 'desc'> | { col: string; order: 'asc' | 'desc' };
+  };
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TableConfigPayload {
@@ -69,6 +110,7 @@ export interface FilterDataItem {
 export interface ColumnFreezeConfig {
   freez_side: 'left' | 'right';
   order: number;
+  active?: boolean;
 }
 
 export interface ColumnConfigItem {

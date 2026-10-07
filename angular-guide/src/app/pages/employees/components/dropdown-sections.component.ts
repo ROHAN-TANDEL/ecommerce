@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedColumn } from '../employees.types';
+import { SectionActionGroup, ActionItemConfig, ActionDropdownOption, EnrichedColumn, SavedTableView } from '../employees.types';
 import { ScrollerComponent } from './scroller.component';
 
 @Component({
@@ -212,12 +212,14 @@ import { ScrollerComponent } from './scroller.component';
               submenuAlign === 'right' ? 'left-full ml-1.5 before:-left-3' : 'right-full mr-1.5 before:-right-3',
               submenuVAlign === 'bottom' ? 'bottom-0' : 'top-0'
             ]"
-            class="before:absolute before:top-0 before:bottom-0 before:w-3 before:content-[''] absolute z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5"
+            class="before:absolute before:top-0 before:bottom-0 before:w-3 before:content-[''] absolute z-[110] w-56 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5"
           >
-            <div class="px-2.5 py-1 text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">
-              SAVED VIEWS
+            <div class="flex items-center justify-between px-2.5 py-1">
+              <span class="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">SAVED VIEWS</span>
+              <span *ngIf="isLoadingViews" class="text-[10px] text-blue-500 animate-pulse">Loading...</span>
             </div>
 
+            <!-- Default View Option -->
             <button
               type="button"
               (click)="onViewSelect('default_view', $event)"
@@ -230,24 +232,48 @@ import { ScrollerComponent } from './scroller.component';
               <span *ngIf="currentViewKey === 'default_view'" class="text-blue-600 font-bold text-xs leading-none">✓</span>
             </button>
 
+            <!-- Dynamic List of Saved Views by Users -->
+            <div *ngIf="savedViews && savedViews.length > 0" class="border-t border-slate-100 my-1 pt-1 space-y-0.5 max-h-48 overflow-y-auto">
+              <button
+                *ngFor="let v of savedViews"
+                type="button"
+                (click)="onViewSelect(String(v.id || v.name), $event)"
+                [ngClass]="String(currentViewKey) === String(v.id || v.name) ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-800 hover:bg-slate-100'"
+                class="flex w-full items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left"
+                [title]="v.name"
+              >
+                <div class="flex items-center gap-2 truncate">
+                  <span class="truncate">{{ v.name }}</span>
+                  <span *ngIf="v.is_default" class="text-[9px] bg-slate-100 text-slate-500 rounded px-1 py-0.2 shrink-0">Default</span>
+                </div>
+                <span *ngIf="String(currentViewKey) === String(v.id || v.name)" class="text-blue-600 font-bold text-xs leading-none">✓</span>
+              </button>
+            </div>
+
+            <div class="border-t border-slate-100 my-1"></div>
+
+            <!-- Save Current View Action -->
             <button
               type="button"
               (click)="onViewSelect('current_view', $event)"
-              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
+              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer text-left"
             >
               <span class="text-slate-400 text-sm leading-none font-medium">+</span>
               <span class="font-medium">Save current view</span>
             </button>
 
+            <!-- Delete Current View Action -->
             <button
               type="button"
-              (click)="onViewSelect('reset_view', $event)"
-              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-left"
+              (click)="onViewSelect('delete_view', $event)"
+              [ngClass]="currentViewKey === 'default_view' ? 'opacity-40 cursor-not-allowed text-slate-400 hover:bg-transparent' : 'text-slate-700 hover:bg-red-50 hover:text-red-600 cursor-pointer'"
+              class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left"
+              [title]="currentViewKey === 'default_view' ? 'Cannot delete default view' : 'Delete currently loaded view from database'"
             >
-              <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" />
+              <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              <span class="font-medium">Reset view</span>
+              <span class="font-medium">Delete current view</span>
             </button>
           </div>
 
@@ -300,6 +326,13 @@ export class DropdownSectionsComponent {
   @Input() set density(val: string | undefined) {
     if (val) this.selectedSubOptions['density'] = val;
   }
+  @Input() savedViews: SavedTableView[] = [];
+  @Input() set activeView(val: string | number | undefined) {
+    if (val !== undefined && val !== null) this.currentViewKey = String(val);
+  }
+  @Input() isLoadingViews = false;
+
+  String = String;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
   @Output() toggleColumn = new EventEmitter<string>();
