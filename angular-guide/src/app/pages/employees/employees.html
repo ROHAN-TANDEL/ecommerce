@@ -63,6 +63,7 @@
       [columns]="allColumnsList"
       [scrollPercentage]="scrollPercentage"
       [isScrollable]="isTableScrollable"
+      [density]="density"
       (actionSelect)="onActionPanelSelect($event)"
       (toggleColumn)="toggleColumnVisibility($event)"
       (reorderColumn)="reorderColumn($event.colKey, $event.direction)"

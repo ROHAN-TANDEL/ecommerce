@@ -8,7 +8,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
   standalone: true,
   imports: [CommonModule, DropdownSectionsComponent],
   template: `
-    <div class="relative z-30 flex flex-wrap items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
+    <div class="relative z-40 flex flex-wrap items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
 
       <!-- Pinned Toolbar Actions Slot -->
       <ng-content></ng-content>
@@ -23,6 +23,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           [columns]="columns"
           [scrollPercentage]="scrollPercentage"
           [isScrollable]="isScrollable"
+          [density]="density"
           (toggleColumn)="toggleColumn.emit($event)"
           (reorderColumn)="reorderColumn.emit($event)"
           (resetColumns)="resetColumns.emit()"
@@ -42,6 +43,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           [columns]="columns"
           [scrollPercentage]="scrollPercentage"
           [isScrollable]="isScrollable"
+          [density]="density"
           (toggleColumn)="toggleColumn.emit($event)"
           (reorderColumn)="reorderColumn.emit($event)"
           (resetColumns)="resetColumns.emit()"
@@ -61,6 +63,7 @@ export class ActionPanelComponent {
   @Input() columns: EnrichedColumn[] = [];
   @Input() scrollPercentage = 0;
   @Input() isScrollable = false;
+  @Input() density?: string;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
   @Output() toggleColumn = new EventEmitter<string>();

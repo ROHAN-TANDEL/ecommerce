@@ -802,7 +802,7 @@ export class Employees implements OnInit {
       )
       .subscribe({
         next: result => {
-          if (result.isLive && result.rows.length > 0) {
+          if (result.isLive) {
             this.rows = result.rows;
             this.pagination = result.pagination;
             this.captureOriginalRowData();
