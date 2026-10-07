@@ -1,5 +1,6 @@
 import db from "../../../platformdb/facade.js";
 import { QueryBuilder } from "../../../helpers/QueryBuilder.js";
+import { MasterFilterConfig, UserFilterConfig } from "../config/user.filter.config.js";
 
 
 export class UserRepository {
@@ -52,15 +53,24 @@ export class UserRepository {
         }
     }
 
-    async getUsers(limit, offset)
+    async getUsers(limit, offset, inputs: any = {})
     {
         try {
-            const users = await db.master.query(`
-                      SELECT * FROM users
-                      ORDER BY created_at DESC
-                      LIMIT $1
-                      OFFSET $2
-                `, [limit, offset]);
+            const inputValues: any[] = [];
+            const filterInputs = { ...inputs, values: inputValues };
+
+            let query = `SELECT * FROM users WHERE 1=1`;
+            query = query + MasterFilterConfig(filterInputs);
+            query = query + UserFilterConfig(filterInputs);
+
+            const validSortColumns = ['id', 'first_name', 'last_name', 'email', 'status', 'created_at', 'updated_at'];
+            const sortCol = validSortColumns.includes(inputs?.sort) ? inputs.sort : 'created_at';
+            const sortOrder = String(inputs?.order || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+            query += ` ORDER BY ${sortCol} ${sortOrder} LIMIT $${inputValues.length + 1} OFFSET $${inputValues.length + 2}`;
+            inputValues.push(limit, offset);
+
+            const users = await db.master.query(query, inputValues);
             return users?.rows;
         }
         catch (error) {
@@ -68,14 +78,22 @@ export class UserRepository {
         }
     }
 
-    async getTotalUsers()
+    async getTotalUsers(inputs: any = {})
     {
         try {
-            const countResult = await db.master.query(`SELECT COUNT(*)::int AS total FROM users`);
+            const inputValues: any[] = [];
+            const filterInputs = { ...inputs, values: inputValues };
 
-            if (countResult?.rows && countResult.rows.length > 0 && countResult.rows[0]?.total) {
+            let countQuery = `SELECT COUNT(*)::int AS total FROM users WHERE 1=1`;
+            countQuery = countQuery + MasterFilterConfig(filterInputs);
+            countQuery = countQuery + UserFilterConfig(filterInputs);
+
+            const countResult = await db.master.query(countQuery, inputValues);
+
+            if (countResult?.rows && countResult.rows.length > 0 && countResult.rows[0]?.total !== undefined) {
                 return countResult.rows[0].total;
             }
+            return 0;
         }
         catch (errors) {
             throw errors;

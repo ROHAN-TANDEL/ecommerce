@@ -26,18 +26,18 @@ export class UserServiceImpl implements UserService {
         return await this.userRepo.getUser(inputs);
     }
 
-    async getUsers(page, limit)
+    async getUsers(page, limit, inputs: any = {})
     {
         try {
             const offset = (page - 1) * limit;
 
-            const users = await this.userRepo.getUsers(limit, offset);
+            const users = await this.userRepo.getUsers(limit, offset, inputs);
 
             if (users?.message) {
                throw new Error("Users not found");
             }
 
-            const total = await this.userRepo.getTotalUsers();
+            const total = await this.userRepo.getTotalUsers(inputs);
 
             return {
                 user : users,
@@ -46,7 +46,7 @@ export class UserServiceImpl implements UserService {
                     page,
                     limit,
                     total,
-                    totalPages: Math.ceil(total / limit)
+                    totalPages: Math.max(1, Math.ceil(total / limit))
                 }
             };
 

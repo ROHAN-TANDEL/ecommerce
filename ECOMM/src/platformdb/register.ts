@@ -8,42 +8,9 @@ import { HealthController } from "../modules/identity/controller/HealthControlle
 
 import { UserRepository } from "../modules/identity/repository/UserRepository.js";
 import { UserResponse } from "../modules/identity/response/UserResponse.js";
-
-import { ClientRepository } from "../modules/tenant/repository/ClientRepository.js";
-import { ClientService } from "../modules/tenant/service/ClientService.js";
-import { ClientValidator } from "../modules/tenant/validator/ClientValidator.js";
-import { ClientResponse } from "../modules/tenant/response/ClientResponse.js";
-import { ClientController } from "../modules/tenant/controller/ClientController.js";
-
-import { ProductRepository } from "../modules/tenant/repository/ProductRepository.js";
-import { ProductService } from "../modules/tenant/service/ProductService.js";
-import { ProductController } from "../modules/tenant/controller/ProductController.js";
-
-import { BusinessRepository } from "../modules/tenant/repository/BusinessRepository.js";
-import { BusinessService } from "../modules/tenant/service/BusinessService.js";
-import { BusinessController } from "../modules/tenant/controller/BusinessController.js";
-
-import { BusinessProductRepository } from "../modules/tenant/repository/BusinessProductRepository.js";
-import { BusinessProductService } from "../modules/tenant/service/BusinessProductService.js";
-import { BusinessProductController } from "../modules/tenant/controller/BusinessProductController.js";
-import {SchemaController} from "../modules/tenant/controller/SchemaController.js";
-import {UserServiceImpl} from "../modules/identity/service/UserService/UserServiceImpl.js";
-import {UserController} from "../modules/identity/controller/UserController.js";
-import {UserValidator} from "../modules/identity/validator/UserValidator.js";
-
-register("schemaController", SchemaController);
-
-register("businessProductRepository", BusinessProductRepository);
-register("businessProductService", BusinessProductService);
-register("businessProductController", BusinessProductController);
-
-register("businessRepository", BusinessRepository);
-register("businessService", BusinessService);
-register("businessController", BusinessController);
-
-register("productRepository", ProductRepository);
-register("productService", ProductService);
-register("productController", ProductController);
+import { UserServiceImpl } from "../modules/identity/service/UserService/UserServiceImpl.js";
+import { UserController } from "../modules/identity/controller/UserController.js";
+import { UserValidator } from "../modules/identity/validator/UserValidator.js";
 
 register("healthRepository", HealthRepository);
 register("healthService", HealthService);
@@ -51,17 +18,10 @@ register("healthValidator", HealthValidator);
 register("healthResponse", HealthResponse);
 register("healthController", HealthController);
 
-register("clientRepository", ClientRepository);
-register("clientService", ClientService);
-register("clientValidator", ClientValidator);
-register("clientResponse", ClientResponse);
-register("clientController", ClientController);
-
 register("userController", UserController);
 register("userValidator", UserValidator);
 register("userService", UserServiceImpl);
 register("userRepository", UserRepository);
 register("userResponse", UserResponse);
-
 
 export default register;

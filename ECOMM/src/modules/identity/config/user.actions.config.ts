@@ -210,6 +210,7 @@ export const UserActionsConfig = {
             component: "view_component",
             info_note: "load saved filters",
             dropdown_default_value: "default_view",
+            dynamic_dropdown: true,
             dropdown_options: {
                 default_view: {
                     display_name: "Default"

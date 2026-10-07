@@ -47,26 +47,22 @@ export class UserValidator {
 
     getUsers(req)
     {
-        let page = Number(req.query?.page || 1);
-        let limit = Number(req.query?.limit || 25);
+        const page = Number(req.query?.page || 1);
+        const limit = Number(req.query?.limit || 25);
 
         const validator = z.object({
-            page: z.coerce.number().int({ message: "invalid page id" }),
-            limit: z.coerce.number().int({ message: "invalid page limit" })
-        });
+            page: z.coerce.number().int({ message: "invalid page id" }).default(1),
+            limit: z.coerce.number().int({ message: "invalid page limit" }).default(25)
+        }).passthrough();
 
-        const result = validator.safeParse({page:page, limit:limit });
+        const result = validator.safeParse({ ...req.query, page, limit });
 
         if (!result.success) {
             // Throw the Zod errors to be caught by the controller's try/catch block
             throw new Error(JSON.stringify(result.error.format()));
         }
 
-        // 3. Extract data values into an array in a predictable order
-        ({ page, limit } = result.data);
-
-        return {page : page, limit : limit};
-
+        return result.data;
     }
 
     updateUsers(req)

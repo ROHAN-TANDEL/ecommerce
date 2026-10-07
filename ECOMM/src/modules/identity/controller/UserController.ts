@@ -74,9 +74,10 @@ export class UserController {
     async getUsers(req, res)
     {
         try {
-            const { page, limit } = this.userValidator.getUsers(req);
+            const validated = this.userValidator.getUsers(req);
+            const { page, limit, ...filterInputs } = validated;
 
-            const users = await this.userService.getUsers(page, limit);
+            const users = await this.userService.getUsers(page, limit, filterInputs);
 
             return res.status(200).json({
                 ...users,
