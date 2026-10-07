@@ -126,7 +126,7 @@ import { ScrollerComponent } from './scroller.component';
           <!-- SUBMENU 1: DYNAMIC COLUMNS (Search, Toggle, Reorder)        -->
           <!-- ═══════════════════════════════════════════════════════════ -->
           <div
-            *ngIf="activeSubmenuKey === action.key && (action.key === 'columns' || action.dynamic_dropdown)"
+            *ngIf="activeSubmenuKey === action.key && (action.key === 'columns' || action.component === 'column_component')"
             (mouseenter)="onSubmenuMouseEnter()"
             [ngClass]="[
               submenuAlign === 'right' ? 'left-full ml-1.5 before:-left-3' : 'right-full mr-1.5 before:-right-3',
@@ -418,7 +418,8 @@ export class DropdownSectionsComponent {
   openSubmenu(action: ActionItemConfig & { key: string }, targetEl: HTMLElement): void {
     this.activeSubmenuKey = action.key;
     const rect = targetEl.getBoundingClientRect();
-    const submenuWidth = (action.key === 'columns' || action.dynamic_dropdown) ? 280 : 220;
+    const isColumnMenu = action.key === 'columns' || action.component === 'column_component';
+    const submenuWidth = isColumnMenu ? 280 : 220;
     const spaceRight = window.innerWidth - rect.right;
     const spaceLeft = rect.left;
 
@@ -431,7 +432,7 @@ export class DropdownSectionsComponent {
     }
 
     const spaceBottom = window.innerHeight - rect.top;
-    const estimatedSubmenuHeight = (action.key === 'columns' || action.dynamic_dropdown) ? 320 : 180;
+    const estimatedSubmenuHeight = isColumnMenu ? 320 : 220;
     this.submenuVAlign = (spaceBottom < estimatedSubmenuHeight && rect.bottom > estimatedSubmenuHeight) ? 'bottom' : 'top';
   }
 
