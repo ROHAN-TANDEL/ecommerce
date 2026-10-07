@@ -301,4 +301,147 @@ export class UserRepository {
 
     importUsers() {}
 
+    async getViews(tableKey = 'users_table_1234', userId = null) {
+        try {
+            let query = `
+                SELECT id, table_key, user_id, name, description, is_default, is_shared, is_locked, view_state, created_at, updated_at
+                FROM master.table_views
+                WHERE table_key = $1
+            `;
+            const params: any[] = [tableKey];
+
+            if (userId) {
+                query += ` AND (user_id = $2 OR is_shared = true OR user_id IS NULL)`;
+                params.push(userId);
+            }
+
+            query += ` ORDER BY is_default DESC, created_at DESC;`;
+            const result = await db.master.query(query, params);
+            return result?.rows || [];
+        } catch (error) {
+            console.log({ error: error });
+            throw error;
+        }
+    }
+
+    async saveView(data: any) {
+        try {
+            const {
+                id,
+                table_key = 'users_table_1234',
+                user_id = null,
+                name,
+                description = null,
+                is_default = false,
+                is_shared = false,
+                is_locked = false,
+                view_state = {}
+            } = data;
+
+            if (is_default) {
+                if (user_id) {
+                    await db.master.query(
+                        `UPDATE master.table_views SET is_default = false WHERE table_key = $1 AND user_id = $2`,
+                        [table_key, user_id]
+                    );
+                } else {
+                    await db.master.query(
+                        `UPDATE master.table_views SET is_default = false WHERE table_key = $1`,
+                        [table_key]
+                    );
+                }
+            }
+
+            if (id) {
+                const updateQuery = `
+                    UPDATE master.table_views
+                    SET name = $1, description = $2, is_default = $3, is_shared = $4, is_locked = $5, view_state = $6, updated_at = NOW()
+                    WHERE id = $7
+                    RETURNING *;
+                `;
+                const result = await db.master.query(updateQuery, [
+                    name,
+                    description,
+                    is_default,
+                    is_shared,
+                    is_locked,
+                    typeof view_state === 'string' ? view_state : JSON.stringify(view_state),
+                    id
+                ]);
+                return result?.rows?.[0];
+            }
+
+            const insertQuery = `
+                INSERT INTO master.table_views (table_key, user_id, name, description, is_default, is_shared, is_locked, view_state, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                ON CONFLICT (user_id, table_key, name)
+                DO UPDATE SET
+                    view_state = EXCLUDED.view_state,
+                    description = EXCLUDED.description,
+                    is_default = EXCLUDED.is_default,
+                    is_shared = EXCLUDED.is_shared,
+                    updated_at = NOW()
+                RETURNING *;
+            `;
+            const result = await db.master.query(insertQuery, [
+                table_key,
+                user_id,
+                name,
+                description,
+                is_default,
+                is_shared,
+                is_locked,
+                typeof view_state === 'string' ? view_state : JSON.stringify(view_state)
+            ]);
+            return result?.rows?.[0];
+        } catch (error) {
+            console.log({ error: error });
+            throw error;
+        }
+    }
+
+    async getViewById(id: any) {
+        try {
+            const result = await db.master.query(`SELECT * FROM master.table_views WHERE id = $1 LIMIT 1`, [id]);
+            return result?.rows?.[0] || null;
+        } catch (error) {
+            console.log({ error });
+            throw error;
+        }
+    }
+
+    async deleteView(id: any) {
+        try {
+            const result = await db.master.query(`DELETE FROM master.table_views WHERE id = $1 RETURNING id`, [id]);
+            return result?.rows?.[0] || null;
+        } catch (error) {
+            console.log({ error });
+            throw error;
+        }
+    }
+
+    async setDefaultView(id: any, tableKey = 'users_table_1234', userId = null) {
+        try {
+            if (userId) {
+                await db.master.query(
+                    `UPDATE master.table_views SET is_default = false WHERE table_key = $1 AND user_id = $2`,
+                    [tableKey, userId]
+                );
+            } else {
+                await db.master.query(
+                    `UPDATE master.table_views SET is_default = false WHERE table_key = $1`,
+                    [tableKey]
+                );
+            }
+
+            const result = await db.master.query(
+                `UPDATE master.table_views SET is_default = true, updated_at = NOW() WHERE id = $1 RETURNING *;`,
+                [id]
+            );
+            return result?.rows?.[0] || null;
+        } catch (error) {
+            console.log({ error });
+            throw error;
+        }
+    }
 }

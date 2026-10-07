@@ -1,10 +1,5 @@
 import express from "express";
 import { KernelContext } from "./src/bootstrap/app/app-context.js";
-import AuthRoute from "./src/modules/auth/AuthRoute.js";
-import ProductRoute from "./src/modules/product/ProductRoute.js";
-import CheckoutRoute from "./src/modules/checkout/CheckoutRoute.js";
-import OrderRoute from "./src/modules/order/OrderRoute.js";
-import AuditRoute from "./src/modules/audit/AuditRoute.js";
 import Context from "./src/platformdb/context.js";
 import SchemaConnect from "./src/platformdb/schema-connect.js";
 
@@ -87,16 +82,6 @@ let context = application.buildContext();
 
 //routes go here
 app.use('/health', context.scripts.health.check);
-
-app.use((new AuthRoute(context)).route(context));
-
-app.use((new ProductRoute(context)).route(context));
-
-app.use((new CheckoutRoute(context)).route());
-
-app.use((new AuditRoute(context)).route());
-
-app.use((new OrderRoute(context)).route());
 
 application.appAfterMiddleware(app);
 

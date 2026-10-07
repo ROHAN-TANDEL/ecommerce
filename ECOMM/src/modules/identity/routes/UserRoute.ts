@@ -70,9 +70,13 @@ export class UserRoute {
 
         router.post('/download/users', user.downloadData.bind(user));
 
-        router.get('/view/users', user.getView.bind(user));
-
-        router.get('/view/users/save', user.saveView.bind(user));
+        //--TABLE VIEWS--//
+        router.get('/view/users/list', user.listViews.bind(user));
+        router.get('/view/users', user.listViews.bind(user));
+        router.post('/view/users/save', user.saveView.bind(user));
+        router.get('/view/users/:id', user.getView.bind(user));
+        router.delete('/view/users/:id', user.deleteView.bind(user));
+        router.patch('/view/users/:id/default', user.setDefaultView.bind(user));
 
         router.get('/talk/users', user.liveUpdatePub.bind(user));
 

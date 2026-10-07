@@ -32,9 +32,11 @@ export const UserTableConfig = {
         "export_data_api" : "/identity/management/export/users",
         "download_data_api" : "/identity/management/download/users",
 
-        "get_view_api" : "/identity/management/view/:id/users",
+        "list_view_api" : "/identity/management/view/users/list",
         "save_view_api" : "/identity/management/view/users/save",
-        "save_view_api" : "/identity/management/view/users/list",
+        "get_view_api" : "/identity/management/view/users/:id",
+        "delete_view_api" : "/identity/management/view/users/:id",
+        "default_view_api" : "/identity/management/view/users/:id/default",
 
         "live_talk_api" : "/identity/management/talk/users",
         "live_listen_api" : "/identity/management/listen/users",

@@ -218,8 +218,8 @@ export const UserActionsConfig = {
                 current_view: {
                     display_name: "Save current view"
                 },
-                reset_view: {
-                    display_name: "Reset view"
+                delete_view: {
+                    display_name: "Delete current view"
                 }
             },
             section: "section_2",

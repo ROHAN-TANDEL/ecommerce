@@ -116,4 +116,23 @@ export class UserServiceImpl implements UserService {
 
     importUsers() {}
 
+    async getViews(tableKey = 'users_table_1234', userId = null) {
+        return await this.userRepo.getViews(tableKey, userId);
+    }
+
+    async saveView(data: any) {
+        return await this.userRepo.saveView(data);
+    }
+
+    async getView(id: any) {
+        return await this.userRepo.getViewById(id);
+    }
+
+    async deleteView(id: any) {
+        return await this.userRepo.deleteView(id);
+    }
+
+    async setDefaultView(id: any, tableKey = 'users_table_1234', userId = null) {
+        return await this.userRepo.setDefaultView(id, tableKey, userId);
+    }
 }

@@ -272,12 +272,145 @@ export class UserController {
         return res.status(200).json({ data: null, message: "getLocks initiated", code: 200 });
     }
 
+    async listViews(req, res) {
+        try {
+            const tableKey = req.query.table_key || 'users_table_1234';
+            const userId = req.user?.id || req.query.user_id || null;
+            const views = await this.userService.getViews(tableKey, userId);
+
+            return res.status(200).json({
+                data: views,
+                message: "Views fetched successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error) {
+            console.error("Error in listViews:", error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to fetch views",
+                status: "failed",
+                code: 500
+            });
+        }
+    }
+
     async saveView(req, res) {
-        return res.status(200).json({ data: null, message: "saveView initiated", code: 200 });
+        try {
+            const { id, name, table_key = 'users_table_1234', user_id = null, description = null, is_default = false, is_shared = false, is_locked = false, view_state = {} } = req.body;
+
+            if (!name || typeof name !== 'string' || !name.trim()) {
+                return res.status(400).json({
+                    data: null,
+                    message: "View name is required",
+                    status: "failed",
+                    code: 400
+                });
+            }
+
+            const savedView = await this.userService.saveView({
+                id,
+                name: name.trim(),
+                table_key,
+                user_id: user_id || req.user?.id || null,
+                description,
+                is_default: !!is_default,
+                is_shared: !!is_shared,
+                is_locked: !!is_locked,
+                view_state
+            });
+
+            return res.status(200).json({
+                data: savedView,
+                message: "View saved successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error) {
+            console.error("Error in saveView:", error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to save view",
+                status: "failed",
+                code: 500
+            });
+        }
     }
 
     async getView(req, res) {
-        return res.status(200).json({ data: null, message: "getView initiated", code: 200 });
+        try {
+            const { id } = req.params;
+            const view = await this.userService.getView(id);
+            if (!view) {
+                return res.status(404).json({
+                    data: null,
+                    message: "View not found",
+                    status: "failed",
+                    code: 404
+                });
+            }
+
+            return res.status(200).json({
+                data: view,
+                message: "View fetched successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error) {
+            console.error("Error in getView:", error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to fetch view",
+                status: "failed",
+                code: 500
+            });
+        }
+    }
+
+    async deleteView(req, res) {
+        try {
+            const { id } = req.params;
+            const deleted = await this.userService.deleteView(id);
+
+            return res.status(200).json({
+                data: deleted,
+                message: "View deleted successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error) {
+            console.error("Error in deleteView:", error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to delete view",
+                status: "failed",
+                code: 500
+            });
+        }
+    }
+
+    async setDefaultView(req, res) {
+        try {
+            const { id } = req.params;
+            const tableKey = req.body?.table_key || 'users_table_1234';
+            const userId = req.user?.id || req.body?.user_id || null;
+            const updated = await this.userService.setDefaultView(id, tableKey, userId);
+
+            return res.status(200).json({
+                data: updated,
+                message: "Default view updated successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error) {
+            console.error("Error in setDefaultView:", error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to set default view",
+                status: "failed",
+                code: 500
+            });
+        }
     }
     async downloadData(req, res) {
         return res.status(200).json({ data: null, message: "downloadData initiated", code: 200 });
