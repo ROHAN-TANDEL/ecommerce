@@ -280,7 +280,7 @@ export const UserActionsConfig = {
             active: true,
             info_note: "Adjust spacing between rows",
             info_note: "Show live panel feed",
-            pinned: false,
+            pinned: true,
             section: "section_3",
             order: 3
         },

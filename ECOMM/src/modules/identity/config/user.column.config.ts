@@ -6,6 +6,13 @@ export const UserColumnConfig = {
             users: 'first_name'
         },
         order : 1,
+        modal : {
+            order : 1,
+            horizontal_section : 'h_section_1',
+            required : true,
+            error_note : "First name is required",
+            info_note : "enter user name"
+        },
         filter_type: 'multi_search',
         editable: true,
         sorting: true,
@@ -28,6 +35,13 @@ export const UserColumnConfig = {
         filter_type: 'search',
         selected : true,
         editable: false,
+        modal : {
+            order : 2,
+            horizontal_section : 'h_section_1',
+            required : true,
+            error_note : "First name is required",
+            info_note : "enter user name"
+        },
         order : 2,
         sorting: true,
         info_note: 'User last name',
@@ -48,6 +62,13 @@ export const UserColumnConfig = {
         filter_type: 'search',
         selected : true,
         editable: true,
+        modal : {
+            order : 2,
+            horizontal_section : 'h_section_2',
+            required : true,
+            error_note : "First name is required",
+            info_note : "enter user name"
+        },
         sorting: true,
         info_note: 'User email address',
         elipsis: 'text_elipsis',
@@ -64,6 +85,13 @@ export const UserColumnConfig = {
         filter_type: 'list',
         editable: true,
         selected : true,
+        modal : {
+            order : 2,
+            horizontal_section : 'h_section_3',
+            required : true,
+            error_note : "status is required",
+            info_note : "enter user status"
+        },
         sorting: true,
         info_note: 'Current user status',
         elipsis: 'text_elipsis',

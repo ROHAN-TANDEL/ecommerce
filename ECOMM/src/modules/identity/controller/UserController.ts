@@ -421,11 +421,105 @@ export class UserController {
     }
 
     async liveUpdateSub(req, res) {
-        return res.status(200).json({ data: null, message: "liveUpdateSub initiated", code: 200 });
+        const tableKey = req.query.table_key || req.body?.table_key || 'users_table_1234';
+        const channel = `table:${tableKey}:live`;
+
+        // Configure SSE (Server-Sent Events) headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.flushHeaders?.();
+
+        // Send initial connected event
+        res.write(`data: ${JSON.stringify({ type: 'CONNECTED', table_key: tableKey, timestamp: new Date().toISOString() })}\n\n`);
+
+        const redisClient = (globalThis as any).context?.redis;
+        if (!redisClient) {
+            res.write(`data: ${JSON.stringify({ type: 'ERROR', message: 'Redis not initialized' })}\n\n`);
+            return res.end();
+        }
+
+        let subscriber: any = null;
+        try {
+            subscriber = redisClient.duplicate();
+            subscriber.on('error', (err: any) => {
+                console.error('[UserController:liveUpdateSub] Redis subscriber error:', err?.message);
+            });
+            await subscriber.connect();
+
+            await subscriber.subscribe(channel, (message: string) => {
+                try {
+                    res.write(`data: ${message}\n\n`);
+                } catch (e) {
+                    console.error('[UserController:liveUpdateSub] Error writing to SSE stream:', e);
+                }
+            });
+        } catch (err: any) {
+            console.error('[UserController:liveUpdateSub] Failed to subscribe to channel:', err?.message);
+            res.write(`data: ${JSON.stringify({ type: 'ERROR', message: err?.message || 'Subscription failed' })}\n\n`);
+            if (subscriber) {
+                try { await subscriber.disconnect(); } catch (_) {}
+            }
+            return res.end();
+        }
+
+        // Keep-alive heartbeat every 25 seconds
+        const heartbeatInterval = setInterval(() => {
+            try {
+                res.write(`: heartbeat\n\n`);
+            } catch (_) {}
+        }, 25000);
+
+        req.on('close', async () => {
+            clearInterval(heartbeatInterval);
+            if (subscriber) {
+                try {
+                    await subscriber.unsubscribe(channel);
+                    await subscriber.disconnect();
+                } catch (_) {}
+            }
+        });
     }
 
     async liveUpdatePub(req, res) {
-        return res.status(200).json({ data: null, message: "liveUpdatePub initiated", code: 200 });
+        try {
+            const tableKey = req.body?.table_key || req.query?.table_key || 'users_table_1234';
+            const channel = `table:${tableKey}:live`;
+            const payload = req.body && Object.keys(req.body).length > 0 ? req.body : req.query;
+
+            const redisClient = (globalThis as any).context?.redis;
+            if (!redisClient) {
+                return res.status(500).json({
+                    data: null,
+                    message: "Redis is not connected",
+                    status: "failed",
+                    code: 500
+                });
+            }
+
+            const messageString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+            const subscribersCount = await redisClient.publish(channel, messageString);
+
+            return res.status(200).json({
+                data: {
+                    channel,
+                    subscribers: subscribersCount,
+                    published: true
+                },
+                message: "liveUpdatePub broadcasted successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (error: any) {
+            console.error('[UserController:liveUpdatePub] Publish error:', error);
+            return res.status(500).json({
+                data: null,
+                message: error?.message || "Failed to publish live event",
+                status: "failed",
+                code: 500
+            });
+        }
     }
 
     async importCreateUsers(req, res) {}

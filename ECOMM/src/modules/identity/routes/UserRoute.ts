@@ -79,8 +79,10 @@ export class UserRoute {
         router.patch('/view/users/:id/default', user.setDefaultView.bind(user));
 
         router.get('/talk/users', user.liveUpdatePub.bind(user));
+        router.post('/talk/users', user.liveUpdatePub.bind(user));
 
         router.get('/listen/users', user.liveUpdateSub.bind(user));
+        router.post('/listen/users', user.liveUpdateSub.bind(user));
 
 
         return router;
