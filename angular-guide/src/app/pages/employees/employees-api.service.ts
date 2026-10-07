@@ -1,11 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, forkJoin, map, catchError, of } from 'rxjs';
+import { Observable, forkJoin, map, catchError, of, Subject, tap } from 'rxjs';
 import {
   TableConfigPayload,
   ColumnConfigMap,
   ActionPanelConfigPayload,
   PaginationState,
+  SavedTableView,
+  LiveTableEvent,
+  TableUserPresence,
 } from './employees.types';
 
 @Injectable({
@@ -14,6 +17,123 @@ import {
 export class EmployeesApiService {
   private readonly http = inject(HttpClient);
   private readonly defaultBaseUrl = 'http://localhost:3000';
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SHARED REACTIVE BUS (Synchronizes Backend-Level Actions Across Tables)
+  // ══════════════════════════════════════════════════════════════════════
+  readonly dataChanged$ = new Subject<void>();
+  readonly viewsChanged$ = new Subject<void>();
+
+  // ══════════════════════════════════════════════════════════════════════
+  // LIVE BROADCAST BUS & MULTI-USER PRESENCE TRACKING
+  // ══════════════════════════════════════════════════════════════════════
+  readonly liveEvents$ = new Subject<LiveTableEvent>();
+  readonly userPresence$ = new Subject<TableUserPresence>();
+
+  private presences = new Map<string, TableUserPresence>();
+
+  notifyDataChanged(): void {
+    this.dataChanged$.next();
+  }
+
+  notifyViewsChanged(): void {
+    this.viewsChanged$.next();
+  }
+
+  broadcastLiveEvent(event: Omit<LiveTableEvent, 'id' | 'timestamp'>): void {
+    const fullEvent: LiveTableEvent = {
+      ...event,
+      id: `live_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date(),
+    };
+    this.liveEvents$.next(fullEvent);
+  }
+
+  updatePresence(presence: TableUserPresence): void {
+    this.presences.set(presence.instanceId, { ...presence });
+    this.userPresence$.next({ ...presence });
+  }
+
+  getAllPresences(): TableUserPresence[] {
+    return Array.from(this.presences.values());
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SHARED PERSISTENT MOCK DATA (Single source of truth for offline mode)
+  // ══════════════════════════════════════════════════════════════════════
+  private sharedMockRows: Record<string, any>[] = [
+    { id: '1', first_name: 'Liam', last_name: 'Walker', email: 'liam.walker@enterprise.io', status: 'active', created_at: '2026-09-12 10:45 AM' },
+    { id: '2', first_name: 'Olivia', last_name: 'Brooks', email: 'olivia.brooks@enterprise.io', status: 'pending', created_at: '2026-09-14 02:18 PM' },
+    { id: '3', first_name: 'Ethan', last_name: 'Hayes', email: 'ethan.hayes@enterprise.io', status: 'active', created_at: '2026-09-16 11:30 AM' },
+    { id: '4', first_name: 'Sophia', last_name: 'Bennett', email: 'sophia.bennett@enterprise.io', status: 'inactive', created_at: '2026-09-18 09:12 AM', editable: false },
+    { id: '5', first_name: 'Noah', last_name: 'Carter', email: 'noah.carter@enterprise.io', status: 'active', created_at: '2026-09-20 04:55 PM' },
+    { id: '6', first_name: 'Ava', last_name: 'Mitchell', email: 'ava.mitchell@enterprise.io', status: 'pending', created_at: '2026-09-22 01:20 PM', disabled: true },
+    { id: '7', first_name: 'Lucas', last_name: 'Sullivan', email: 'lucas.sullivan@enterprise.io', status: 'active', created_at: '2026-09-24 08:40 AM' },
+    { id: '8', first_name: 'Mia', last_name: 'Reynolds', email: 'mia.reynolds@enterprise.io', status: 'inactive', created_at: '2026-09-26 03:15 PM' },
+  ];
+
+  private sharedMockViews: SavedTableView[] = [];
+
+  getMockRows(): Record<string, any>[] {
+    return [...this.sharedMockRows];
+  }
+
+  addMockRow(row: Record<string, any>): void {
+    this.sharedMockRows.unshift(row);
+  }
+
+  updateMockRow(id: string | number, data: Partial<Record<string, any>>): void {
+    const strId = String(id);
+    const existing = this.sharedMockRows.find(r => String(r['id']) === strId);
+    if (existing) {
+      Object.assign(existing, data);
+    }
+  }
+
+  deleteMockRow(id: string | number): void {
+    const strId = String(id);
+    this.sharedMockRows = this.sharedMockRows.filter(r => String(r['id']) !== strId);
+  }
+
+  deleteMockRows(ids: (string | number)[]): void {
+    const set = new Set(ids.map(String));
+    this.sharedMockRows = this.sharedMockRows.filter(r => !set.has(String(r['id'])));
+  }
+
+  bulkUpdateMockRows(rows: Record<string, any>[]): void {
+    rows.forEach(r => {
+      this.updateMockRow(r['id'], r);
+    });
+  }
+
+  getMockSavedViews(): SavedTableView[] {
+    return [...this.sharedMockViews];
+  }
+
+  saveMockView(payload: any): SavedTableView {
+    const id = payload.id || `view_${Date.now()}`;
+    const newView: SavedTableView = {
+      id,
+      table_key: payload.table_key || 'users_table_1234',
+      name: payload.name,
+      is_default: !!payload.is_default,
+      view_state: payload.view_state,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const existingIdx = this.sharedMockViews.findIndex(v => String(v.id) === String(id) || v.name === payload.name);
+    if (existingIdx !== -1) {
+      this.sharedMockViews[existingIdx] = newView;
+    } else {
+      this.sharedMockViews.push(newView);
+    }
+    return newView;
+  }
+
+  deleteMockView(id: string | number): void {
+    const strId = String(id);
+    this.sharedMockViews = this.sharedMockViews.filter(v => String(v.id) !== strId && v.name !== strId);
+  }
 
   /**
    * Resolves relative paths (/identity/management/users) or absolute URLs
@@ -140,7 +260,9 @@ export class EmployeesApiService {
    */
   createUser(apiUrl: string, body: any, baseUrl = this.defaultBaseUrl): Observable<any> {
     const fullUrl = this.resolveUrl(apiUrl, baseUrl);
-    return this.http.post<any>(fullUrl, body);
+    return this.http.post<any>(fullUrl, body).pipe(
+      tap(() => this.notifyDataChanged())
+    );
   }
 
   /**
@@ -154,7 +276,19 @@ export class EmployeesApiService {
   ): Observable<any> {
     const resolvedPath = apiTemplate.replace(':id', String(id));
     const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
-    return this.http.put<any>(fullUrl, body);
+    return this.http.put<any>(fullUrl, body).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Bulk Update Users
+   */
+  updateBulkUsers(apiUrl: string, rows: any[], baseUrl = this.defaultBaseUrl): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.put<any>(fullUrl, { rows }).pipe(
+      tap(() => this.notifyDataChanged())
+    );
   }
 
   /**
@@ -167,7 +301,19 @@ export class EmployeesApiService {
   ): Observable<any> {
     const resolvedPath = apiTemplate.replace(':id', String(id));
     const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
-    return this.http.delete<any>(fullUrl);
+    return this.http.delete<any>(fullUrl).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Delete Bulk Users
+   */
+  deleteBulkUsers(apiUrl: string, ids: (string | number)[], baseUrl = this.defaultBaseUrl): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.delete<any>(fullUrl, { body: { ids } }).pipe(
+      tap(() => this.notifyDataChanged())
+    );
   }
 
   /**
@@ -197,7 +343,9 @@ export class EmployeesApiService {
    */
   saveView(apiUrl: string, payload: any, baseUrl = this.defaultBaseUrl): Observable<any> {
     const fullUrl = this.resolveUrl(apiUrl, baseUrl);
-    return this.http.post<any>(fullUrl, payload);
+    return this.http.post<any>(fullUrl, payload).pipe(
+      tap(() => this.notifyViewsChanged())
+    );
   }
 
   /**
@@ -212,6 +360,8 @@ export class EmployeesApiService {
       ? apiTemplate.replace(':id', String(id))
       : `${apiTemplate.replace(/\/+$/, '')}/${id}`;
     const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
-    return this.http.delete<any>(fullUrl);
+    return this.http.delete<any>(fullUrl).pipe(
+      tap(() => this.notifyViewsChanged())
+    );
   }
 }

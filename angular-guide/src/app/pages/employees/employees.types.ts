@@ -197,3 +197,41 @@ export interface PaginationState {
   total: number;
   totalPages: number;
 }
+
+export type LiveActionType =
+  | 'CONNECT'
+  | 'VIEW'
+  | 'FILTER'
+  | 'SORT'
+  | 'SELECT'
+  | 'EDIT'
+  | 'SAVE'
+  | 'DELETE'
+  | 'CREATE'
+  | 'VIEW_PRESET'
+  | 'DENSITY'
+  | 'COLLAPSE'
+  | 'LOCK'
+  | 'COLUMN';
+
+export interface LiveTableEvent {
+  id: string;
+  tableKey: string;
+  sourceInstanceId: string;
+  sourceUser: string;
+  actionType: LiveActionType;
+  isDataImpacting: boolean;
+  title: string;
+  detail: string;
+  timestamp: Date;
+  badgeColor?: string;
+  data?: any;
+}
+
+export interface TableUserPresence {
+  instanceId: string;
+  userName: string;
+  lastActive: Date;
+  currentActivity: string;
+  status: 'active' | 'idle';
+}

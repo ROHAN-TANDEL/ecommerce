@@ -1,662 +1,73 @@
-<div
-  class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-6 pb-28 transition-all duration-200"
-  [class.fixed]="isFullscreen"
-  [class.inset-0]="isFullscreen"
-  [class.z-[150]]="isFullscreen"
-  [class.overflow-auto]="isFullscreen"
-  [class.pb-6]="isFullscreen"
->
-  <!-- Fullscreen Floating Exit Pill -->
-  <div *ngIf="isFullscreen" class="fixed top-4 right-6 z-[160] flex items-center gap-2 bg-slate-900 text-white px-3.5 py-1.5 rounded-full shadow-2xl text-xs font-medium animate-slide-up">
-    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-    <span>Full Screen Mode</span>
-    <button type="button" (click)="toggleFullscreen()" class="ml-2 text-slate-400 hover:text-white font-semibold cursor-pointer">✕ Exit</button>
-  </div>
+<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-6 pb-28 space-y-8">
 
-  <div class="max-w-[1400px] mx-auto space-y-4">
-
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 1. HEADER SECTION & BUTTONS                                     -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <header-section-component
-      *ngIf="tableConfig.show_title_header_section"
-      [displayName]="tableConfig.display_name"
-      [tableKey]="tableConfig.table_key"
-      [apiStatus]="apiStatus"
-      description="Component-based data architecture: granular headers, action components, cells, and filters."
-    >
-      <button-component
-        variant="secondary"
-        size="md"
-        (clicked)="bootstrapTable()"
-        title="Re-sync from API"
-      >
-        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <span>Sync API</span>
-      </button-component>
-
-      <button-component
-        *ngIf="tableConfig.enable_add_data_button"
-        variant="primary"
-        size="md"
-        (clicked)="onHeaderAddDataClick()"
-      >
-        <svg class="w-3.5 h-3.5 stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <span>{{ cleanAddButtonName }}</span>
-      </button-component>
-    </header-section-component>
-
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 2. ACTION PANEL COMPONENT & INDIVIDUAL ACTION COMPONENTS        -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <action-panel-component
-      *ngIf="tableConfig.action_panel"
-      [sectionGroups]="sectionGroups"
-      [isIndividualSelected]="isIndividualRowSelectionActive"
-      [isMasterChecked]="isMasterCheckboxChecked || isMasterSelected"
-      [hasDirtyRows]="hasDirtyRows"
-      [columns]="allColumnsList"
-      [scrollPercentage]="scrollPercentage"
-      [isScrollable]="isTableScrollable"
-      [density]="density"
-      [savedViews]="savedViews"
-      [activeView]="activeViewId"
-      [isLoadingViews]="isLoadingViews"
-      (actionSelect)="onActionPanelSelect($event)"
-      (toggleColumn)="toggleColumnVisibility($event)"
-      (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
-      (resetColumns)="resetColumns()"
-      (scrollTable)="scrollTableHorizontally($event)"
-    >
-      <!-- Config-Driven Pinned Action Components (Driven by actions API pinned: true) -->
-      <ng-container *ngFor="let item of pinnedActions">
-        <refresh-component
-          *ngIf="item.component === 'refresh_component'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          (refresh)="bootstrapTable()"
-        ></refresh-component>
-
-        <lock-component
-          *ngIf="item.component === 'lock_component'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          [locked]="isLocked"
-          (lockToggle)="onLockToggle($event)"
-        ></lock-component>
-
-        <edit-component
-          *ngIf="item.component === 'edit_component'"
-          [label]="item.name"
-          [infoNote]="editButtonTooltip"
-          [disabled]="selectedRowIds.size === 0"
-          [editing]="isEditModeActive"
-          (edit)="onEditClick()"
-        ></edit-component>
-
-        <save-component
-          *ngIf="item.component === 'save_component'"
-          [label]="item.name"
-          [infoNote]="saveButtonTooltip"
-          [disabled]="!hasDirtyRows"
-          [saving]="isSaving"
-          [dirtyCount]="dirtyRowCount"
-          (save)="onSaveClick()"
-        ></save-component>
-
-        <density-component
-          *ngIf="item.component === 'density_component'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          [density]="density"
-          (densityChange)="onDensityChange($event)"
-        ></density-component>
-
-        <live-component
-          *ngIf="item.component === 'live_component_option'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          [active]="isLiveFeedActive"
-          (liveToggle)="onLiveToggle($event)"
-        ></live-component>
-
-        <!-- Scroller Component (Exact match to Image 2) -->
-        <scroller-component
-          *ngIf="item.component === 'scroller_component' || item.key === 'scroller'"
-          [percentage]="scrollPercentage"
-          [totalColumns]="columnsList.length || 12"
-          [isScrollable]="isTableScrollable"
-          (scroll)="onScrollerScroll($event)"
-        ></scroller-component>
-
-        <!-- Columns Dropdown Component -->
-        <columns-component
-          *ngIf="item.component === 'column_component' || item.key === 'columns'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          [columns]="allColumnsList"
-          (toggleColumn)="toggleColumnVisibility($event)"
-          (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
-          (resetColumns)="resetColumns()"
-        ></columns-component>
-
-        <!-- View Dropdown Component -->
-        <view-component
-          *ngIf="item.component === 'view_component' || item.key === 'view'"
-          [label]="item.name"
-          [infoNote]="item.info_note"
-          [savedViews]="savedViews"
-          [activeViewId]="activeViewId"
-          [activeViewName]="activeViewName"
-          [isLoadingViews]="isLoadingViews"
-          (viewSelect)="onActionPanelSelect({ actionKey: 'view', optionKey: $event })"
-        ></view-component>
-
-        <!-- Options Dropdown Component (e.g. Export, Download) -->
-        <options-dropdown-component
-          *ngIf="item.dropdown_options && item.key !== 'view' && item.key !== 'columns'"
-          [label]="item.name"
-          [actionKey]="item.key"
-          [infoNote]="item.info_note"
-          [options]="item.dropdown_options"
-          (optionSelect)="onActionPanelSelect($event)"
-        ></options-dropdown-component>
-
-        <!-- Action Button Component (delete, enable, disable, revert, copy, fullscreen, collapse, expand, reset, etc.) -->
-        <action-btn-component
-          *ngIf="item.component !== 'refresh_component' && item.key !== 'refresh' && item.component !== 'lock_component' && item.key !== 'lock' && item.component !== 'edit_component' && item.key !== 'edit' && item.component !== 'save_component' && item.key !== 'save' && item.component !== 'density_component' && item.key !== 'density' && item.component !== 'live_component_option' && item.key !== 'live' && item.component !== 'scroller_component' && item.key !== 'scroller' && item.component !== 'column_component' && item.key !== 'columns' && item.component !== 'view_component' && item.key !== 'view' && !item.dropdown_options"
-          [actionKey]="item.key"
-          [label]="item.name"
-          [infoNote]="getActionTooltip(item)"
-          [disabled]="isActionDisabled(item.key)"
-          (btnClick)="onActionPanelSelect({ actionKey: item.key })"
-        ></action-btn-component>
-      </ng-container>
-    </action-panel-component>
-
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 3. TABLE COMPONENT WITH COMPOSABLE SUB-COMPONENTS               -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <table-component
-      [isLoading]="isDataLoading"
-      [minHeight]="tableMinHeight"
-      [maxHeight]="tableMaxHeight"
-      (scrollProgress)="onTableScrollProgress($event)"
-      (scrollableChange)="onTableScrollableChange($event)"
-    >
-      <!-- Table Header Wrapper -->
-      <table-header-component *ngIf="tableConfig.show_table_headers" class="contents">
-        <!-- Row 1: Column Headers -->
-        <tr class="border-b border-slate-200">
-          <master-component
-            *ngIf="hasCheckboxColumn"
-            class="contents"
-            [showCheckbox]="enableMasterLevelCheckbox"
-            [checked]="isMasterCheckboxChecked"
-            [indeterminate]="isMasterCheckboxIndeterminate"
-            (masterToggle)="toggleSelectAll()"
-          ></master-component>
-
-          <header-component
-            *ngFor="let col of columnsList"
-            class="contents"
-            [column]="col"
-            [sortDirection]="sortState[col.key]"
-            (sortChange)="onHeaderSortClick($event)"
-          ></header-component>
-
-          <!-- Action column header (Matching Image 4: Actions in bold navy) -->
-          <th
-            *ngIf="tableConfig.action_column.active"
-            style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-3 py-3 bg-slate-50 sticky right-0 z-30 border-l border-slate-200 text-center text-xs font-bold text-[#0F172A] tracking-tight uppercase"
-          >
-            Actions
-          </th>
-        </tr>
-
-        <!-- Row 2: Dynamic Filter Row -->
-        <filter-row-component
-          *ngIf="tableConfig.enable_table_search_filters"
-          class="contents"
-          [columns]="columnsList"
-          [activeFilters]="activeFilters"
-          [hasCheckboxColumn]="hasCheckboxColumn"
-          [hasActionColumn]="tableConfig.action_column.active"
-          (filterChange)="onFilterChange($event)"
-          (filterTrigger)="onFilterTrigger($event)"
-        ></filter-row-component>
-
-        <!-- Row 3: Secondary Section Row (Active & visible when rows are selected, Image 4) -->
-        <section-row-component
-          *ngIf="isSecondSectionActive"
-          class="contents"
-          [columns]="columnsList"
-          [values]="sectionRowValues"
-          [hasCheckboxColumn]="hasCheckboxColumn"
-          [hasActionColumn]="tableConfig.action_column.active"
-          (sectionChange)="onSectionRowChange($event)"
-          (sectionAction)="onSectionRowAction($event)"
-          (clearMasterFilters)="onClearMasterFilters()"
-          (applyMasterFilters)="onApplyMasterFilters()"
-        ></section-row-component>
-      </table-header-component>
-
-      <!-- Table Body Component (Collapsed toggle support) -->
-      <table-body-component class="contents" *ngIf="!isTableCollapsed">
-        <!-- Data Rows -->
-        <tr
-          *ngFor="let row of rows; let i = index; let even = even"
-          [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
-          [class.bg-blue-50]="selectedRowIds.has(row['id'])"
-          [class.z-40]="activeRowActionId === row['id']"
-          [class.relative]="activeRowActionId === row['id']"
-          class="hover:bg-slate-100/70 transition-colors"
-        >
-          <!-- Row Checkbox Cell -->
-          <td
-            *ngIf="hasCheckboxColumn"
-            style="width: 50px; min-width: 50px; max-width: 50px;"
-            class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 text-center sticky left-0 z-10 border-r border-slate-200"
-            [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
-            [class.bg-white]="!even && !selectedRowIds.has(row['id'])"
-            [class.bg-blue-50]="selectedRowIds.has(row['id'])"
-          >
-            <input
-              *ngIf="enableRowLevelCheckboxes"
-              type="checkbox"
-              [checked]="selectedRowIds.has(row['id'])"
-              [disabled]="isRowDisabled(row)"
-              (click)="toggleRowSelect($event, row['id'])"
-              class="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              [title]="isRowDisabled(row) ? 'Row disabled' : (selectedRowIds.has(row['id']) ? 'Uncheck to exclude from changes' : 'Check to apply changes')"
-            />
-            <span *ngIf="!enableRowLevelCheckboxes" class="text-[11px] text-slate-400 font-mono">
-              {{ (pagination.page - 1) * pagination.limit + i + 1 }}
-            </span>
-          </td>
-
-          <!-- Dynamic Cells Rendered by <cell-component> with Density Support -->
-          <cell-component
-            *ngFor="let col of columnsList"
-            class="contents"
-            [column]="col"
-            [row]="row"
-            [isEven]="even"
-            [isSelected]="selectedRowIds.has(row['id'])"
-            [isEditing]="isEditModeActive && !isMasterCheckboxChecked && !isMasterSelected && selectedRowIds.has(row['id']) && isRowEditable(row)"
-            [density]="density"
-            (valueChange)="onCellValueChange($event)"
-          ></cell-component>
-
-          <!-- Sticky Action Column Cell with Kebab Popover -->
-          <td
-            *ngIf="tableConfig.action_column.active"
-            style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-3 text-center sticky right-0 border-l border-slate-200"
-            [class.z-40]="activeRowActionId === row['id']"
-            [class.z-10]="activeRowActionId !== row['id']"
-            [class.bg-slate-50]="even && !selectedRowIds.has(row['id'])"
-            [class.bg-white]="!even && !selectedRowIds.has(row['id'])"
-            [class.bg-blue-50]="selectedRowIds.has(row['id'])"
-          >
-            <div class="relative inline-block text-left" (click)="$event.stopPropagation()">
-              <button
-                type="button"
-                (click)="toggleRowActionMenu($event, row['id'])"
-                class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer"
-                title="Row Actions"
-              >
-                <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="1.75"></circle>
-                  <circle cx="12" cy="12" r="1.75"></circle>
-                  <circle cx="12" cy="19" r="1.75"></circle>
-                </svg>
-              </button>
-
-              <div
-                *ngIf="activeRowActionId === row['id']"
-                class="absolute right-0 z-50 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-2xl space-y-0.5 text-left"
-                [class.top-full]="!isBottomRow(i)"
-                [class.mt-1]="!isBottomRow(i)"
-                [class.bottom-full]="isBottomRow(i)"
-                [class.mb-1]="isBottomRow(i)"
-              >
-                <ng-container *ngFor="let opt of tableConfig.action_column.options">
-                  <div *ngIf="opt === 'delete'" class="my-1 border-t border-slate-100"></div>
-                  <button
-                    type="button"
-                    (click)="onRowActionClick($event, opt, row)"
-                    class="flex w-full items-center px-2.5 py-1.5 text-xs rounded-lg capitalize transition-colors cursor-pointer"
-                    [class.text-red-600]="opt === 'delete'"
-                    [class.hover:bg-red-50]="opt === 'delete'"
-                    [class.text-slate-700]="opt !== 'delete'"
-                    [class.hover:bg-slate-100]="opt !== 'delete'"
-                  >
-                    {{ opt }}
-                  </button>
-                </ng-container>
-              </div>
-            </div>
-          </td>
-        </tr>
-
-        <!-- Table Footer Component (Empty State) -->
-        <table-footer-component
-          class="contents"
-          [showEmptyState]="rows.length === 0 && !isDataLoading"
-          [colspan]="columnsList.length + (hasCheckboxColumn ? 1 : 0) + (tableConfig.action_column.active ? 1 : 0)"
-        ></table-footer-component>
-      </table-body-component>
-
-      <!-- Collapsed Table State Placeholder -->
-      <tbody *ngIf="isTableCollapsed">
-        <tr class="border-b border-slate-200 bg-slate-50/70">
-          <td
-            [attr.colspan]="columnsList.length + (hasCheckboxColumn ? 1 : 0) + (tableConfig.action_column.active ? 1 : 0)"
-            class="py-10 px-4 text-center"
-          >
-            <div class="flex flex-col items-center justify-center gap-2">
-              <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-              <div class="text-xs font-bold text-slate-700">Table Collapsed ({{ rows.length }} rows hidden)</div>
-              <div class="text-[11px] text-slate-500">
-                Table rows and pagination are currently collapsed. Click
-                <button type="button" (click)="toggleTableCollapse()" class="text-blue-600 font-semibold hover:underline cursor-pointer">Expand</button>
-                or select Collapse from the Actions menu to restore view.
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table-component>
-
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <!-- 4. PAGINATION COMPONENT                                         -->
-    <!-- ═══════════════════════════════════════════════════════════════ -->
-    <pagination-component
-      *ngIf="tableConfig.pagination.active && !isTableCollapsed"
-      [pagination]="pagination"
-      [pageSizeOptions]="tableConfig.pagination.page_size_options"
-      [currentCount]="rows.length"
-      (pageChange)="onPaginationPageChange($event)"
-      (limitChange)="onPaginationLimitChange($event)"
-    ></pagination-component>
-
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- 5. CREATE USER MODAL (End-to-End POST create_api)              -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div *ngIf="showCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h2 class="text-sm font-bold text-slate-900">{{ cleanAddButtonName }}</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.create_api }}</code></p>
-        </div>
-        <button type="button" (click)="showCreateModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+  <!-- Header Banner Explaining Dual Table Setup -->
+  <div class="max-w-[1400px] mx-auto bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          Dual Table Verification
+        </span>
+        <span class="text-xs font-mono text-slate-400">table_key: users_table_1234</span>
       </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">First Name</label>
-          <input type="text" [(ngModel)]="createForm.first_name" placeholder="John" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Last Name</label>
-          <input type="text" [(ngModel)]="createForm.last_name" placeholder="Doe" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Email Address</label>
-          <input type="email" [(ngModel)]="createForm.email" placeholder="john.doe@enterprise.io" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Account Status</label>
-          <select [(ngModel)]="createForm.status" class="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs outline-none focus:border-slate-900 bg-white">
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        <button type="button" (click)="showCreateModal = false" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer">
-          Cancel
-        </button>
-        <button type="button" (click)="submitCreateUser()" class="px-4 py-1.5 rounded-lg bg-slate-900 text-xs font-medium text-white hover:bg-slate-800 cursor-pointer shadow-xs">
-          Create via API
-        </button>
-      </div>
+      <h1 class="text-lg font-bold text-slate-900 tracking-tight">Employee Tables — Shared Backend, Isolated UI State</h1>
+      <p class="text-xs text-slate-500 max-w-3xl leading-relaxed">
+        Both tables share the exact same backend <code class="bg-slate-100 text-slate-700 px-1 py-0.5 rounded text-[11px]">table_key: "users_table_1234"</code>.
+        <strong>UI level actions</strong> (collapse, column reordering & visibility, density, selection, filters, sort) remain strictly isolated to each respective table.
+        <strong>Backend level actions</strong> (view, delete, edit, create, bulk save) impact and synchronize across both tables.
+      </p>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- 6. EDIT USER MODAL (End-to-End PUT update_api)                  -->
+  <!-- TABLE 1 (INSTANCE 1)                                            -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div *ngIf="showEditModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h2 class="text-sm font-bold text-slate-900">Edit User Record</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.update_api }}</code></p>
-        </div>
-        <button type="button" (click)="showEditModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+  <div class="max-w-[1400px] mx-auto space-y-2">
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">1</span>
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Table 1</h2>
+        <span class="text-[11px] text-slate-400 font-medium">(UI actions here will NOT impact Table 2)</span>
       </div>
+      <div class="text-[11px] text-slate-400">
+        Try collapsing or changing column order here — Table 2 below stays intact.
+      </div>
+    </div>
 
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">User ID</label>
-          <input type="text" [value]="editForm.id" disabled class="w-full h-8 rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs text-slate-500 outline-none" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">First Name</label>
-          <input type="text" [(ngModel)]="editForm.first_name" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Last Name</label>
-          <input type="text" [(ngModel)]="editForm.last_name" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Email Address</label>
-          <input type="email" [(ngModel)]="editForm.email" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
-        </div>
-        <div>
-          <label class="block font-medium text-slate-700 mb-1">Account Status</label>
-          <select [(ngModel)]="editForm.status" class="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs outline-none focus:border-slate-900 bg-white">
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
+    <app-employee-table instanceId="table-1" instanceLabel="Table 1"></app-employee-table>
+  </div>
 
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        <button type="button" (click)="showEditModal = false" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer">
-          Cancel
-        </button>
-        <button type="button" (click)="submitEditUser()" class="px-4 py-1.5 rounded-lg bg-slate-900 text-xs font-medium text-white hover:bg-slate-800 cursor-pointer shadow-xs">
-          Save via API
-        </button>
-      </div>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- VISUAL DIVIDER                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="max-w-[1400px] mx-auto relative py-3">
+    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+      <div class="w-full border-t-2 border-dashed border-slate-300"></div>
+    </div>
+    <div class="relative flex justify-center">
+      <span class="bg-[#F8FAFC] px-4 text-xs font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+        <span>▼</span>
+        <span>Table 2 Duplicated Below</span>
+        <span>▼</span>
+      </span>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- 7. DELETE CONFIRMATION MODAL                                    -->
+  <!-- TABLE 2 (INSTANCE 2 - DUPLICATED BELOW TABLE 1)                 -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div *ngIf="showDeleteConfirmModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
-      <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
-        <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </div>
-        <div>
-          <h2 class="text-sm font-bold text-slate-900">Confirm Deletion</h2>
-          <p class="text-[11px] text-slate-500">Permanently delete selected rows</p>
-        </div>
+  <div class="max-w-[1400px] mx-auto space-y-2">
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">2</span>
+        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Table 2</h2>
+        <span class="text-[11px] text-slate-400 font-medium">(Duplicated Instance — Same table_key)</span>
       </div>
-
-      <div class="space-y-2 text-xs text-slate-600">
-        <p>
-          Are you sure you want to permanently delete <strong class="text-slate-900">{{ deleteTargetRowIds.length }}</strong> selected row(s)?
-        </p>
-        <div class="max-h-36 overflow-y-auto rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1">
-          <div *ngFor="let id of deleteTargetRowIds" class="flex items-center justify-between text-[11px] text-slate-700">
-            <span class="font-mono text-slate-500">#{{ id }}</span>
-            <span class="font-medium text-slate-900">{{ getRowDisplayName(id) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        <button
-          type="button"
-          (click)="cancelDelete()"
-          class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          (click)="confirmDeleteRows()"
-          class="px-4 py-1.5 rounded-lg bg-red-600 text-xs font-medium text-white hover:bg-red-700 cursor-pointer shadow-xs"
-        >
-          Confirm Delete
-        </button>
+      <div class="text-[11px] text-slate-400">
+        Backend actions (edit, delete, view, add) here will sync with Table 1.
       </div>
     </div>
-  </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ -->
-  <!-- 7B. SAVE VIEW MODAL                                             -->
-  <!-- ═══════════════════════════════════════════════════════════ -->
-  <div
-    *ngIf="isSaveViewModalOpen"
-    class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
-    (click)="closeSaveViewModal()"
-  >
-    <div
-      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5"
-      (click)="$event.stopPropagation()"
-    >
-      <div class="flex items-start justify-between">
-        <div>
-          <h3 class="text-base font-semibold text-slate-900">Save Current View</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Save current filters, pagination, pins & density as a preset.</p>
-        </div>
-        <button
-          type="button"
-          (click)="closeSaveViewModal()"
-          class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
-        >
-          ×
-        </button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">View Name</label>
-          <input
-            type="text"
-            [(ngModel)]="newViewName"
-            placeholder="e.g. Active Leads, Compact Review"
-            class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
-            (keydown.enter)="onSaveViewSubmit()"
-          />
-        </div>
-
-        <!-- Summary of settings being captured -->
-        <div class="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-1.5 text-xs text-slate-600">
-          <div class="font-semibold text-slate-700 text-[11px] uppercase tracking-wider">Settings to capture:</div>
-          <div class="flex flex-wrap gap-2 pt-1">
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
-              <span class="text-slate-400">Density:</span>
-              <span class="font-medium capitalize">{{ density }}</span>
-            </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
-              <span class="text-slate-400">Page size:</span>
-              <span class="font-medium">{{ pagination.limit }}</span>
-            </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
-              <span class="text-slate-400">Filters:</span>
-              <span class="font-medium">{{ getActiveFilterCount() }} active</span>
-            </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
-              <span class="text-slate-400">Pinned cols:</span>
-              <span class="font-medium">{{ getPinnedColumnCount() }}</span>
-            </span>
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700">
-          <input
-            type="checkbox"
-            [(ngModel)]="newViewIsDefault"
-            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
-          />
-          <span>Set as default view for this table</span>
-        </label>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-        <button
-          type="button"
-          (click)="closeSaveViewModal()"
-          class="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          [disabled]="!newViewName.trim() || isSavingView"
-          (click)="onSaveViewSubmit()"
-          class="px-4 py-1.5 rounded-lg bg-blue-600 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-        >
-          <span *ngIf="!isSavingView">Save View</span>
-          <span *ngIf="isSavingView">Saving...</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- 8. FLOATING TOAST NOTIFICATION SYSTEM (Non-Destructive)         -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-    <div
-      *ngFor="let toast of toasts"
-      class="pointer-events-auto bg-slate-900/95 backdrop-blur text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-800 flex items-start justify-between gap-3 transform transition-all duration-200 ease-out animate-slide-up"
-    >
-      <div class="space-y-0.5">
-        <div class="text-xs font-semibold text-white tracking-tight flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          <span>{{ toast.title }}</span>
-        </div>
-        <div *ngIf="toast.detail" class="text-[11px] text-slate-300 font-mono">
-          {{ toast.detail }}
-        </div>
-      </div>
-
-      <button
-        type="button"
-        (click)="dismissToast(toast.id)"
-        class="text-slate-400 hover:text-white text-base leading-none cursor-pointer"
-      >
-        ×
-      </button>
-    </div>
+    <app-employee-table instanceId="table-2" instanceLabel="Table 2"></app-employee-table>
   </div>
 
 </div>

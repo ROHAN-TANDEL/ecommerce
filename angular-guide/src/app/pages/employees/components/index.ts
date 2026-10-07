@@ -23,5 +23,7 @@ export { ColumnsComponent } from './columns.component';
 export { ViewComponent } from './view.component';
 export { OptionsDropdownComponent } from './options-dropdown.component';
 export { ActionBtnComponent } from './action-btn.component';
+export { LivePanelComponent } from './live-panel.component';
+export { EmployeeTableComponent } from '../employee-table.component';
 
 
