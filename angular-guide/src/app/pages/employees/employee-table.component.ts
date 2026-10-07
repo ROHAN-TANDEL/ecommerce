@@ -600,8 +600,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     detail: string,
     data?: any
   ): void {
+    const tableKey = this.tableConfig.table_key || 'users_table_1234';
     this.apiService.broadcastLiveEvent({
-      tableKey: this.tableConfig.table_key || 'users_table_1234',
+      tableKey,
       sourceInstanceId: this.instanceId,
       sourceUser: `${this.instanceLabel}`,
       actionType,
@@ -609,14 +610,14 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       title,
       detail,
       data,
-    });
+    }, this.apiBaseUrl);
     this.apiService.updatePresence({
       instanceId: this.instanceId,
       userName: `${this.instanceLabel}`,
       lastActive: new Date(),
       currentActivity: `${title}: ${detail}`,
       status: 'active',
-    });
+    }, tableKey, this.apiBaseUrl);
   }
 
   onClearLiveEvents(): void {
@@ -777,6 +778,10 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.bootstrapTable();
+
+    // ── Connect to Backend Redis Pub/Sub Live SSE Stream ──
+    const tableKey = this.tableConfig.table_key || 'users_table_1234';
+    this.apiService.connectRedisLiveFeed(tableKey, this.apiBaseUrl);
 
     // ── Listen to Shared Reactive Bus: Backend changes in ANY table trigger update here ──
     this.apiService.dataChanged$

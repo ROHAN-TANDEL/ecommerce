@@ -25,12 +25,13 @@ export class EmployeesApiService {
   readonly viewsChanged$ = new Subject<void>();
 
   // ══════════════════════════════════════════════════════════════════════
-  // LIVE BROADCAST BUS & MULTI-USER PRESENCE TRACKING
+  // LIVE BROADCAST BUS & MULTI-USER PRESENCE TRACKING (Redis Pub/Sub backed)
   // ══════════════════════════════════════════════════════════════════════
   readonly liveEvents$ = new Subject<LiveTableEvent>();
   readonly userPresence$ = new Subject<TableUserPresence>();
 
   private presences = new Map<string, TableUserPresence>();
+  private activeEventSources = new Map<string, EventSource>();
 
   notifyDataChanged(): void {
     this.dataChanged$.next();
@@ -40,18 +41,125 @@ export class EmployeesApiService {
     this.viewsChanged$.next();
   }
 
-  broadcastLiveEvent(event: Omit<LiveTableEvent, 'id' | 'timestamp'>): void {
+  /**
+   * Connect to backend Redis Pub/Sub via Server-Sent Events (SSE)
+   */
+  connectRedisLiveFeed(tableKey = 'users_table_1234', baseUrl = this.defaultBaseUrl): void {
+    if (this.activeEventSources.has(tableKey)) {
+      return; // Already connected
+    }
+
+    const sseUrl = `${this.resolveUrl('/identity/management/listen/users', baseUrl)}?table_key=${encodeURIComponent(tableKey)}`;
+    try {
+      const eventSource = new EventSource(sseUrl);
+
+      eventSource.onopen = () => {
+        console.log(`[EmployeesApiService] Connected to Redis Pub/Sub SSE feed for table: ${tableKey}`);
+      };
+
+      eventSource.onmessage = (messageEvent) => {
+        try {
+          if (!messageEvent.data || messageEvent.data === ': heartbeat') return;
+          const payload = JSON.parse(messageEvent.data);
+
+          if (payload.type === 'CONNECTED' || payload.type === 'ERROR') {
+            return;
+          }
+
+          // Handle Presence sync from Redis
+          if (payload.presence) {
+            const pres: TableUserPresence = {
+              ...payload.presence,
+              lastActive: new Date(payload.presence.lastActive || Date.now()),
+            };
+            this.presences.set(pres.instanceId, pres);
+            this.userPresence$.next(pres);
+            return;
+          }
+
+          // Handle Live Table Event from Redis
+          if (payload.actionType && payload.sourceInstanceId) {
+            const liveEvt: LiveTableEvent = {
+              ...payload,
+              id: payload.id || `live_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              timestamp: new Date(payload.timestamp || Date.now()),
+            };
+            this.liveEvents$.next(liveEvt);
+          }
+        } catch (err) {
+          console.warn('[EmployeesApiService] Failed to parse Redis SSE message:', err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.warn(`[EmployeesApiService] SSE connection issue on table ${tableKey}, browser will auto-reconnect`, err);
+      };
+
+      this.activeEventSources.set(tableKey, eventSource);
+    } catch (e) {
+      console.warn('[EmployeesApiService] Could not initialize EventSource for Redis live feed', e);
+    }
+  }
+
+  disconnectRedisLiveFeed(tableKey = 'users_table_1234'): void {
+    const source = this.activeEventSources.get(tableKey);
+    if (source) {
+      source.close();
+      this.activeEventSources.delete(tableKey);
+    }
+  }
+
+  /**
+   * Broadcast an event to Redis Pub/Sub backend & local reactive bus
+   */
+  broadcastLiveEvent(
+    event: Omit<LiveTableEvent, 'id' | 'timestamp'>,
+    baseUrl = this.defaultBaseUrl
+  ): void {
     const fullEvent: LiveTableEvent = {
       ...event,
       id: `live_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: new Date(),
     };
+
+    // 1. Immediately emit locally for zero-latency local UI responsiveness
     this.liveEvents$.next(fullEvent);
+
+    // 2. Publish to backend Redis Pub/Sub so all users / browsers receive it
+    const talkUrl = this.resolveUrl('/identity/management/talk/users', baseUrl);
+    this.http.post(talkUrl, {
+      table_key: event.tableKey || 'users_table_1234',
+      ...fullEvent,
+      timestamp: fullEvent.timestamp.toISOString(),
+    }).pipe(
+      catchError(err => {
+        // Fallback: If backend is offline or network fails, local reactive bus already handled it
+        return of(null);
+      })
+    ).subscribe();
   }
 
-  updatePresence(presence: TableUserPresence): void {
+  /**
+   * Broadcast presence update to Redis Pub/Sub backend & local reactive bus
+   */
+  updatePresence(
+    presence: TableUserPresence,
+    tableKey = 'users_table_1234',
+    baseUrl = this.defaultBaseUrl
+  ): void {
     this.presences.set(presence.instanceId, { ...presence });
     this.userPresence$.next({ ...presence });
+
+    const talkUrl = this.resolveUrl('/identity/management/talk/users', baseUrl);
+    this.http.post(talkUrl, {
+      table_key: tableKey,
+      presence: {
+        ...presence,
+        lastActive: presence.lastActive.toISOString(),
+      },
+    }).pipe(
+      catchError(() => of(null))
+    ).subscribe();
   }
 
   getAllPresences(): TableUserPresence[] {
