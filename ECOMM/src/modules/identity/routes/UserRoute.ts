@@ -707,6 +707,7 @@ export class UserRoute {
          * }
          */
         router.post('/users/view/create', user.saveView.bind(user));
+        router.post('/users/view/save', user.saveView.bind(user));
 
         /**
          * @route   GET /users/view/:id

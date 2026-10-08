@@ -25,21 +25,21 @@ export const UserTableConfig = {
         "table_config_api" : "/identity/management/users/config/table",
         "action_panel_config_api" : "/identity/management/users/config/actions",
 
-        "table_lock_api" : "/identity/management/lock/users/table",
-        "row_lock_api" : "/identity/management/lock/users/rows",
-        "lock_status_api" : "/identity/management/lock/users",
+        "table_lock_api" : "/identity/management/users/lock/table",
+        "row_lock_api" : "/identity/management/users/lock/rows",
+        "lock_status_api" : "/identity/management/users/lock",
 
-        "export_data_api" : "/identity/management/export/users",
-        "download_data_api" : "/identity/management/download/users",
+        "export_data_api" : "/identity/management/users/export",
+        "download_data_api" : "/identity/management/users/download",
 
-        "list_view_api" : "/identity/management/view/users/list",
-        "save_view_api" : "/identity/management/view/users/save",
-        "get_view_api" : "/identity/management/view/users/:id",
-        "delete_view_api" : "/identity/management/view/users/:id",
-        "default_view_api" : "/identity/management/view/users/:id/default",
+        "list_view_api" : "/identity/management/users/view/list",
+        "save_view_api" : "/identity/management/users/view/create",
+        "get_view_api" : "/identity/management/users/view/:id",
+        "delete_view_api" : "/identity/management/users/view/:id",
+        "default_view_api" : "/identity/management/users/view/:id/default",
 
-        "live_talk_api" : "/identity/management/talk/users",
-        "live_listen_api" : "/identity/management/listen/users",
+        "live_talk_api" : "/identity/management/users/talk",
+        "live_listen_api" : "/identity/management/users/listen",
     },
 
     "show_title_header_section" : true,
