@@ -29,6 +29,8 @@ export interface TableApiRegistry {
   default_view_api?: string;
   live_talk_api: string;
   live_listen_api: string;
+  ai_summary_api?: string;
+  ai_interact_api?: string;
 }
 
 export interface SavedTableView {

@@ -369,11 +369,70 @@ export class EmployeesApiService {
   }
 
   /**
+   * Fetch single user details via data_api (replaces :id)
+   */
+  fetchUser(
+    apiTemplate: string,
+    id: string | number,
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const resolvedPath = apiTemplate.replace(':id', String(id));
+    const fullUrl = this.resolveUrl(resolvedPath, baseUrl);
+    return this.http.get<any>(fullUrl);
+  }
+
+  /**
    * Create User via create_api
    */
   createUser(apiUrl: string, body: any, baseUrl = this.defaultBaseUrl): Observable<any> {
     const fullUrl = this.resolveUrl(apiUrl, baseUrl);
     return this.http.post<any>(fullUrl, body).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Batch create multiple users via create_all_api / create_bulk_api
+   */
+  createAllUsers(apiUrl: string, users: any[], baseUrl = this.defaultBaseUrl): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.post<any>(fullUrl, users).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Import users from Excel / CSV file via create_import_api
+   */
+  importCreateUsers(
+    apiUrl: string,
+    file: File,
+    options: { skip_duplicates?: boolean; notify_users?: boolean } = { skip_duplicates: true, notify_users: false },
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('options', JSON.stringify({ options }));
+    return this.http.post<any>(fullUrl, formData).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Import user updates from Excel / CSV file via update_import_api
+   */
+  importUpdateUsers(
+    apiUrl: string,
+    file: File,
+    identifierKey = 'email',
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('identifier_key', identifierKey);
+    return this.http.post<any>(fullUrl, formData).pipe(
       tap(() => this.notifyDataChanged())
     );
   }
@@ -535,5 +594,50 @@ export class EmployeesApiService {
     return this.http.delete<any>(fullUrl).pipe(
       tap(() => this.notifyViewsChanged())
     );
+  }
+
+  /**
+   * AI Summary: Fetch overview summary of table or selected rows
+   * Method: POST /identity/management/users/ai/summary
+   */
+  fetchAiSummary(
+    apiUrl: string,
+    payload: {
+      mode?: string;
+      row_ids?: (string | number)[];
+      rows_sample?: any[];
+      filters?: Record<string, any>;
+      total_count?: number;
+      selected_row_ids?: (string | number)[];
+      selected_rows?: any[];
+      active_filters?: Record<string, any>;
+      table_key?: string;
+      [key: string]: any;
+    },
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.post<any>(fullUrl, payload);
+  }
+
+  /**
+   * Interact with Table using AI
+   * Method: POST /identity/management/users/ai/interact
+   */
+  interactWithAi(
+    apiUrl: string,
+    payload: {
+      query: string;
+      columns?: any[];
+      current_rows?: any[];
+      selected_row_ids?: (string | number)[];
+      active_filters?: Record<string, any>;
+      table_key?: string;
+      [key: string]: any;
+    },
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    return this.http.post<any>(fullUrl, payload);
   }
 }

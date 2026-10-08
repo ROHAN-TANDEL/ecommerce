@@ -156,6 +156,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       default_view_api: '/identity/management/users/view/:id/default',
       live_talk_api: '/identity/management/users/talk',
       live_listen_api: '/identity/management/users/listen',
+      ai_summary_api: '/identity/management/users/ai/summary',
+      ai_interact_api: '/identity/management/users/ai/interact',
     },
     show_title_header_section: true,
     enable_add_data_button: true,
@@ -328,8 +330,41 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         order: 4,
         pinned: true,
       },
+      section_5: {
+        name: 'AI',
+        component: 'dropdown_sections_component',
+        order: 5,
+        pinned: true,
+      },
     },
     actions: {
+      ai_summary: {
+        name: 'AI Summary',
+        component: 'action_btn_component',
+        active: true,
+        info_note: 'Selected Row/s level summary',
+        pinned: false,
+        section: 'section_5',
+        order: 1,
+      },
+      ai_chat: {
+        name: 'Interact with AI',
+        component: 'action_btn_component',
+        active: true,
+        info_note: 'Interact with table using AI assistant',
+        pinned: false,
+        section: 'section_5',
+        order: 2,
+      },
+      ai_data_reviewed: {
+        name: 'Mark All Reviewed',
+        component: 'action_btn_component',
+        active: true,
+        info_note: 'Mark all AI altered rows as reviewed',
+        pinned: false,
+        section: 'section_5',
+        order: 3,
+      },
       refresh: {
         name: 'Refresh',
         component: 'refresh_component',
@@ -800,6 +835,59 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   createFormErrors: Record<string, string> = {};
   editForm = { id: '', first_name: '', last_name: '', email: '', status: 'active' };
 
+  // Add User Dropdown & Batch / File Import Modals
+  showAddUserDropdown = false;
+  showBatchCreateModal = false;
+  showImportCreateModal = false;
+  showImportUpdateModal = false;
+
+  batchUsers: Array<{ first_name: string; last_name: string; email: string; status: string }> = [
+    { first_name: '', last_name: '', email: '', status: 'active' },
+    { first_name: '', last_name: '', email: '', status: 'active' },
+  ];
+  batchCreateErrors: string | null = null;
+  isSubmittingBatch = false;
+
+  importCreateFile: File | null = null;
+  importSkipDuplicates = true;
+  importNotifyUsers = false;
+  isSubmittingImportCreate = false;
+
+  importUpdateFile: File | null = null;
+  importIdentifierKey: 'email' | 'id' = 'email';
+  isSubmittingImportUpdate = false;
+
+  // View Row Details Modal
+  showViewModal = false;
+  viewModalRowIndex = 0;
+
+  get currentViewRow(): Record<string, any> | null {
+    return this.rows[this.viewModalRowIndex] || null;
+  }
+
+  // ── AI Summary State ──────────────────────────────────────────────────────
+  showAiSummaryModal = false;
+  isGeneratingAiSummary = false;
+  aiSummaryData: any = null;
+
+  // ── AI Table Assistant Chat State ─────────────────────────────────────────
+  showAiChatSection = false;
+  aiChatQuery = '';
+  isAiThinking = false;
+  latestAiReply: string | null = null;
+
+  get pendingReviewRows(): Record<string, any>[] {
+    return this.rows.filter(r => r['_needsReview'] === true);
+  }
+
+  get pendingReviewRowCount(): number {
+    return this.pendingReviewRows.length;
+  }
+
+  get hasPendingReviewRows(): boolean {
+    return this.pendingReviewRowCount > 0;
+  }
+
   modalSections: { sectionKey: string; fields: EnrichedColumn[] }[] = [];
 
   rebuildModalSections(): void {
@@ -1117,13 +1205,33 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   // ── Global Document Click Listener ──────────────────────────────────
+  // ── Global Document Click & Keydown Listeners ────────────────────────
   @HostListener('document:click')
   onDocumentClick(): void {
     this.actionsMenuOpen = false;
     this.activeSubmenuKey = null;
     this.activeFilterDropdownKey = null;
     this.activeRowActionId = null;
+    this.showAddUserDropdown = false;
     this.cdr.markForCheck();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(e: KeyboardEvent): void {
+    if (this.showViewModal) {
+      if (e.key === 'ArrowLeft') {
+        this.prevViewRow();
+      } else if (e.key === 'ArrowRight') {
+        this.nextViewRow();
+      } else if (e.key === 'Escape') {
+        this.showViewModal = false;
+        this.cdr.markForCheck();
+      }
+    } else if (e.key === 'Escape') {
+      this.showAddUserDropdown = false;
+      this.activeRowActionId = null;
+      this.cdr.markForCheck();
+    }
   }
 
   // ── Floating Toast System ───────────────────────────────────────────
@@ -1244,11 +1352,288 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── Add User Dropdown & Batch / File Import Methods ─────────────────
+  toggleAddUserDropdown(e?: MouseEvent): void {
+    if (e) e.stopPropagation();
+    this.showAddUserDropdown = !this.showAddUserDropdown;
+    this.cdr.markForCheck();
+  }
+
+  openCreateModal(): void {
+    this.showAddUserDropdown = false;
+    this.onHeaderAddDataClick();
+  }
+
+  openBatchCreateModal(): void {
+    this.showAddUserDropdown = false;
+    this.batchUsers = [
+      { first_name: '', last_name: '', email: '', status: 'active' },
+      { first_name: '', last_name: '', email: '', status: 'active' },
+    ];
+    this.batchCreateErrors = null;
+    this.showBatchCreateModal = true;
+    this.cdr.markForCheck();
+  }
+
+  openImportCreateModal(): void {
+    this.showAddUserDropdown = false;
+    this.importCreateFile = null;
+    this.importSkipDuplicates = true;
+    this.importNotifyUsers = false;
+    this.showImportCreateModal = true;
+    this.cdr.markForCheck();
+  }
+
+  openImportUpdateModal(): void {
+    this.showAddUserDropdown = false;
+    this.importUpdateFile = null;
+    this.importIdentifierKey = 'email';
+    this.showImportUpdateModal = true;
+    this.cdr.markForCheck();
+  }
+
+  addBatchRow(): void {
+    this.batchUsers.push({ first_name: '', last_name: '', email: '', status: 'active' });
+    this.cdr.markForCheck();
+  }
+
+  removeBatchRow(idx: number): void {
+    if (this.batchUsers.length > 1) {
+      this.batchUsers.splice(idx, 1);
+      this.cdr.markForCheck();
+    }
+  }
+
+  submitBatchCreate(): void {
+    const validUsers = this.batchUsers.filter(u => u.first_name.trim() && u.email.trim());
+    if (validUsers.length === 0) {
+      this.batchCreateErrors = 'Please enter at least one user with First Name and Email';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.batchCreateErrors = null;
+    this.isSubmittingBatch = true;
+
+    const createAllUrl = this.tableConfig.table_api.create_all_api || '/identity/management/users/create/all';
+    this.apiService.createAllUsers(createAllUrl, validUsers, this.apiBaseUrl).subscribe({
+      next: res => {
+        this.isSubmittingBatch = false;
+        this.showBatchCreateModal = false;
+        this.batchUsers = [
+          { first_name: '', last_name: '', email: '', status: 'active' },
+          { first_name: '', last_name: '', email: '', status: 'active' },
+        ];
+        this.fetchTableData(1, this.pagination.limit);
+        this.showToast('Batch Users Created', res?.message || `Successfully created ${validUsers.length} users`, 'header');
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isSubmittingBatch = false;
+        validUsers.forEach((u, i) => {
+          this.apiService.addMockRow({
+            id: String(Date.now() + i),
+            ...u,
+            created_at: new Date().toLocaleDateString(),
+          });
+        });
+        this.showBatchCreateModal = false;
+        this.fetchTableData(1, this.pagination.limit);
+        this.showToast('Batch Users Created', `Created ${validUsers.length} users in table`, 'header');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onImportCreateFileChange(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.importCreateFile = input.files[0];
+      this.cdr.markForCheck();
+    }
+  }
+
+  submitImportCreate(): void {
+    if (!this.importCreateFile) {
+      this.showToast('File Required', 'Please select a file to import', 'header');
+      return;
+    }
+    this.isSubmittingImportCreate = true;
+    const importUrl = this.tableConfig.table_api.create_import_api || '/identity/management/users/create/import';
+    this.apiService.importCreateUsers(
+      importUrl,
+      this.importCreateFile,
+      { skip_duplicates: this.importSkipDuplicates, notify_users: this.importNotifyUsers },
+      this.apiBaseUrl
+    ).subscribe({
+      next: res => {
+        this.isSubmittingImportCreate = false;
+        this.showImportCreateModal = false;
+        this.importCreateFile = null;
+        this.fetchTableData(1, this.pagination.limit);
+        const data = res?.data;
+        const msg = res?.message || `Imported ${data?.imported_count ?? 0} user(s), skipped ${data?.skipped_count ?? 0}`;
+        this.showToast('Users Imported', msg, 'header');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.isSubmittingImportCreate = false;
+        this.showToast('Import Failed', err?.error?.message || 'Error uploading users file', 'header');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onImportUpdateFileChange(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.importUpdateFile = input.files[0];
+      this.cdr.markForCheck();
+    }
+  }
+
+  submitImportUpdate(): void {
+    if (!this.importUpdateFile) {
+      this.showToast('File Required', 'Please select a file to update', 'header');
+      return;
+    }
+    this.isSubmittingImportUpdate = true;
+    const updateImportUrl = this.tableConfig.table_api.update_import_api || '/identity/management/users/update/import';
+    this.apiService.importUpdateUsers(
+      updateImportUrl,
+      this.importUpdateFile,
+      this.importIdentifierKey,
+      this.apiBaseUrl
+    ).subscribe({
+      next: res => {
+        this.isSubmittingImportUpdate = false;
+        this.showImportUpdateModal = false;
+        this.importUpdateFile = null;
+        this.fetchTableData(1, this.pagination.limit);
+        const msg = res?.message || 'Users updated successfully via file upload';
+        this.showToast('Updates Imported', msg, 'header');
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.isSubmittingImportUpdate = false;
+        this.showToast('Update Import Failed', err?.error?.message || 'Error uploading file updates', 'header');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ── View Row Details Popup Navigation & Actions ─────────────────────
+  openViewModal(row: Record<string, any>): void {
+    const idx = this.rows.findIndex(r => String(r['id']) === String(row['id']));
+    this.viewModalRowIndex = idx >= 0 ? idx : 0;
+    this.showViewModal = true;
+    this.cdr.markForCheck();
+  }
+
+  prevViewRow(): void {
+    if (this.viewModalRowIndex > 0) {
+      this.viewModalRowIndex--;
+      this.cdr.markForCheck();
+    }
+  }
+
+  nextViewRow(): void {
+    if (this.viewModalRowIndex < this.rows.length - 1) {
+      this.viewModalRowIndex++;
+      this.cdr.markForCheck();
+    }
+  }
+
+  refreshCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    const dataApiUrl = this.tableConfig.table_api.data_api || '/identity/management/users/:id';
+    this.apiService.fetchUser(dataApiUrl, row['id'], this.apiBaseUrl).subscribe({
+      next: res => {
+        const user = res?.data || res;
+        if (user && typeof user === 'object') {
+          Object.assign(row, user);
+          this.originalRowData.set(String(row['id']), { ...row });
+        }
+        this.showToast('Row Refreshed', `Refreshed User #${row['id']}`, 'row');
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.showToast('Refresh Failed', `Could not refresh User #${row['id']}`, 'row');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  disableCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    const updateUrl = this.tableConfig.table_api.update_api || '/identity/management/users/update/:id';
+    row['status'] = 'inactive';
+    row['disabled'] = true;
+    this.apiService.updateUser(updateUrl, row['id'], { status: 'inactive' }, this.apiBaseUrl).subscribe({
+      next: () => {
+        this.originalRowData.set(String(row['id']), { ...row });
+        this.showToast('User Disabled', `User #${row['id']} marked inactive`, 'row');
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.originalRowData.set(String(row['id']), { ...row });
+        this.showToast('User Disabled', `User #${row['id']} marked inactive`, 'row');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  revertCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    const orig = this.originalRowData.get(String(row['id']));
+    if (!orig) return;
+    Object.assign(row, { ...orig });
+    this.showToast('Row Reverted', `User #${row['id']} reverted to original baseline`, 'row');
+    this.cdr.markForCheck();
+  }
+
+  editCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    this.editForm = {
+      id: String(row['id']),
+      first_name: row['first_name'] || '',
+      last_name: row['last_name'] || '',
+      email: row['email'] || '',
+      status: row['status'] || 'active',
+    };
+    this.showEditModal = true;
+    this.cdr.markForCheck();
+  }
+
+  deleteCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    this.deleteTargetRowIds = [String(row['id'])];
+    this.showDeleteConfirmModal = true;
+    this.cdr.markForCheck();
+  }
+
+  lockCurrentViewRow(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    row['locked'] = !row['locked'];
+    this.showToast(row['locked'] ? 'Row Locked' : 'Row Unlocked', `User #${row['id']}`, 'row');
+    this.cdr.markForCheck();
+  }
+
   submitEditUser(): void {
     const updateUrl = this.tableConfig.table_api.update_api || '/identity/management/users/update/:id';
     this.apiService.updateUser(updateUrl, this.editForm.id, this.editForm, this.apiBaseUrl).subscribe({
       next: res => {
         this.apiService.updateMockRow(this.editForm.id, this.editForm);
+        const rowInTable = this.rows.find(r => String(r['id']) === String(this.editForm.id));
+        if (rowInTable) {
+          Object.assign(rowInTable, this.editForm);
+          this.originalRowData.set(String(this.editForm.id), { ...rowInTable });
+        }
         this.apiService.notifyDataChanged();
         this.broadcastAction(
           'EDIT',
@@ -1258,9 +1643,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         );
         this.showToast('User Updated', res?.message || `User ID ${this.editForm.id} updated via API`, 'row');
         this.showEditModal = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.apiService.updateMockRow(this.editForm.id, this.editForm);
+        const rowInTable = this.rows.find(r => String(r['id']) === String(this.editForm.id));
+        if (rowInTable) {
+          Object.assign(rowInTable, this.editForm);
+          this.originalRowData.set(String(this.editForm.id), { ...rowInTable });
+        }
         this.apiService.notifyDataChanged();
         this.broadcastAction(
           'EDIT',
@@ -1268,8 +1659,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           'User Record Updated',
           `Updated User #${this.editForm.id} (${this.editForm.first_name} ${this.editForm.last_name})`
         );
-        this.showToast('User Updated (Shared)', `Changes saved for ID: ${this.editForm.id} — updated across both tables`, 'row');
+        this.showToast('User Updated (Shared)', `Updated row: ${this.editForm.first_name} — updated across both tables`, 'row');
         this.showEditModal = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -2161,7 +2553,271 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // AI TABLE ASSISTANT & SUMMARY LOGIC
+  // ══════════════════════════════════════════════════════════════════════
+
+  triggerAiSummary(): void {
+    const isSelectedMode = this.selectedRowIds.size > 0;
+    const selectedRows = this.rows.filter(r => this.selectedRowIds.has(String(r['id'])));
+
+    const endpoint = this.tableConfig.table_api?.ai_summary_api || '/identity/management/users/ai/summary';
+    const payload = isSelectedMode
+      ? {
+          mode: 'selected',
+          row_ids: Array.from(this.selectedRowIds).map(id => (isNaN(Number(id)) ? id : Number(id))),
+          rows_sample: selectedRows.slice(0, 10),
+          filters: this.activeFilters,
+          total_count: this.pagination.total,
+        }
+      : {
+          mode: 'all',
+          filters: this.activeFilters,
+          total_count: this.pagination.total,
+          rows_sample: this.rows.slice(0, 10),
+        };
+
+    this.isGeneratingAiSummary = true;
+    this.showAiSummaryModal = true;
+    this.aiSummaryData = null;
+    this.cdr.markForCheck();
+
+    this.apiService.fetchAiSummary(endpoint, payload).subscribe({
+      next: (res) => {
+        this.aiSummaryData = res?.data || null;
+        this.isGeneratingAiSummary = false;
+        this.broadcastAction(
+          'VIEW',
+          false,
+          'AI Summary Generated',
+          `Generated summary for ${isSelectedMode ? `${this.selectedRowIds.size} selected row(s)` : 'entire table'}`
+        );
+        this.showToast(
+          'AI Summary Ready',
+          isSelectedMode
+            ? `Summary of ${this.selectedRowIds.size} selected rows`
+            : 'Table overview summary generated',
+          'header'
+        );
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.isGeneratingAiSummary = false;
+        this.showToast('AI Summary Error', err?.error?.message || 'Failed to generate AI summary', 'header');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  closeAiSummaryModal(): void {
+    this.showAiSummaryModal = false;
+    this.cdr.markForCheck();
+  }
+
+  copySummaryToClipboard(): void {
+    if (!this.aiSummaryData) return;
+    const parts = [
+      this.aiSummaryData.title || 'Table Summary',
+      '',
+      this.aiSummaryData.summary || '',
+      '',
+      'Key Highlights:',
+      ...(this.aiSummaryData.highlights || []).map((h: string) => `• ${h}`),
+    ];
+    navigator.clipboard?.writeText(parts.join('\n'));
+    this.showToast('Summary Copied', 'Summary text copied to clipboard', 'header');
+  }
+
+  sendAiQuickPrompt(prompt: string): void {
+    this.aiChatQuery = prompt;
+    this.submitAiQuery();
+  }
+
+  submitAiQuery(): void {
+    const query = this.aiChatQuery?.trim();
+    if (!query || this.isAiThinking) return;
+
+    this.isAiThinking = true;
+    this.latestAiReply = null;
+    this.cdr.markForCheck();
+
+    const endpoint = this.tableConfig.table_api?.ai_interact_api || '/identity/management/users/ai/interact';
+    const payload = {
+      query,
+      current_rows: this.rows.map(r => ({
+        id: r['id'],
+        first_name: r['first_name'],
+        last_name: r['last_name'],
+        email: r['email'],
+        status: r['status'],
+        phone_number: r['phone_number'],
+      })),
+      selected_row_ids: Array.from(this.selectedRowIds),
+      active_filters: this.activeFilters,
+    };
+
+    this.apiService.interactWithAi(endpoint, payload).subscribe({
+      next: (res) => {
+        this.isAiThinking = false;
+        const data = res?.data;
+        if (!data) {
+          this.latestAiReply = 'No response received from AI Assistant.';
+          this.cdr.markForCheck();
+          return;
+        }
+
+        this.latestAiReply = data.reply;
+        const actions = data.actions;
+
+        if (actions) {
+          // 1. FILTERS
+          if (actions.filters?.remove_all) {
+            this.activeFilters = {};
+            this.fetchTableData(1, this.pagination.limit);
+            this.showToast('AI Filters Cleared', 'Reset all active filters', 'filter');
+          } else if (actions.filters?.set && Object.keys(actions.filters.set).length > 0) {
+            Object.assign(this.activeFilters, actions.filters.set);
+            this.fetchTableData(1, this.pagination.limit);
+            this.showToast('AI Filter Applied', 'Table filtered according to AI prompt', 'filter');
+          }
+
+          // 2. GENERATE SAMPLE ROWS (Max 5 records, non-destructive draft mode)
+          if (actions.generated_rows && actions.generated_rows.length > 0) {
+            const newRows = actions.generated_rows.map((genRow: any, idx: number) => {
+              const rowId = genRow.temp_id || `ai_gen_${Date.now()}_${idx + 1}`;
+              return {
+                ...genRow,
+                id: rowId,
+                _aiGenerated: true,
+                _needsReview: true,
+                _reviewed: false,
+              };
+            });
+            this.rows = [...newRows, ...this.rows];
+            this.showToast(
+              'AI Generated Data',
+              `Added ${newRows.length} sample row(s) in draft mode (review required)`,
+              'row'
+            );
+          }
+
+          // 3. PROPOSED DATA EDITS (Non-destructive: user review required)
+          if (actions.proposed_edits && actions.proposed_edits.length > 0) {
+            let editCount = 0;
+            actions.proposed_edits.forEach((edit: any) => {
+              const targetRow = this.rows.find(r => String(r['id']) === String(edit.row_id));
+              if (targetRow) {
+                if (!targetRow['_originalBeforeAi']) {
+                  targetRow['_originalBeforeAi'] = { ...targetRow };
+                }
+                targetRow[edit.field] = edit.new_value;
+                targetRow['_aiEdited'] = true;
+                targetRow['_needsReview'] = true;
+                targetRow['_reviewed'] = false;
+                editCount++;
+              }
+            });
+            if (editCount > 0) {
+              this.showToast(
+                'AI Proposed Edits',
+                `${editCount} row(s) updated in draft mode (review required)`,
+                'row'
+              );
+            }
+          }
+        }
+
+        this.broadcastAction(
+          'EDIT',
+          false,
+          'AI Table Interaction',
+          `AI query: "${query}" - Intent: ${data.intent || 'general'}`
+        );
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.isAiThinking = false;
+        this.latestAiReply = err?.error?.message || 'Error communicating with AI Assistant';
+        this.showToast('AI Interaction Error', this.latestAiReply || 'Request failed', 'header');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  markRowReviewed(row: Record<string, any>, event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    row['_needsReview'] = false;
+    row['_reviewed'] = true;
+    this.showToast('Row Reviewed', `User #${row['id']} marked as reviewed and ready to save`, 'row');
+    this.cdr.markForCheck();
+  }
+
+  markAllReviewed(): void {
+    let count = 0;
+    this.rows.forEach(r => {
+      if (r['_needsReview']) {
+        r['_needsReview'] = false;
+        r['_reviewed'] = true;
+        count++;
+      }
+    });
+    this.showToast('All Rows Reviewed', `Marked ${count} row(s) as reviewed`, 'header');
+    this.cdr.markForCheck();
+  }
+
+  revertAllAiChanges(): void {
+    // 1. Remove AI generated rows
+    this.rows = this.rows.filter(r => !r['_aiGenerated']);
+
+    // 2. Revert AI proposed edits
+    this.rows.forEach(r => {
+      if (r['_originalBeforeAi']) {
+        Object.assign(r, r['_originalBeforeAi']);
+        delete r['_originalBeforeAi'];
+        r['_aiEdited'] = false;
+        r['_needsReview'] = false;
+        r['_reviewed'] = false;
+      }
+    });
+
+    this.latestAiReply = null;
+    this.showToast('AI Changes Reverted', 'All AI-generated rows and proposed edits were discarded', 'header');
+    this.cdr.markForCheck();
+  }
+
+  clearAiReply(): void {
+    this.latestAiReply = null;
+    this.cdr.markForCheck();
+  }
+
+  toggleAiChatSection(forceState?: boolean): void {
+    this.showAiChatSection = forceState !== undefined ? forceState : !this.showAiChatSection;
+    if (this.showAiChatSection) {
+      setTimeout(() => {
+        const inputEl = document.querySelector('input[placeholder*="Ask AI"]') as HTMLInputElement;
+        inputEl?.focus();
+        inputEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+      this.showToast('AI Assistant Opened', 'Interact with table data via AI prompts', 'header');
+    }
+    this.cdr.markForCheck();
+  }
+
   onActionPanelSelect(event: { actionKey: string; optionKey?: string }): void {
+    if (event.actionKey === 'ai_summary') {
+      this.triggerAiSummary();
+      return;
+    }
+    if (event.actionKey === 'ai_chat') {
+      this.toggleAiChatSection();
+      return;
+    }
+    if (event.actionKey === 'ai_data_reviewed') {
+      this.markAllReviewed();
+      return;
+    }
     if (event.actionKey === 'copy') {
       this.onCopySelectedRows();
       return;
@@ -2358,35 +3014,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     e.stopPropagation();
     this.activeRowActionId = null;
 
+    // 1. DELETE
     if (optionKey === 'delete') {
-      const deleteUrl = this.tableConfig.table_api.delete_api || '/identity/management/users/delete/:id';
-      this.apiService.deleteUser(deleteUrl, row['id'], this.apiBaseUrl).subscribe({
-        next: res => {
-          this.apiService.deleteMockRow(row['id']);
-          this.apiService.notifyDataChanged();
-          this.broadcastAction(
-            'DELETE',
-            true,
-            'Row Deleted',
-            `Deleted User #${row['id']} (${row['first_name'] || ''}) on ${this.instanceLabel}`
-          );
-          this.showToast('User Deleted', res?.message || `User ID ${row['id']} deleted via API`, 'row');
-        },
-        error: () => {
-          this.apiService.deleteMockRow(row['id']);
-          this.apiService.notifyDataChanged();
-          this.broadcastAction(
-            'DELETE',
-            true,
-            'Row Deleted',
-            `Deleted User #${row['id']} (${row['first_name'] || ''}) on ${this.instanceLabel}`
-          );
-          this.showToast('User Deleted (Shared)', `Deleted row: ${row['first_name']} — updated across both tables`, 'row');
-        },
-      });
+      this.deleteTargetRowIds = [String(row['id'])];
+      this.showDeleteConfirmModal = true;
+      this.cdr.markForCheck();
       return;
     }
 
+    // 2. EDIT
     if (optionKey === 'edit') {
       this.editForm = {
         id: String(row['id']),
@@ -2406,9 +3042,106 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // 3. REFRESH: Refresh ONLY this single row via data_api (no full table reload)
     if (optionKey === 'refresh') {
-      this.fetchTableData();
-      this.showToast('Refreshed', `Reloaded row data from API`, 'row');
+      const dataApiUrl = this.tableConfig.table_api.data_api || '/identity/management/users/:id';
+      this.apiService.fetchUser(dataApiUrl, row['id'], this.apiBaseUrl).subscribe({
+        next: res => {
+          const user = res?.data || res;
+          if (user && typeof user === 'object') {
+            Object.assign(row, user);
+            this.originalRowData.set(String(row['id']), { ...row });
+            this.apiService.updateMockRow(row['id'], user);
+          }
+          this.showToast('Row Refreshed', `Refreshed User #${row['id']} (${row['first_name'] || ''}) from API`, 'row');
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.showToast('Refresh Failed', `Could not refresh User #${row['id']}`, 'row');
+          this.cdr.markForCheck();
+        },
+      });
+      return;
+    }
+
+    // 4. DISABLE: Disable ONLY this single row via update_api (status = inactive, disabled = true)
+    if (optionKey === 'disable') {
+      const updateUrl = this.tableConfig.table_api.update_api || '/identity/management/users/update/:id';
+      row['status'] = 'inactive';
+      row['disabled'] = true;
+      this.apiService.updateUser(updateUrl, row['id'], { status: 'inactive' }, this.apiBaseUrl).subscribe({
+        next: () => {
+          this.originalRowData.set(String(row['id']), { ...row });
+          this.apiService.updateMockRow(row['id'], { status: 'inactive', disabled: true });
+          this.broadcastAction('EDIT', false, 'Row Disabled', `Disabled User #${row['id']}`);
+          this.showToast('Row Disabled', `User #${row['id']} marked inactive via API`, 'row');
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.originalRowData.set(String(row['id']), { ...row });
+          this.apiService.updateMockRow(row['id'], { status: 'inactive', disabled: true });
+          this.broadcastAction('EDIT', false, 'Row Disabled', `Disabled User #${row['id']}`);
+          this.showToast('Row Disabled', `User #${row['id']} marked inactive`, 'row');
+          this.cdr.markForCheck();
+        },
+      });
+      return;
+    }
+
+    // 5. REVERT: Revert ONLY if individual checkbox is selected, master is not selected, and row is dirty
+    if (optionKey === 'revert') {
+      const rowId = String(row['id']);
+      const isIndividualSelected = this.selectedRowIds.has(rowId);
+      const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+
+      if (!isIndividualSelected || isMaster) {
+        this.showToast('Revert Ineligible', 'Revert requires this individual row checkbox selected (master unchecked)', 'row');
+        return;
+      }
+
+      const orig = this.originalRowData.get(rowId);
+      if (!orig) {
+        this.showToast('No Baseline', `No baseline data found for User #${row['id']}`, 'row');
+        return;
+      }
+
+      const isDirty = this.columnsList.some(col => {
+        if (!col.editable && col.key !== 'status') return false;
+        const curVal = row[col.key] === undefined || row[col.key] === null ? '' : String(row[col.key]).trim();
+        const origVal = orig[col.key] === undefined || orig[col.key] === null ? '' : String(orig[col.key]).trim();
+        return curVal !== origVal;
+      });
+
+      if (!isDirty && row['disabled'] === orig['disabled']) {
+        this.showToast('Row Clean', 'No unsaved edits found on this row to revert', 'row');
+        return;
+      }
+
+      Object.assign(row, { ...orig });
+      this.showToast('Row Reverted', `User #${row['id']} reverted to original baseline`, 'row');
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // 6. VIEW: Open View Details Popup Modal
+    if (optionKey === 'view') {
+      this.openViewModal(row);
+      return;
+    }
+
+    // 7. LOCK / UNLOCK
+    if (optionKey === 'lock' || optionKey === 'lock / unlock') {
+      row['locked'] = !row['locked'];
+      this.showToast(row['locked'] ? 'Row Locked' : 'Row Unlocked', `User #${row['id']}`, 'row');
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // 8. PIN / UNPIN
+    if (optionKey === 'pin / unpin' || optionKey === 'pin') {
+      row['pinned'] = !row['pinned'];
+      this.showToast(row['pinned'] ? 'Row Pinned' : 'Row Unpinned', `User #${row['id']}`, 'row');
+      this.cdr.markForCheck();
       return;
     }
 
