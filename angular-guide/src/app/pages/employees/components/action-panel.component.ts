@@ -82,13 +82,17 @@ export class ActionPanelComponent {
 
   get pinnedSectionGroups(): SectionActionGroup[] {
     return (this.sectionGroups || []).filter(
-      s => (s.pinned === true || String(s.pinned) === 'true') && s.actions && s.actions.length > 0
+      s => (s.pinned === true || String(s.pinned) === 'true') &&
+        s.actions &&
+        s.actions.some(a => a.pinned !== true && String(a.pinned) !== 'true')
     );
   }
 
   get unpinnedSectionGroups(): SectionActionGroup[] {
     return (this.sectionGroups || []).filter(
-      s => s.pinned !== true && String(s.pinned) !== 'true' && s.actions && s.actions.length > 0
+      s => s.pinned !== true && String(s.pinned) !== 'true' &&
+        s.actions &&
+        s.actions.some(a => a.pinned !== true && String(a.pinned) !== 'true')
     );
   }
 }

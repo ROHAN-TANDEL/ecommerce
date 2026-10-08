@@ -9,7 +9,7 @@ import { ScrollerComponent } from './scroller.component';
   standalone: true,
   imports: [CommonModule, FormsModule, ScrollerComponent],
   template: `
-    <div class="relative inline-block text-left" *ngIf="section && section.actions && section.actions.length > 0">
+    <div class="relative inline-block text-left" *ngIf="section && visibleActions && visibleActions.length > 0">
       <!-- Section Dropdown Trigger -->
       <button
         type="button"
@@ -44,7 +44,7 @@ import { ScrollerComponent } from './scroller.component';
           {{ section.name }} Menu
         </div>
 
-        <div *ngFor="let action of section.actions" class="relative group">
+        <div *ngFor="let action of visibleActions" class="relative group">
           <!-- Special Case: Scroller action item replaced with interactive scroller control -->
           <div
             *ngIf="action.key === 'scroller' || action.component === 'scroller_component'; else defaultActionBtn"
@@ -317,6 +317,13 @@ import { ScrollerComponent } from './scroller.component';
 })
 export class DropdownSectionsComponent {
   @Input({ required: true }) section!: SectionActionGroup;
+
+  get visibleActions(): (ActionItemConfig & { key: string })[] {
+    return (this.section?.actions || []).filter(
+      a => a.pinned !== true && String(a.pinned) !== 'true'
+    );
+  }
+
   @Input() isIndividualSelected = false;
   @Input() isMasterChecked = false;
   @Input() hasDirtyRows = false;
@@ -376,7 +383,7 @@ export class DropdownSectionsComponent {
 
   isActionDisabled(actionKey: string): boolean {
     if (actionKey === 'copy' || actionKey === 'enable' || actionKey === 'disable' || actionKey === 'delete') {
-      return !this.isIndividualSelected;
+      return !this.isIndividualSelected && !this.isMasterChecked;
     }
     if (actionKey === 'revert') {
       return !this.hasDirtyRows;
@@ -402,11 +409,8 @@ export class DropdownSectionsComponent {
 
   getActionTooltip(action: ActionItemConfig & { key: string }): string {
     if (action.key === 'copy' || action.key === 'enable' || action.key === 'disable' || action.key === 'delete') {
-      if (this.isMasterChecked) {
-        return `${action.name} is disabled when master checkbox is selected`;
-      }
-      if (!this.isIndividualSelected) {
-        return `Select 1 or more individual rows to ${action.name.toLowerCase()}`;
+      if (!this.isIndividualSelected && !this.isMasterChecked) {
+        return `Select 1 or more rows or master checkbox to ${action.name.toLowerCase()}`;
       }
     }
     if (action.key === 'revert' && !this.hasDirtyRows) {

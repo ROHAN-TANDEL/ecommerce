@@ -144,18 +144,18 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       column_config_api: '/identity/management/users/config/columns',
       table_config_api: '/identity/management/users/config/table',
       action_panel_config_api: '/identity/management/users/config/actions',
-      table_lock_api: '/identity/management/lock/users/table',
-      row_lock_api: '/identity/management/lock/users/rows',
-      lock_status_api: '/identity/management/lock/users',
-      export_data_api: '/identity/management/export/users',
-      download_data_api: '/identity/management/download/users',
-      list_view_api: '/identity/management/view/users/list',
-      save_view_api: '/identity/management/view/users/save',
-      get_view_api: '/identity/management/view/users/:id',
-      delete_view_api: '/identity/management/view/users/:id',
-      default_view_api: '/identity/management/view/users/:id/default',
-      live_talk_api: '/identity/management/talk/users',
-      live_listen_api: '/identity/management/listen/users',
+      table_lock_api: '/identity/management/users/lock/table',
+      row_lock_api: '/identity/management/users/lock/rows',
+      lock_status_api: '/identity/management/users/lock',
+      export_data_api: '/identity/management/users/export',
+      download_data_api: '/identity/management/users/download',
+      list_view_api: '/identity/management/users/view/list',
+      save_view_api: '/identity/management/users/view/create',
+      get_view_api: '/identity/management/users/view/:id',
+      delete_view_api: '/identity/management/users/view/:id',
+      default_view_api: '/identity/management/users/view/:id/default',
+      live_talk_api: '/identity/management/users/talk',
+      live_listen_api: '/identity/management/users/listen',
     },
     show_title_header_section: true,
     enable_add_data_button: true,
@@ -335,7 +335,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         component: 'refresh_component',
         active: true,
         info_note: 'Refresh rows',
-        pinned: false,
+        pinned: true,
         section: 'section_2',
         order: 1,
       },
@@ -673,7 +673,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
   isActionDisabled(actionKey: string): boolean {
     if (actionKey === 'copy' || actionKey === 'enable' || actionKey === 'disable' || actionKey === 'delete') {
-      return !this.isIndividualRowSelectionActive;
+      const hasSelection = this.selectedRowIds.size > 0 || this.isMasterCheckboxChecked || this.isMasterSelected;
+      return !hasSelection;
     }
     if (actionKey === 'revert') {
       return !this.hasDirtyRows;
@@ -685,11 +686,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     if (!action) return '';
     const key = action.key || '';
     if (key === 'copy' || key === 'enable' || key === 'disable' || key === 'delete') {
-      if (this.isMasterCheckboxChecked || this.isMasterSelected) {
-        return `${action.name || key} is disabled when master checkbox is selected`;
-      }
-      if (!this.isIndividualRowSelectionActive) {
-        return `Select 1 or more individual rows to ${(action.name || key).toLowerCase()}`;
+      const hasSelection = this.selectedRowIds.size > 0 || this.isMasterCheckboxChecked || this.isMasterSelected;
+      if (!hasSelection) {
+        return `Select 1 or more rows or master checkbox to ${(action.name || key).toLowerCase()}`;
       }
     }
     if (key === 'revert' && !this.hasDirtyRows) {
@@ -1098,7 +1097,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         .filter(aKey => {
           const item = actionsMap[aKey];
           const isActive = item.active === true || String(item.active) === 'true';
-          return item.section === sKey && isActive;
+          const isPinned = item.pinned === true || String(item.pinned) === 'true';
+          return item.section === sKey && isActive && !isPinned;
         })
         .map(aKey => ({ ...actionsMap[aKey], key: aKey }))
         .sort((a, b) => {
@@ -1331,16 +1331,70 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     // Commit changes into shared backend mock store
     this.apiService.bulkUpdateMockRows(modified.map(m => m.row));
 
-    // Also call backend bulk update API if connected
-    const bulkUpdateUrl = this.tableConfig.table_api.update_bulk_api || '/identity/management/users/update/bulk';
-    this.apiService.updateBulkUsers(bulkUpdateUrl, modified.map(m => m.row), this.apiBaseUrl).subscribe({
-      next: () => {
-        this.apiService.notifyDataChanged();
-      },
-      error: () => {
-        this.apiService.notifyDataChanged();
-      }
-    });
+    const extractUserFields = (row: Record<string, any>) => {
+      const fields: Record<string, any> = {};
+      const allowedKeys = ['first_name', 'last_name', 'email', 'status', 'password_hash'];
+      allowedKeys.forEach(k => {
+        if (row[k] !== undefined && row[k] !== null && row[k] !== '') {
+          fields[k] = k === 'status' ? String(row[k]).toLowerCase() : row[k];
+        }
+      });
+      return fields;
+    };
+
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+
+    if (isMaster) {
+      // ── Rule 1: Master Checkbox Level Bulk Update (POST update_bulk_api) ──
+      const bulkUpdateUrl = this.tableConfig.table_api.update_bulk_api || '/identity/management/users/update/bulk';
+      const cleanSectionData = extractUserFields(this.sectionRowValues);
+      const rowDiffData = modified.length > 0 ? extractUserFields(modified[0].row) : {};
+      const bulkData = Object.keys(cleanSectionData).length > 0 ? cleanSectionData : rowDiffData;
+
+      const excluded = this.selectableRows
+        .filter(r => !this.selectedRowIds.has(String(r['id'])))
+        .map(r => Number(r['id']))
+        .filter(n => !isNaN(n));
+
+      const activeSortCol = Object.keys(this.sortState).find(k => this.sortState[k] !== null);
+      const sorts = activeSortCol && this.sortState[activeSortCol]
+        ? [{ key: activeSortCol, direction: this.sortState[activeSortCol] as 'asc' | 'desc' }]
+        : [];
+
+      this.apiService.updateBulkUsers(
+        bulkUpdateUrl,
+        { data: bulkData, filters: this.activeFilters, excluded, sorts },
+        this.apiBaseUrl
+      ).subscribe({
+        next: () => this.apiService.notifyDataChanged(),
+        error: () => this.apiService.notifyDataChanged()
+      });
+    } else if (modified.length > 1) {
+      // ── Rule 2: Multiple Individual Rows Update (POST update_all_api) ──
+      const updateAllUrl = this.tableConfig.table_api.update_all_api || '/identity/management/users/update/all';
+      const updates = modified
+        .map(m => ({
+          id: Number(m.row['id']),
+          ...extractUserFields(m.row),
+        }))
+        .filter(u => !isNaN(u.id));
+
+      this.apiService.updateAllUsers(updateAllUrl, updates, this.apiBaseUrl).subscribe({
+        next: () => this.apiService.notifyDataChanged(),
+        error: () => this.apiService.notifyDataChanged()
+      });
+    } else if (modified.length === 1) {
+      // ── Rule 3: Single Row Update (PUT update_api) ──
+      const updateSingleUrl = this.tableConfig.table_api.update_api || '/identity/management/users/update/:id';
+      const singleRow = modified[0].row;
+      const singleId = singleRow['id'];
+      const singleBody = extractUserFields(singleRow);
+
+      this.apiService.updateUser(updateSingleUrl, singleId, singleBody, this.apiBaseUrl).subscribe({
+        next: () => this.apiService.notifyDataChanged(),
+        error: () => this.apiService.notifyDataChanged()
+      });
+    }
 
     // Commit baseline state into originalRowData
     modified.forEach(m => {
@@ -1355,7 +1409,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.broadcastAction(
       'SAVE',
       true,
-      'Bulk Changes Saved',
+      isMaster ? 'Master Bulk Changes Saved' : (modified.length > 1 ? 'Multiple Rows Saved' : 'Row Saved'),
       `Committed modifications for ${modified.length} row(s)`
     );
     this.showToast('Changes Saved', `Successfully committed changes for ${modified.length} row(s) across both tables`, 'toolbar');
@@ -1422,13 +1476,18 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // ══════════════════════════════════════════════════════════════════════
 
   onCopySelectedRows(): void {
-    if (!this.isIndividualRowSelectionActive) {
-      this.showToast('Copy Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+    if (this.selectedRowIds.size === 0 && !isMaster) {
+      this.showToast('Copy Unavailable', 'Select 1 or more rows or master checkbox', 'dropdown');
       return;
     }
 
+    const targetRowIds = isMaster
+      ? this.selectableRows.map(r => String(r['id']))
+      : Array.from(this.selectedRowIds);
+
     const copiedRows: Record<string, any>[] = [];
-    this.selectedRowIds.forEach(id => {
+    targetRowIds.forEach(id => {
       const target = this.rows.find(r => String(r['id']) === id);
       if (target) {
         const newId = `copy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -1460,9 +1519,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   onEnableSelectedRows(): void {
-    if (!this.isIndividualRowSelectionActive) {
-      this.showToast('Enable Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+    if (this.selectedRowIds.size === 0 && !isMaster) {
+      this.showToast('Enable Unavailable', 'Select 1 or more rows or master checkbox', 'dropdown');
       return;
+    }
+
+    if (isMaster) {
+      this.selectableRows.forEach(r => this.selectedRowIds.add(String(r['id'])));
+      this.sectionRowValues['status'] = 'active';
     }
 
     let count = 0;
@@ -1487,9 +1552,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   onDisableSelectedRows(): void {
-    if (!this.isIndividualRowSelectionActive) {
-      this.showToast('Disable Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+    if (this.selectedRowIds.size === 0 && !isMaster) {
+      this.showToast('Disable Unavailable', 'Select 1 or more rows or master checkbox', 'dropdown');
       return;
+    }
+
+    if (isMaster) {
+      this.selectableRows.forEach(r => this.selectedRowIds.add(String(r['id'])));
+      this.sectionRowValues['status'] = 'inactive';
     }
 
     let count = 0;
@@ -1514,12 +1585,17 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   onDeleteSelectedRows(): void {
-    if (!this.isIndividualRowSelectionActive) {
-      this.showToast('Delete Unavailable', 'Select 1 or more individual rows (master level not allowed)', 'dropdown');
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
+    if (this.selectedRowIds.size === 0 && !isMaster) {
+      this.showToast('Delete Unavailable', 'Select 1 or more rows or master checkbox', 'dropdown');
       return;
     }
 
-    this.deleteTargetRowIds = Array.from(this.selectedRowIds);
+    if (isMaster) {
+      this.deleteTargetRowIds = this.selectableRows.map(r => String(r['id']));
+    } else {
+      this.deleteTargetRowIds = Array.from(this.selectedRowIds);
+    }
     this.showDeleteConfirmModal = true;
     this.cdr.markForCheck();
   }
@@ -1527,18 +1603,66 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   confirmDeleteRows(): void {
     const toDeleteSet = new Set(this.deleteTargetRowIds);
     const count = toDeleteSet.size;
-    const deleteBulkUrl = this.tableConfig.table_api.delete_bulk_api || '/identity/management/users/delete/bulk';
+    const isMaster = this.isMasterCheckboxChecked || this.isMasterSelected;
 
-    this.apiService.deleteBulkUsers(deleteBulkUrl, Array.from(toDeleteSet), this.apiBaseUrl).subscribe({
-      next: () => {
-        this.apiService.deleteMockRows(Array.from(toDeleteSet));
-        this.apiService.notifyDataChanged();
-      },
-      error: () => {
-        this.apiService.deleteMockRows(Array.from(toDeleteSet));
-        this.apiService.notifyDataChanged();
-      }
-    });
+    if (isMaster) {
+      // ── Rule 1: Master Checkbox Level Bulk Delete (DELETE delete_bulk_api) ──
+      const deleteBulkUrl = this.tableConfig.table_api.delete_bulk_api || '/identity/management/users/delete/bulk';
+      const excluded = this.selectableRows
+        .filter(r => !this.selectedRowIds.has(String(r['id'])))
+        .map(r => Number(r['id']))
+        .filter(n => !isNaN(n));
+
+      const activeSortCol = Object.keys(this.sortState).find(k => this.sortState[k] !== null);
+      const sorts = activeSortCol && this.sortState[activeSortCol]
+        ? [{ key: activeSortCol, direction: this.sortState[activeSortCol] as 'asc' | 'desc' }]
+        : [];
+
+      this.apiService.deleteBulkUsers(
+        deleteBulkUrl,
+        { filters: this.activeFilters, excluded, sorts },
+        this.apiBaseUrl
+      ).subscribe({
+        next: () => {
+          this.apiService.deleteMockRows(Array.from(toDeleteSet));
+          this.apiService.notifyDataChanged();
+        },
+        error: () => {
+          this.apiService.deleteMockRows(Array.from(toDeleteSet));
+          this.apiService.notifyDataChanged();
+        }
+      });
+    } else if (toDeleteSet.size > 1) {
+      // ── Rule 2: Multiple Individual Rows Delete (DELETE delete_all_api) ──
+      const deleteAllUrl = this.tableConfig.table_api.delete_all_api || '/identity/management/users/delete/all';
+      const ids = Array.from(toDeleteSet).map(Number).filter(n => !isNaN(n));
+
+      this.apiService.deleteAllUsers(deleteAllUrl, ids, this.apiBaseUrl).subscribe({
+        next: () => {
+          this.apiService.deleteMockRows(Array.from(toDeleteSet));
+          this.apiService.notifyDataChanged();
+        },
+        error: () => {
+          this.apiService.deleteMockRows(Array.from(toDeleteSet));
+          this.apiService.notifyDataChanged();
+        }
+      });
+    } else if (toDeleteSet.size === 1) {
+      // ── Rule 3: Single Row Delete (DELETE delete_api) ──
+      const deleteSingleUrl = this.tableConfig.table_api.delete_api || '/identity/management/users/delete/:id';
+      const singleId = Array.from(toDeleteSet)[0];
+
+      this.apiService.deleteUser(deleteSingleUrl, singleId, this.apiBaseUrl).subscribe({
+        next: () => {
+          this.apiService.deleteMockRow(singleId);
+          this.apiService.notifyDataChanged();
+        },
+        error: () => {
+          this.apiService.deleteMockRow(singleId);
+          this.apiService.notifyDataChanged();
+        }
+      });
+    }
 
     toDeleteSet.forEach(id => {
       this.selectedRowIds.delete(id);
@@ -1550,7 +1674,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.broadcastAction(
       'DELETE',
       true,
-      'Rows Deleted',
+      isMaster ? 'Master Bulk Delete' : (count > 1 ? 'Multiple Rows Deleted' : 'Row Deleted'),
       `Permanently deleted ${count} selected row(s) from both tables`
     );
     this.showToast('Rows Deleted', `Permanently deleted ${count} row(s) from both tables`, 'dropdown');

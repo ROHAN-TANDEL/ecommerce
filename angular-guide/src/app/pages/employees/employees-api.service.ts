@@ -325,15 +325,20 @@ export class EmployeesApiService {
       .set('limit', limit.toString());
 
     if (sortKey && sortOrder) {
-      params = params.set('sort', sortKey).set('order', sortOrder);
+      params = params
+        .set('sort', JSON.stringify({ [sortKey]: sortOrder }))
+        .set('order', sortOrder);
     }
 
-    Object.keys(filters).forEach(key => {
-      const val = filters[key];
-      if (val !== undefined && val !== null && val !== '') {
-        params = params.set(key, String(val));
-      }
-    });
+    if (filters && Object.keys(filters).length > 0) {
+      params = params.set('filters', JSON.stringify(filters));
+      Object.keys(filters).forEach(key => {
+        const val = filters[key];
+        if (val !== undefined && val !== null && val !== '') {
+          params = params.set(key, typeof val === 'object' ? JSON.stringify(val) : String(val));
+        }
+      });
+    }
 
     return this.http.get<any>(fullUrl, { params }).pipe(
       map(response => {
@@ -374,7 +379,8 @@ export class EmployeesApiService {
   }
 
   /**
-   * Update User via update_api (replaces :id)
+   * Rule 3: Single User Update via update_api (replaces :id)
+   * Method: PUT /identity/management/users/update/:id
    */
   updateUser(
     apiTemplate: string,
@@ -390,17 +396,47 @@ export class EmployeesApiService {
   }
 
   /**
-   * Bulk Update Users
+   * Rule 2: Multiple Individual Rows Update via update_all_api
+   * Method: POST /identity/management/users/update/all
+   * Payload: [{ id: number, ...updatedFields }]
    */
-  updateBulkUsers(apiUrl: string, rows: any[], baseUrl = this.defaultBaseUrl): Observable<any> {
+  updateAllUsers(apiUrl: string, rows: any[], baseUrl = this.defaultBaseUrl): Observable<any> {
     const fullUrl = this.resolveUrl(apiUrl, baseUrl);
-    return this.http.put<any>(fullUrl, { rows }).pipe(
+    return this.http.post<any>(fullUrl, rows).pipe(
       tap(() => this.notifyDataChanged())
     );
   }
 
   /**
-   * Delete User via delete_api (replaces :id)
+   * Rule 1: Master Checkbox Level Bulk Update via update_bulk_api
+   * Method: POST /identity/management/users/update/bulk
+   * Payload: { data: Record<string, any>, filters?: {}, excluded?: number[], sorts?: [] }
+   */
+  updateBulkUsers(
+    apiUrl: string,
+    payload: {
+      data: Record<string, any>;
+      filters?: Record<string, any>;
+      excluded?: (string | number)[];
+      sorts?: any[];
+    },
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    const body = {
+      data: payload?.data || {},
+      filters: payload?.filters || {},
+      excluded: (payload?.excluded || []).map(Number).filter(n => !isNaN(n)),
+      sorts: payload?.sorts || [],
+    };
+    return this.http.post<any>(fullUrl, body).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Rule 3: Single User Delete via delete_api (replaces :id)
+   * Method: DELETE /identity/management/users/delete/:id
    */
   deleteUser(
     apiTemplate: string,
@@ -415,11 +451,39 @@ export class EmployeesApiService {
   }
 
   /**
-   * Delete Bulk Users
+   * Rule 2: Multiple Individual Rows Delete via delete_all_api
+   * Method: DELETE /identity/management/users/delete/all
+   * Payload: { ids: number[] }
    */
-  deleteBulkUsers(apiUrl: string, ids: (string | number)[], baseUrl = this.defaultBaseUrl): Observable<any> {
+  deleteAllUsers(apiUrl: string, ids: (string | number)[], baseUrl = this.defaultBaseUrl): Observable<any> {
     const fullUrl = this.resolveUrl(apiUrl, baseUrl);
-    return this.http.delete<any>(fullUrl, { body: { ids } }).pipe(
+    const numericIds = ids.map(Number).filter(n => !isNaN(n));
+    return this.http.delete<any>(fullUrl, { body: { ids: numericIds } }).pipe(
+      tap(() => this.notifyDataChanged())
+    );
+  }
+
+  /**
+   * Rule 1: Master Checkbox Level Bulk Delete via delete_bulk_api
+   * Method: DELETE /identity/management/users/delete/bulk
+   * Payload: { filters?: {}, excluded?: number[], sorts?: [] }
+   */
+  deleteBulkUsers(
+    apiUrl: string,
+    payload: {
+      filters?: Record<string, any>;
+      excluded?: (string | number)[];
+      sorts?: any[];
+    },
+    baseUrl = this.defaultBaseUrl
+  ): Observable<any> {
+    const fullUrl = this.resolveUrl(apiUrl, baseUrl);
+    const body = {
+      filters: payload?.filters || {},
+      excluded: (payload?.excluded || []).map(Number).filter(n => !isNaN(n)),
+      sorts: payload?.sorts || [],
+    };
+    return this.http.delete<any>(fullUrl, { body }).pipe(
       tap(() => this.notifyDataChanged())
     );
   }
