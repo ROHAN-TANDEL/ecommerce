@@ -275,7 +275,7 @@ export class UserController {
         try {
             const { filters, excluded } = this.userValidator.bulkSelection(req);
             const result = await this.userService.deleteMatchingUsers(filters, excluded);
-            return res.status(200).json({ data: result, message: "successully rows update requested", code: 200 });
+            return res.status(200).json({ data: result, message: "successully rows delete requested", code: 200 });
         } catch (errors) {
             console.log({error: errors});
             return res.status(400).json({ data: null, message: "row update failed", code: 400 });
