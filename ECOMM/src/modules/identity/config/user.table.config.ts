@@ -24,6 +24,8 @@ export const UserTableConfig = {
         "column_config_api" : "/identity/management/users/config/columns",
         "table_config_api" : "/identity/management/users/config/table",
         "action_panel_config_api" : "/identity/management/users/config/actions",
+        "header_config_api" : "/identity/management/users/config/header",
+        "row_actions_config_api" : "/identity/management/users/config/row-actions",
 
         "table_lock_api" : "/identity/management/users/lock/table",
         "row_lock_api" : "/identity/management/users/lock/rows",

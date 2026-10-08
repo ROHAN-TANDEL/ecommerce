@@ -962,6 +962,18 @@ export class UserRoute {
          */
         router.get('/users/config/actions', user.getUserActionsConfig.bind(user));
 
+        /**
+         * @route   GET /users/config/header
+         * @desc    Get user table header section configuration (sync API & Add User dropdown options with popup component names)
+         */
+        router.get('/users/config/header', user.getUserHeaderConfig.bind(user));
+
+        /**
+         * @route   GET /users/config/row-actions
+         * @desc    Get row level action options, popup components, and API configurations
+         */
+        router.get('/users/config/row-actions', user.getUserRowActionsConfig.bind(user));
+
         /** =========================================================================
          * AI SUMMARY & INTERACTION OPERATIONS
          * ========================================================================= */

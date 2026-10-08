@@ -122,3 +122,24 @@ export const UserColumnConfig = {
         filter_data: []
     }
 };
+
+export const UserColumnOptionsConfig = {
+    pin: {
+        key: "pin",
+        name: "pin",
+        active: true,
+        info_note: "Pin column to left freeze side or unpin"
+    },
+    readonly: {
+        key: "readonly",
+        name: "readonly",
+        active: true,
+        info_note: "Toggle column editable / readonly mode"
+    },
+    hide: {
+        key: "hide",
+        name: "hide",
+        active: true,
+        info_note: "Hide or show column in table view"
+    }
+};

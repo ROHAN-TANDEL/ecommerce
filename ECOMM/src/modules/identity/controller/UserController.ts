@@ -1,5 +1,7 @@
-import { UserColumnConfig } from "../config/user.column.config.js";
+import { UserColumnConfig, UserColumnOptionsConfig } from "../config/user.column.config.js";
 import { UserActionsConfig } from "../config/user.actions.config.js";
+import { UserHeaderConfig } from "../config/user.header.config.js";
+import { UserRowActionsConfig } from "../config/user.row-actions.config.js";
 
 import {UserResponse} from "../response/UserResponse.js";
 import {UserTableConfig} from "../config/user.table.config.js";
@@ -196,11 +198,22 @@ export class UserController {
     }
 
     async getUserColumnsConfig(req, res) {
-        return res.json(UserColumnConfig);
+        return res.json({
+            columns: UserColumnConfig,
+            options: UserColumnOptionsConfig
+        });
     }
 
     async getUserActionsConfig(req, res) {
         return res.json(UserActionsConfig);
+    }
+
+    async getUserHeaderConfig(req, res) {
+        return res.json(UserHeaderConfig);
+    }
+
+    async getUserRowActionsConfig(req, res) {
+        return res.json(UserRowActionsConfig);
     }
 
     async createBulkUsers(req, res) {
