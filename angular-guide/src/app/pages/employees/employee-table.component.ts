@@ -2822,16 +2822,21 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     const payload = isSelectedMode
       ? {
           mode: 'selected',
-          row_ids: Array.from(this.selectedRowIds).map(id => (isNaN(Number(id)) ? id : Number(id))),
+          row_ids: Array.from(this.selectedRowIds),
+          selected_row_ids: Array.from(this.selectedRowIds),
+          selected_rows: selectedRows.slice(0, 10),
           rows_sample: selectedRows.slice(0, 10),
           filters: this.activeFilters,
+          active_filters: this.activeFilters,
           total_count: this.pagination.total,
         }
       : {
           mode: 'all',
           filters: this.activeFilters,
+          active_filters: this.activeFilters,
           total_count: this.pagination.total,
           rows_sample: this.rows.slice(0, 10),
+          selected_rows: this.rows.slice(0, 10),
         };
 
     this.isGeneratingAiSummary = true;
