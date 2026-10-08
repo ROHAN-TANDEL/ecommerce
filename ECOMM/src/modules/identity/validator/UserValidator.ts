@@ -527,10 +527,13 @@ export class UserValidator {
 
     aiSummary(req) {
         const body = (req.body && typeof req.body === 'object') ? req.body : {};
+        const rawIds = body.selected_row_ids || body.row_ids || [];
+        const rawRows = body.selected_rows || body.rows_sample || [];
+        const rawFilters = body.active_filters || body.filters || {};
         return {
-            selected_row_ids: Array.isArray(body.selected_row_ids) ? body.selected_row_ids.map(String) : [],
-            selected_rows: Array.isArray(body.selected_rows) ? body.selected_rows : [],
-            active_filters: (body.active_filters && typeof body.active_filters === 'object') ? body.active_filters : {},
+            selected_row_ids: Array.isArray(rawIds) ? rawIds.map(String) : [],
+            selected_rows: Array.isArray(rawRows) ? rawRows : [],
+            active_filters: (rawFilters && typeof rawFilters === 'object') ? rawFilters : {},
             table_key: body.table_key || 'users_table_1234',
             context: (body.context && typeof body.context === 'object') ? body.context : {}
         };
