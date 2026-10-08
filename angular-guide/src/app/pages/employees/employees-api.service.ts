@@ -5,6 +5,9 @@ import {
   TableConfigPayload,
   ColumnConfigMap,
   ActionPanelConfigPayload,
+  HeaderConfigPayload,
+  RowActionsConfigPayload,
+  ColumnOptionsConfigPayload,
   PaginationState,
   SavedTableView,
   LiveTableEvent,
@@ -267,9 +270,16 @@ export class EmployeesApiService {
   /**
    * Fetch Columns Config from /identity/management/users/config/columns
    */
-  fetchColumnsConfig(baseUrl = this.defaultBaseUrl): Observable<ColumnConfigMap> {
+  fetchColumnsConfig(baseUrl = this.defaultBaseUrl): Observable<{ columns: ColumnConfigMap; options?: ColumnOptionsConfigPayload }> {
     const url = this.resolveUrl('/identity/management/users/config/columns', baseUrl);
-    return this.http.get<ColumnConfigMap>(url);
+    return this.http.get<any>(url).pipe(
+      map(res => {
+        if (res && res.columns) {
+          return { columns: res.columns as ColumnConfigMap, options: res.options as ColumnOptionsConfigPayload };
+        }
+        return { columns: res as ColumnConfigMap, options: undefined };
+      })
+    );
   }
 
   /**
@@ -281,26 +291,61 @@ export class EmployeesApiService {
   }
 
   /**
-   * Loads all 3 table configurations in parallel
+   * Fetch Header Config from /identity/management/users/config/header
+   */
+  fetchHeaderConfig(baseUrl = this.defaultBaseUrl): Observable<HeaderConfigPayload> {
+    const url = this.resolveUrl('/identity/management/users/config/header', baseUrl);
+    return this.http.get<HeaderConfigPayload>(url);
+  }
+
+  /**
+   * Fetch Row Actions Config from /identity/management/users/config/row-actions
+   */
+  fetchRowActionsConfig(baseUrl = this.defaultBaseUrl): Observable<RowActionsConfigPayload> {
+    const url = this.resolveUrl('/identity/management/users/config/row-actions', baseUrl);
+    return this.http.get<RowActionsConfigPayload>(url);
+  }
+
+  /**
+   * Loads all configurations in parallel
    */
   bootstrap(baseUrl = this.defaultBaseUrl): Observable<{
     tableConfig: TableConfigPayload;
     columnsConfig: ColumnConfigMap;
+    columnOptionsConfig?: ColumnOptionsConfigPayload;
     actionsConfig: ActionPanelConfigPayload;
+    headerConfig?: HeaderConfigPayload;
+    rowActionsConfig?: RowActionsConfigPayload;
     isLive: boolean;
   }> {
     return forkJoin({
-      tableConfig: this.fetchTableConfig(baseUrl),
-      columnsConfig: this.fetchColumnsConfig(baseUrl),
-      actionsConfig: this.fetchActionsConfig(baseUrl),
+      tableConfig: this.fetchTableConfig(baseUrl).pipe(catchError(() => of(null as any))),
+      columnsData: this.fetchColumnsConfig(baseUrl).pipe(catchError(() => of(null as any))),
+      actionsConfig: this.fetchActionsConfig(baseUrl).pipe(catchError(() => of(null as any))),
+      headerConfig: this.fetchHeaderConfig(baseUrl).pipe(catchError(() => of(null as any))),
+      rowActionsConfig: this.fetchRowActionsConfig(baseUrl).pipe(catchError(() => of(null as any))),
     }).pipe(
-      map(res => ({ ...res, isLive: true })),
+      map(res => {
+        const isLive = !!(res.tableConfig && res.columnsData);
+        return {
+          tableConfig: res.tableConfig,
+          columnsConfig: res.columnsData?.columns || (res.columnsData as any),
+          columnOptionsConfig: res.columnsData?.options,
+          actionsConfig: res.actionsConfig,
+          headerConfig: res.headerConfig,
+          rowActionsConfig: res.rowActionsConfig,
+          isLive,
+        };
+      }),
       catchError(err => {
         console.warn('[EmployeesApiService] Backend API unreachable on :3000, using local configuration fallback.', err);
         return of({
           tableConfig: null as any,
           columnsConfig: null as any,
+          columnOptionsConfig: undefined,
           actionsConfig: null as any,
+          headerConfig: null as any,
+          rowActionsConfig: null as any,
           isLive: false,
         });
       })

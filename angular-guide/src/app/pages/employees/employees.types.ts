@@ -31,6 +31,8 @@ export interface TableApiRegistry {
   live_listen_api: string;
   ai_summary_api?: string;
   ai_interact_api?: string;
+  header_config_api?: string;
+  row_actions_config_api?: string;
 }
 
 export interface SavedTableView {
@@ -245,4 +247,66 @@ export interface TableUserPresence {
   lastActive: Date;
   currentActivity: string;
   status: 'active' | 'idle';
+}
+
+export interface HeaderDropdownOption {
+  key?: string;
+  display_name: string;
+  description?: string;
+  popup_component?: string;
+  api?: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface HeaderConfigPayload {
+  title?: {
+    display_name: string;
+    table_key?: string;
+    description?: string;
+  };
+  sync?: {
+    active: boolean;
+    name: string;
+    api: string;
+    info_note?: string;
+    icon?: string;
+  };
+  add_button?: {
+    active: boolean;
+    name: string;
+    dropdown_options?: Record<string, HeaderDropdownOption> | HeaderDropdownOption[];
+  };
+}
+
+export interface RowActionItem {
+  key: string;
+  name: string;
+  active: boolean;
+  info_note?: string;
+  api?: string;
+  method?: string;
+  icon?: string;
+  popup_component?: string;
+  order?: number;
+}
+
+export interface RowActionsConfigPayload {
+  active?: boolean;
+  actions: Record<string, RowActionItem>;
+}
+
+export interface ColumnOptionItem {
+  key: string;
+  name: string;
+  active: boolean;
+  info_note?: string;
+  icon?: string;
+}
+
+export interface ColumnOptionsConfigPayload {
+  pin?: ColumnOptionItem;
+  readonly?: ColumnOptionItem;
+  hide?: ColumnOptionItem;
+  [key: string]: ColumnOptionItem | undefined;
 }

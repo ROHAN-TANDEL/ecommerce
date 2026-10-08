@@ -29,6 +29,12 @@ import {
   LiveTableEvent,
   TableUserPresence,
   LiveActionType,
+  HeaderConfigPayload,
+  HeaderDropdownOption,
+  RowActionItem,
+  RowActionsConfigPayload,
+  ColumnOptionItem,
+  ColumnOptionsConfigPayload,
 } from './employees.types';
 import {
   ButtonComponent,
@@ -580,6 +586,170 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     },
   };
 
+  // Local instance copy of header configuration
+  rawHeaderConfig: HeaderConfigPayload = {
+    title: {
+      display_name: 'User Management',
+      table_key: 'users_table_1234',
+      description: 'Component-based data architecture: granular headers, action components, cells, and filters.',
+    },
+    sync: {
+      active: true,
+      name: 'Sync API',
+      api: '/identity/management/users',
+      info_note: 'Re-sync from API',
+      icon: 'sync',
+    },
+    add_button: {
+      active: true,
+      name: '+ Add User',
+      dropdown_options: {
+        single_add: {
+          key: 'single_add',
+          display_name: 'Add Single User',
+          description: 'Create 1 user manually via form',
+          popup_component: 'create_user_modal',
+          api: '/identity/management/users/create',
+          icon: 'user_plus',
+          order: 1,
+        },
+        batch_add: {
+          key: 'batch_add',
+          display_name: 'Add Multiple Users (Batch)',
+          description: 'Create N users via batch API',
+          popup_component: 'batch_create_modal',
+          api: '/identity/management/users/create/all',
+          icon: 'users_plus',
+          order: 2,
+        },
+        import_create: {
+          key: 'import_create',
+          display_name: 'Import Users (File Upload)',
+          description: 'Upload .xlsx / .csv to create users',
+          popup_component: 'import_create_modal',
+          api: '/identity/management/users/create/import',
+          icon: 'file_upload',
+          order: 3,
+        },
+        import_update: {
+          key: 'import_update',
+          display_name: 'Import Updates (File Upload)',
+          description: 'Upload .xlsx / .csv to update existing',
+          popup_component: 'import_update_modal',
+          api: '/identity/management/users/update/import',
+          icon: 'file_sync',
+          order: 4,
+        },
+      },
+    },
+  };
+
+  // Local instance copy of row actions configuration
+  rawRowActionsConfig: RowActionsConfigPayload = {
+    active: true,
+    actions: {
+      refresh: {
+        key: 'refresh',
+        name: 'Refresh',
+        active: true,
+        info_note: 'Refresh only this row from database',
+        api: '/identity/management/users/:id',
+        method: 'GET',
+        icon: 'refresh',
+        order: 1,
+      },
+      disable: {
+        key: 'disable',
+        name: 'Disable',
+        active: true,
+        info_note: 'Toggle active / inactive status for this row',
+        api: '/identity/management/users/update/:id',
+        method: 'PUT',
+        icon: 'ban',
+        order: 2,
+      },
+      revert: {
+        key: 'revert',
+        name: 'Revert',
+        active: true,
+        info_note: 'Revert row edits back to original baseline',
+        icon: 'undo',
+        order: 3,
+      },
+      view: {
+        key: 'view',
+        name: 'View',
+        active: true,
+        info_note: 'Open view details popup modal',
+        popup_component: 'view_row_modal',
+        icon: 'eye',
+        order: 4,
+      },
+      pin: {
+        key: 'pin',
+        name: 'Pin / Unpin',
+        active: true,
+        info_note: 'Pin row to top or unpin',
+        icon: 'pin',
+        order: 5,
+      },
+      lock: {
+        key: 'lock',
+        name: 'Lock',
+        active: true,
+        info_note: 'Lock or unlock this row for editing',
+        api: '/identity/management/users/lock/rows',
+        method: 'POST',
+        icon: 'lock',
+        order: 6,
+      },
+      edit: {
+        key: 'edit',
+        name: 'Edit',
+        active: true,
+        info_note: 'Edit user details in modal form',
+        popup_component: 'edit_user_modal',
+        api: '/identity/management/users/update/:id',
+        method: 'PUT',
+        icon: 'edit',
+        order: 7,
+      },
+      delete: {
+        key: 'delete',
+        name: 'Delete',
+        active: true,
+        info_note: 'Delete user record with confirmation',
+        popup_component: 'delete_confirm_modal',
+        api: '/identity/management/users/delete/:id',
+        method: 'DELETE',
+        icon: 'trash',
+        order: 8,
+      },
+    },
+  };
+
+  // Local instance copy of column options configuration
+  rawColumnOptionsConfig: ColumnOptionsConfigPayload = {
+    pin: {
+      key: 'pin',
+      name: 'pin',
+      active: true,
+      info_note: 'Pin column to left freeze side or unpin',
+    },
+    readonly: {
+      key: 'readonly',
+      name: 'readonly',
+      active: true,
+      info_note: 'Toggle column editable / readonly mode',
+    },
+    hide: {
+      key: 'hide',
+      name: 'hide',
+      active: true,
+      info_note: 'Hide or show column in table view',
+    },
+  };
+
   // ══════════════════════════════════════════════════════════════════════
   // ADAPTER ENGINE STATE (Isolated to this table instance)
   // ══════════════════════════════════════════════════════════════════════
@@ -636,8 +806,86 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   get cleanAddButtonName(): string {
-    const raw = this.tableConfig.add_data_button_name || 'Add User';
+    const raw = this.rawHeaderConfig?.add_button?.name || this.tableConfig.add_data_button_name || 'Add User';
     return raw.replace(/^\+\s*/, '');
+  }
+
+  get headerAddDropdownOptions(): HeaderDropdownOption[] {
+    const opts = this.rawHeaderConfig?.add_button?.dropdown_options;
+    if (!opts) return [];
+    if (Array.isArray(opts)) return opts;
+    return Object.keys(opts)
+      .map(k => {
+        const item = (opts as Record<string, HeaderDropdownOption>)[k];
+        return { ...item, key: item.key || k };
+      })
+      .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  }
+
+  get activeRowActions(): RowActionItem[] {
+    const acts = this.rawRowActionsConfig?.actions;
+    if (!acts) return [];
+    return Object.keys(acts)
+      .map(k => ({ ...acts[k], key: acts[k].key || k }))
+      .filter(a => a.active !== false)
+      .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  }
+
+  onHeaderSyncClick(): void {
+    this.bootstrapTable();
+    this.broadcastAction('VIEW', false, 'Header Sync', `${this.instanceLabel} synced table data from API`);
+    this.showToast('Header Sync Triggered', 'Refreshing table configuration and dataset from API', 'header');
+  }
+
+  onHeaderAddOptionClick(opt: HeaderDropdownOption): void {
+    this.showAddUserDropdown = false;
+    const popup = opt.popup_component;
+    if (popup === 'create_user_modal') {
+      this.openCreateModal();
+    } else if (popup === 'batch_create_modal') {
+      this.openBatchCreateModal();
+    } else if (popup === 'import_create_modal') {
+      this.openImportCreateModal();
+    } else if (popup === 'import_update_modal') {
+      this.openImportUpdateModal();
+    } else {
+      this.openCreateModal();
+    }
+  }
+
+  onToggleColumnPin(colKey: string): void {
+    const col = this.allColumnsList.find(c => c.key === colKey);
+    if (!col) return;
+    const nextFrozen = !col.isFrozen;
+    col.isFrozen = nextFrozen;
+    if (this.rawColumnConfig[colKey]) {
+      this.rawColumnConfig[colKey].freez = nextFrozen ? { freez_side: 'left', order: col.order || 1 } : undefined;
+    }
+    this.recomputeColumnOffsets(this.allColumnsList);
+    this.columnsList = this.allColumnsList.filter(c => c.active !== false);
+    this.showToast('Column Pin', `Column "${col.header_name}" ${nextFrozen ? 'pinned to left' : 'unpinned'}`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onToggleColumnReadonly(colKey: string): void {
+    const col = this.allColumnsList.find(c => c.key === colKey);
+    if (!col) return;
+    col.editable = !col.editable;
+    if (this.rawColumnConfig[colKey]) {
+      this.rawColumnConfig[colKey].editable = col.editable;
+    }
+    this.showToast('Column Readonly', `Column "${col.header_name}" is now ${col.editable ? 'editable' : 'readonly'}`, 'dropdown');
+    this.cdr.markForCheck();
+  }
+
+  onColumnOptionSelect(event: { colKey: string; option: 'pin' | 'readonly' | 'hide' }): void {
+    if (event.option === 'pin') {
+      this.onToggleColumnPin(event.colKey);
+    } else if (event.option === 'readonly') {
+      this.onToggleColumnReadonly(event.colKey);
+    } else if (event.option === 'hide') {
+      this.toggleColumnVisibility(event.colKey);
+    }
   }
 
   // UI Interactive States (Isolated to this table instance)
@@ -988,6 +1236,15 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           this.tableConfig = JSON.parse(JSON.stringify(res.tableConfig));
           this.rawColumnConfig = JSON.parse(JSON.stringify(res.columnsConfig));
           this.rawActionPanelConfig = JSON.parse(JSON.stringify(res.actionsConfig));
+          if (res.headerConfig) {
+            this.rawHeaderConfig = JSON.parse(JSON.stringify(res.headerConfig));
+          }
+          if (res.rowActionsConfig) {
+            this.rawRowActionsConfig = JSON.parse(JSON.stringify(res.rowActionsConfig));
+          }
+          if (res.columnOptionsConfig) {
+            this.rawColumnOptionsConfig = JSON.parse(JSON.stringify(res.columnOptionsConfig));
+          }
           this.apiStatus = 'connected';
           this.showToast(
             'API Connected (Live)',
@@ -3010,12 +3267,34 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  onRowActionClick(e: MouseEvent, optionKey: string, row: Record<string, any>): void {
+  onRowActionClick(e: MouseEvent, optionKey: string, row: Record<string, any>, actionItem?: RowActionItem): void {
     e.stopPropagation();
     this.activeRowActionId = null;
 
-    // 1. DELETE
-    if (optionKey === 'delete') {
+    // Check popup_component if defined
+    if (actionItem?.popup_component === 'view_row_modal' || optionKey === 'view') {
+      this.openViewModal(row);
+      return;
+    }
+    if (actionItem?.popup_component === 'edit_user_modal' || optionKey === 'edit') {
+      this.editForm = {
+        id: String(row['id']),
+        first_name: row['first_name'] || '',
+        last_name: row['last_name'] || '',
+        email: row['email'] || '',
+        status: row['status'] || 'active',
+      };
+      this.showEditModal = true;
+      this.broadcastAction(
+        'EDIT',
+        false,
+        'Editing User',
+        `Opened edit modal for User #${row['id']} on ${this.instanceLabel}`
+      );
+      this.cdr.markForCheck();
+      return;
+    }
+    if (actionItem?.popup_component === 'delete_confirm_modal' || optionKey === 'delete') {
       this.deleteTargetRowIds = [String(row['id'])];
       this.showDeleteConfirmModal = true;
       this.cdr.markForCheck();
