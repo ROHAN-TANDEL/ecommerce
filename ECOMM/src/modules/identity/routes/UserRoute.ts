@@ -204,6 +204,7 @@ export class UserRoute {
          * }
          */
         router.get('/users', user.getUsers.bind(user));
+        router.post('/users', user.getUsers.bind(user));
 
         /**
          * @route   GET /users/:id

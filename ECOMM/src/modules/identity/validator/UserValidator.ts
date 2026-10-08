@@ -49,22 +49,56 @@ export class UserValidator {
 
     getUsers(req)
     {
-        const page = Number(req.query?.page || 1);
-        const limit = Number(req.query?.limit || 25);
+        const body = (req.body && typeof req.body === 'object') ? req.body : {};
+        const query = (req.query && typeof req.query === 'object') ? req.query : {};
 
-        const validator = z.object({
-            page: z.coerce.number().int({ message: "invalid page id" }).default(1),
-            limit: z.coerce.number().int({ message: "invalid page limit" }).default(25)
-        }).passthrough();
+        let pageRaw = body.page ?? query.page ?? 1;
+        let limitRaw = body.limit ?? query.limit ?? 25;
 
-        const result = validator.safeParse({ ...req.query, page, limit });
+        const page = Number(pageRaw) > 0 ? Number(pageRaw) : 1;
+        const limit = Number(limitRaw) > 0 ? Number(limitRaw) : 25;
 
-        if (!result.success) {
-            // Throw the Zod errors to be caught by the controller's try/catch block
-            throw new Error(JSON.stringify(result.error.format()));
+        let filters: any = {};
+        if (body.filters !== undefined) {
+            filters = body.filters;
+        } else if (query.filters !== undefined) {
+            filters = query.filters;
         }
 
-        return result.data;
+        if (typeof filters === 'string') {
+            try {
+                filters = JSON.parse(filters);
+            } catch (_) {
+                filters = {};
+            }
+        }
+        if (!filters || typeof filters !== 'object' || Array.isArray(filters)) {
+            filters = {};
+        }
+
+        let sort: any = body.sort ?? query.sort ?? null;
+        if (typeof sort === 'string' && (sort.startsWith('{') || sort.startsWith('['))) {
+            try {
+                sort = JSON.parse(sort);
+            } catch (_) {}
+        }
+
+        const mergedInputs: any = {
+            ...query,
+            ...body,
+            page,
+            limit,
+            filters: { ...filters },
+            sort: sort ?? (query.sort || body.sort)
+        };
+
+        for (const [k, v] of Object.entries(filters)) {
+            if (mergedInputs[k] === undefined) {
+                mergedInputs[k] = v;
+            }
+        }
+
+        return mergedInputs;
     }
 
     updateUsers(req)

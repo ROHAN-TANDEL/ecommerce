@@ -64,10 +64,54 @@ export class UserRepository {
             query = query + UserFilterConfig(filterInputs);
 
             const validSortColumns = ['id', 'first_name', 'last_name', 'email', 'status', 'created_at', 'updated_at'];
-            const sortCol = validSortColumns.includes(inputs?.sort) ? inputs.sort : 'created_at';
-            const sortOrder = String(inputs?.order || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+            const sortClauses: string[] = [];
 
-            query += ` ORDER BY ${sortCol} ${sortOrder} LIMIT $${inputValues.length + 1} OFFSET $${inputValues.length + 2}`;
+            if (inputs?.sort && typeof inputs.sort === 'object' && !Array.isArray(inputs.sort)) {
+                if (inputs.sort.column || inputs.sort.field) {
+                    const col = inputs.sort.column || inputs.sort.field;
+                    if (validSortColumns.includes(col)) {
+                        const dir = String(inputs.sort.order || inputs.sort.direction || 'asc').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+                        sortClauses.push(`${col} ${dir}`);
+                    }
+                } else {
+                    for (const [col, dir] of Object.entries(inputs.sort)) {
+                        if (validSortColumns.includes(col)) {
+                            const order = String(dir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+                            sortClauses.push(`${col} ${order}`);
+                        }
+                    }
+                }
+            } else if (Array.isArray(inputs?.sort)) {
+                for (const item of inputs.sort) {
+                    if (typeof item === 'object' && item !== null) {
+                        const col = item.column || item.field || Object.keys(item)[0];
+                        const dir = item.order || item.direction || Object.values(item)[0];
+                        if (validSortColumns.includes(col)) {
+                            const order = String(dir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+                            sortClauses.push(`${col} ${order}`);
+                        }
+                    } else if (typeof item === 'string' && validSortColumns.includes(item)) {
+                        sortClauses.push(`${item} ASC`);
+                    }
+                }
+            } else if (typeof inputs?.sort === 'string') {
+                if (inputs.sort.includes(':')) {
+                    const [col, dir] = inputs.sort.split(':');
+                    if (validSortColumns.includes(col)) {
+                        const order = String(dir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+                        sortClauses.push(`${col} ${order}`);
+                    }
+                } else if (validSortColumns.includes(inputs.sort)) {
+                    const order = String(inputs.order || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+                    sortClauses.push(`${inputs.sort} ${order}`);
+                }
+            }
+
+            if (sortClauses.length === 0) {
+                sortClauses.push('created_at DESC');
+            }
+
+            query += ` ORDER BY ${sortClauses.join(', ')} LIMIT $${inputValues.length + 1} OFFSET $${inputValues.length + 2}`;
             inputValues.push(limit, offset);
 
             const users = await db.master.query(query, inputValues);

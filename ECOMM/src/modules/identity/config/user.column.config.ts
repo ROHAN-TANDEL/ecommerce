@@ -80,7 +80,7 @@ export const UserColumnConfig = {
     },
     status: {
         header_name: 'Status',
-        filter_key : 'user_name',
+        filter_key : 'status',
         columns: { users: 'status' },
         filter_type: 'list',
         editable: true,

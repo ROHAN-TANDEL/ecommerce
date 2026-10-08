@@ -100,21 +100,22 @@ export class UserController {
             const { page, limit, ...filterInputs } = validated;
 
             const users = await this.userService.getUsers(page, limit, filterInputs);
+            const userList = users?.user || users?.data || [];
 
             return res.status(200).json({
-                ...users,
-                message: null,
-                status : "success",
-                code : 200
+                data: userList,
+                pagination: users?.pagination,
+                message: "users list",
+                status: "success",
+                code: 200
             });
 
-        } catch(errors) {
-
+        } catch(errors: any) {
             console.log({errors:errors});
 
-            return res.status(200).json({
+            return res.status(400).json({
                 data : null,
-                message: "user not found",
+                message: errors?.message ?? "user not found",
                 status : "failed",
                 code : 400
             });
