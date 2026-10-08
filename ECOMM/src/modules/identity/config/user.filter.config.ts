@@ -81,8 +81,10 @@ export function UserFilterConfig(inputs: any, valuesArray?: any[]): string {
             rawVal = rawVal.split(',').map((s: string) => s.trim()).filter(Boolean);
         }
 
+        const fType = config.filter_type || 'single_search';
+
         // 1. multi_search (array of search tokens or single string)
-        if (config.filter_type === 'multi_search') {
+        if (fType === 'multi_search') {
             if (Array.isArray(rawVal)) {
                 const validItems = rawVal.filter(item => item !== undefined && item !== null && String(item).trim() !== '');
                 if (validItems.length > 0) {
@@ -99,8 +101,8 @@ export function UserFilterConfig(inputs: any, valuesArray?: any[]): string {
                 clause += ` AND ${dbColumn} ILIKE $${idx}`;
             }
         }
-        // 2. search (single substring match or array of substrings)
-        else if (config.filter_type === 'search') {
+        // 2. single_search aka search
+        else if (fType === 'single_search' || fType === 'search') {
             if (Array.isArray(rawVal)) {
                 const validItems = rawVal.filter(item => item !== undefined && item !== null && String(item).trim() !== '');
                 if (validItems.length > 0) {
@@ -117,26 +119,17 @@ export function UserFilterConfig(inputs: any, valuesArray?: any[]): string {
                 clause += ` AND ${dbColumn} ILIKE $${idx}`;
             }
         }
-        // 3. list (enum / category matching)
-        else if (config.filter_type === 'list') {
-            if (Array.isArray(rawVal)) {
-                const validItems = rawVal.filter(item => item !== undefined && item !== null && String(item).trim() !== '');
-                if (validItems.length > 0) {
-                    const inParts = validItems.map(item => {
-                        const idx = values.length + 1;
-                        values.push(String(item).trim().toUpperCase());
-                        return `UPPER(${dbColumn}) = $${idx}`;
-                    });
-                    clause += ` AND (${inParts.join(' OR ')})`;
-                }
-            } else {
+        // 3. single_date (exact date matching)
+        else if (fType === 'single_date') {
+            const parsed = parseDateInput(rawVal);
+            if (parsed) {
                 const idx = values.length + 1;
-                values.push(String(rawVal).trim().toUpperCase());
-                clause += ` AND UPPER(${dbColumn}) = $${idx}`;
+                values.push(parsed);
+                clause += ` AND ${dbColumn}::date = $${idx}::date`;
             }
         }
-        // 4. date_range (date comparison)
-        else if (config.filter_type === 'date_range') {
+        // 4. date_range (date range comparison)
+        else if (fType === 'date_range') {
             let startDate: any = null;
             let endDate: any = null;
 
@@ -164,7 +157,70 @@ export function UserFilterConfig(inputs: any, valuesArray?: any[]): string {
                 clause += ` AND ${dbColumn}::date <= $${idx}::date`;
             }
         }
-        // 5. default fallback
+        // 5. single_number (exact number match)
+        else if (fType === 'single_number') {
+            const num = Number(rawVal);
+            if (!isNaN(num)) {
+                const idx = values.length + 1;
+                values.push(num);
+                clause += ` AND ${dbColumn}::numeric = $${idx}`;
+            }
+        }
+        // 6. number_range (min & max number range)
+        else if (fType === 'number_range') {
+            let minVal: any = null;
+            let maxVal: any = null;
+            if (Array.isArray(rawVal)) {
+                if (rawVal.length >= 1 && rawVal[0] !== '' && !isNaN(Number(rawVal[0]))) minVal = Number(rawVal[0]);
+                if (rawVal.length >= 2 && rawVal[1] !== '' && !isNaN(Number(rawVal[1]))) maxVal = Number(rawVal[1]);
+            } else if (typeof rawVal === 'object') {
+                if (rawVal.min !== undefined && rawVal.min !== '' && !isNaN(Number(rawVal.min))) minVal = Number(rawVal.min);
+                if (rawVal.max !== undefined && rawVal.max !== '' && !isNaN(Number(rawVal.max))) maxVal = Number(rawVal.max);
+            } else if (typeof rawVal === 'string' && rawVal.includes('-')) {
+                const parts = rawVal.split('-').map(s => s.trim());
+                if (parts[0] !== '' && !isNaN(Number(parts[0]))) minVal = Number(parts[0]);
+                if (parts[1] !== '' && !isNaN(Number(parts[1]))) maxVal = Number(parts[1]);
+            }
+
+            if (minVal !== null) {
+                const idx = values.length + 1;
+                values.push(minVal);
+                clause += ` AND ${dbColumn}::numeric >= $${idx}`;
+            }
+            if (maxVal !== null) {
+                const idx = values.length + 1;
+                values.push(maxVal);
+                clause += ` AND ${dbColumn}::numeric <= $${idx}`;
+            }
+        }
+        // 7. dropdowns with checkboxes (list / dropdown_checkboxes)
+        else if (fType === 'dropdown_checkboxes' || fType === 'dropdown_checkbox' || fType === 'list') {
+            if (Array.isArray(rawVal)) {
+                const validItems = rawVal.filter(item => item !== undefined && item !== null && String(item).trim() !== '');
+                if (validItems.length > 0) {
+                    const inParts = validItems.map(item => {
+                        const idx = values.length + 1;
+                        values.push(String(item).trim().toUpperCase());
+                        return `UPPER(${dbColumn}::text) = $${idx}`;
+                    });
+                    clause += ` AND (${inParts.join(' OR ')})`;
+                }
+            } else {
+                const idx = values.length + 1;
+                values.push(String(rawVal).trim().toUpperCase());
+                clause += ` AND UPPER(${dbColumn}::text) = $${idx}`;
+            }
+        }
+        // 8. dropdowns with radiobuttons (dropdown_radiobuttons / dropdown_radio)
+        else if (fType === 'dropdown_radiobuttons' || fType === 'dropdown_radio') {
+            const val = Array.isArray(rawVal) ? rawVal[0] : rawVal;
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                const idx = values.length + 1;
+                values.push(String(val).trim().toUpperCase());
+                clause += ` AND UPPER(${dbColumn}::text) = $${idx}`;
+            }
+        }
+        // 9. default fallback
         else {
             const idx = values.length + 1;
             values.push(`%${String(rawVal).trim()}%`);

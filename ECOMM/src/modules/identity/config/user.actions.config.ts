@@ -29,10 +29,35 @@ export const UserActionsConfig = {
             component: "dropdown_sections_component",
             order: 5,
             pinned : true
+        },
+        section_6: {
+            name: "Themes",
+            component: "dropdown_sections_component",
+            order: 6,
+            pinned : true
         }
     },
 
     actions: {
+        // themes : {
+        //     name: "Themes",
+        //     active: true,
+        //     pinned : false,
+        //     component: "theme_component",
+        //     info_note: "set themes",
+        //     dropdown_options: {
+        //         excel: {
+        //             display_name: "excel .xlsx",
+        //             info_note: "download max 10k rows"
+        //         },
+        //         csv: {
+        //             display_name: "csv download",
+        //             info_note: "csv download"
+        //         }
+        //     },
+        //     section: "section_4",
+        //     order: 8
+        // },
         refresh: {
             name: "Refresh",
             component: "refresh_component",
@@ -280,7 +305,7 @@ export const UserActionsConfig = {
             active: true,
             info_note: "Adjust spacing between rows",
             info_note: "Show live panel feed",
-            pinned: true,
+            pinned: false,
             section: "section_3",
             order: 3
         },
@@ -320,10 +345,18 @@ export const UserActionsConfig = {
             component: "live_component_option",
             active: true,
             info_note: "Interact with AI",
-            info_note: "Interact with AI",
             pinned: false,
             section: "section_5",
             order: 4
+        },
+        ai_data_reviewed: {
+            name: "Reviewed",
+            component: "live_component_option",
+            active: true,
+            info_note: "Interact with AI",
+            pinned: false,
+            section: "section_5",
+            order: 5
         }
     }
 };

@@ -634,4 +634,323 @@ export class UserController {
             });
         }
     }
+
+    /**
+     * @route POST /users/ai/summary
+     * @desc  AI Summary: Summarizes the table as a whole or specific selected rows
+     */
+    async aiSummary(req, res) {
+        try {
+            const inputs = this.userValidator.aiSummary(req);
+            let summaryData: any = {};
+
+            // 1. If specific rows are selected: summarize only those rows
+            if (inputs.selected_row_ids.length > 0 || inputs.selected_rows.length > 0) {
+                let rowsToSummarize = inputs.selected_rows;
+
+                if (rowsToSummarize.length === 0 && inputs.selected_row_ids.length > 0) {
+                    const fetchedUsers: any[] = [];
+                    for (const id of inputs.selected_row_ids) {
+                        try {
+                            const u = await this.userService.getUser([Number(id) || id]);
+                            if (u && !u.message) fetchedUsers.push(u);
+                        } catch (e) {}
+                    }
+                    rowsToSummarize = fetchedUsers;
+                }
+
+                const count = rowsToSummarize.length || inputs.selected_row_ids.length;
+                const statusCounts: Record<string, number> = { active: 0, inactive: 0, pending: 0 };
+                const names: string[] = [];
+                const emails: string[] = [];
+
+                rowsToSummarize.forEach((r: any) => {
+                    const st = String(r.status || 'active').toLowerCase();
+                    statusCounts[st] = (statusCounts[st] || 0) + 1;
+                    const name = `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email || `User #${r.id}`;
+                    names.push(name);
+                    if (r.email) emails.push(r.email);
+                });
+
+                const statusText = Object.entries(statusCounts)
+                    .filter(([, v]) => v > 0)
+                    .map(([k, v]) => `${v} ${k}`)
+                    .join(', ');
+
+                const namesSnippet = names.slice(0, 3).join(', ') + (names.length > 3 ? ` and ${names.length - 3} more` : '');
+
+                summaryData = {
+                    type: "row_summary",
+                    title: `Selected Rows Summary (${count} User${count > 1 ? 's' : ''})`,
+                    summary: `You have selected ${count} record(s): ${namesSnippet}. Status distribution among selected items: ${statusText || 'None'}.`,
+                    highlights: [
+                        `Selected user records: ${names.join(', ')}`,
+                        `Status breakdown: ${statusText || 'N/A'}`,
+                        emails.length > 0 ? `Associated emails: ${emails.slice(0, 5).join(', ')}` : null
+                    ].filter(Boolean),
+                    stats: {
+                        selected_count: count,
+                        status_counts: statusCounts,
+                        selected_ids: inputs.selected_row_ids
+                    },
+                    generated_at: new Date().toISOString()
+                };
+            } else {
+                // 2. Table-level summary: summarize overall table purpose and dataset metrics
+                let totalUsers = 0;
+                let sampleUsers: any[] = [];
+                try {
+                    const usersResult = await this.userService.getUsers(1, 100, inputs);
+                    sampleUsers = usersResult?.user || [];
+                    totalUsers = usersResult?.pagination?.total ?? sampleUsers.length;
+                } catch (e) {}
+
+                const statusCounts: Record<string, number> = { active: 0, inactive: 0, pending: 0 };
+                sampleUsers.forEach((r: any) => {
+                    const st = String(r.status || 'active').toLowerCase();
+                    statusCounts[st] = (statusCounts[st] || 0) + 1;
+                });
+
+                const activeFiltersCount = Object.keys(inputs.active_filters || {}).length;
+                const filterDesc = activeFiltersCount > 0
+                    ? ` Table currently has ${activeFiltersCount} active filter(s) applied.`
+                    : ' No filters are currently applied.';
+
+                summaryData = {
+                    type: "table_summary",
+                    title: "User Management Table Overview",
+                    summary: `This table manages core identity records, employee accounts, access permissions, and authentication baselines across the platform.${filterDesc} Total records: ${totalUsers}.`,
+                    highlights: [
+                        `Total registered users: ${totalUsers}`,
+                        `Status breakdown: ${statusCounts.active} active, ${statusCounts.pending} pending, ${statusCounts.inactive} inactive`,
+                        activeFiltersCount > 0 ? `Active filters applied: ${Object.keys(inputs.active_filters).join(', ')}` : 'Displaying unfiltered dataset'
+                    ],
+                    stats: {
+                        total_users: totalUsers,
+                        status_counts: statusCounts,
+                        active_filters: inputs.active_filters
+                    },
+                    generated_at: new Date().toISOString()
+                };
+            }
+
+            return res.status(200).json({
+                status: "success",
+                code: 200,
+                message: "AI summary generated successfully",
+                data: summaryData
+            });
+        } catch (error: any) {
+            console.log({ error });
+            return res.status(400).json({
+                status: "failed",
+                code: 400,
+                message: error?.message ?? "Failed to generate AI summary",
+                data: null
+            });
+        }
+    }
+
+    /**
+     * @route POST /users/ai/interact
+     * @desc  Interact with Table using AI:
+     *        1. Add / remove filters
+     *        2. Propose data edits (non-destructive; requires user review before saving)
+     *        3. Generate up to 5 relative test data records
+     */
+    async aiInteract(req, res) {
+        try {
+            const inputs = this.userValidator.aiInteract(req);
+            const query = inputs.query.toLowerCase();
+            const currentRows = inputs.current_rows || [];
+
+            let reply = "";
+            let intent = "general";
+            const actions: any = {
+                filters: { set: {}, remove: [] },
+                proposed_edits: [],
+                generated_rows: [],
+                requires_user_review: false
+            };
+
+            // 1. FILTER INTENTS
+            const isFilterAdd = query.includes('filter') || query.includes('show only') || query.includes('find') || query.includes('search');
+            const isFilterRemove = query.includes('remove filter') || query.includes('clear filter') || query.includes('reset filter') || query.includes('show all');
+
+            if (isFilterRemove) {
+                intent = "filter_remove";
+                actions.filters.remove_all = true;
+                reply = "I have cleared all table filters so you can see all records.";
+            } else if (isFilterAdd) {
+                intent = "filter_add";
+                if (query.includes('active')) {
+                    actions.filters.set['status'] = ['active'];
+                    reply = "Filtered table to show only active users.";
+                } else if (query.includes('inactive')) {
+                    actions.filters.set['status'] = ['inactive'];
+                    reply = "Filtered table to show only inactive users.";
+                } else if (query.includes('pending')) {
+                    actions.filters.set['status'] = ['pending'];
+                    reply = "Filtered table to show only pending users.";
+                } else {
+                    const matchName = query.match(/(?:for|named|user|name)\s+([a-zA-Z]+)/);
+                    if (matchName && matchName[1]) {
+                        const nameTerm = matchName[1];
+                        actions.filters.set['first_name'] = [nameTerm];
+                        reply = `Filtered table for first name matching "${nameTerm}".`;
+                    } else {
+                        reply = "Understood. Please specify the column or value you wish to filter by (e.g. 'filter active users').";
+                    }
+                }
+            }
+
+            // 2. GENERATE NEW RELATIVE DATA (Max 5 records)
+            const isGenerate = query.includes('generate') || query.includes('add random') || query.includes('create test') || query.includes('sample user') || query.includes('dummy user') || query.includes('fake user');
+            if (isGenerate) {
+                intent = "generate";
+                const numMatch = query.match(/\b([1-9]|10)\b/);
+                let count = numMatch ? parseInt(numMatch[1], 10) : 3;
+                if (count > 5) count = 5;
+                if (count < 1) count = 1;
+
+                const firstNames = ['Liam', 'Sophia', 'Ethan', 'Olivia', 'Noah', 'Ava', 'Lucas', 'Mia', 'Jackson', 'Emma'];
+                const lastNames = ['Vance', 'Sterling', 'Hayes', 'Brooks', 'Sinclair', 'Bennett', 'Reynolds', 'Sullivan', 'Carter', 'Morgan'];
+                const domains = ['enterprise.io', 'techcorp.com', 'acme.org'];
+
+                const genRows: any[] = [];
+                for (let i = 0; i < count; i++) {
+                    const fn = firstNames[Math.floor(Math.random() * firstNames.length)];
+                    const ln = lastNames[Math.floor(Math.random() * lastNames.length)];
+                    const domain = domains[Math.floor(Math.random() * domains.length)];
+                    const randSuffix = Math.floor(Math.random() * 900) + 100;
+                    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}${randSuffix}@${domain}`;
+                    const targetStatus = query.includes('pending') ? 'pending' : (query.includes('inactive') ? 'inactive' : 'active');
+
+                    genRows.push({
+                        temp_id: `ai_gen_${Date.now()}_${i + 1}`,
+                        first_name: fn,
+                        last_name: ln,
+                        email: email,
+                        status: targetStatus,
+                        created_at: new Date().toLocaleDateString(),
+                        is_ai_generated: true,
+                        needs_review: true
+                    });
+                }
+
+                actions.generated_rows = genRows;
+                actions.requires_user_review = true;
+                reply = `Generated ${count} relative sample user record(s) matching your table schema. They have been added in draft mode and marked for review. Please review and accept them before saving.`;
+            }
+
+            // 3. PROPOSED DATA EDITS (Non-destructive: AI does NOT execute any DB update!)
+            const isEdit = query.includes('change') || query.includes('update') || query.includes('modify') || query.includes('set') || query.includes('make') || query.includes('capitalize');
+            if (isEdit && !isGenerate) {
+                intent = "edit_propose";
+                const proposedEdits: any[] = [];
+
+                if (query.includes('pending to active') || (query.includes('activate') && query.includes('pending'))) {
+                    currentRows.forEach((r: any) => {
+                        if (String(r.status).toLowerCase() === 'pending') {
+                            proposedEdits.push({
+                                row_id: String(r.id),
+                                field: 'status',
+                                old_value: r.status,
+                                new_value: 'active',
+                                user_name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email,
+                                needs_review: true,
+                                reason: 'Requested to change pending users to active'
+                            });
+                        }
+                    });
+                } else if (query.includes('inactive') && query.includes('to active')) {
+                    currentRows.forEach((r: any) => {
+                        if (String(r.status).toLowerCase() === 'inactive') {
+                            proposedEdits.push({
+                                row_id: String(r.id),
+                                field: 'status',
+                                old_value: r.status,
+                                new_value: 'active',
+                                user_name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || r.email,
+                                needs_review: true,
+                                reason: 'Requested to change inactive users to active'
+                            });
+                        }
+                    });
+                } else if (query.includes('capitalize')) {
+                    currentRows.forEach((r: any) => {
+                        const fn = r.first_name || '';
+                        const capitalized = fn.charAt(0).toUpperCase() + fn.slice(1);
+                        if (fn && fn !== capitalized) {
+                            proposedEdits.push({
+                                row_id: String(r.id),
+                                field: 'first_name',
+                                old_value: fn,
+                                new_value: capitalized,
+                                user_name: fn,
+                                needs_review: true,
+                                reason: 'Capitalized first name'
+                            });
+                        }
+                    });
+                } else {
+                    const idMatch = query.match(/user\s*(?:#|id\s*)?(\d+)/);
+                    if (idMatch && idMatch[1]) {
+                        const targetId = idMatch[1];
+                        const row = currentRows.find((r: any) => String(r.id) === targetId);
+                        if (row) {
+                            const newStatus = query.includes('active') ? 'active' : (query.includes('inactive') ? 'inactive' : 'pending');
+                            proposedEdits.push({
+                                row_id: targetId,
+                                field: 'status',
+                                old_value: row.status,
+                                new_value: newStatus,
+                                user_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || row.email,
+                                needs_review: true,
+                                reason: `Requested status change to ${newStatus}`
+                            });
+                        }
+                    }
+                }
+
+                if (proposedEdits.length > 0) {
+                    actions.proposed_edits = proposedEdits;
+                    actions.requires_user_review = true;
+                    reply = `I have prepared proposed updates for ${proposedEdits.length} record(s). No changes have been saved to the database. Please review the highlighted rows in the table and mark them as reviewed to commit them.`;
+                } else if (!reply) {
+                    reply = "I analyzed your request, but could not find matching rows on screen to edit. You can specify rows by status or user ID.";
+                }
+            }
+
+            // Default response
+            if (!reply) {
+                reply = `I am your AI Table Assistant. You can ask me to:
+1. Filter table records (e.g., "show only active users", "clear filters")
+2. Propose data edits (e.g., "change all pending users to active")
+3. Generate sample relative data (e.g., "generate 3 test users", max 5 records)
+All proposed edits and generated rows are marked for your manual review before any database save.`;
+            }
+
+            return res.status(200).json({
+                status: "success",
+                code: 200,
+                message: "AI interaction processed successfully",
+                data: {
+                    reply,
+                    intent,
+                    actions,
+                    query: inputs.query,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        } catch (error: any) {
+            console.log({ error });
+            return res.status(400).json({
+                status: "failed",
+                code: 400,
+                message: error?.message ?? "Failed to process AI query",
+                data: null
+            });
+        }
+    }
 }

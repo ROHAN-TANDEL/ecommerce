@@ -524,4 +524,31 @@ export class UserValidator {
             options
         };
     }
+
+    aiSummary(req) {
+        const body = (req.body && typeof req.body === 'object') ? req.body : {};
+        return {
+            selected_row_ids: Array.isArray(body.selected_row_ids) ? body.selected_row_ids.map(String) : [],
+            selected_rows: Array.isArray(body.selected_rows) ? body.selected_rows : [],
+            active_filters: (body.active_filters && typeof body.active_filters === 'object') ? body.active_filters : {},
+            table_key: body.table_key || 'users_table_1234',
+            context: (body.context && typeof body.context === 'object') ? body.context : {}
+        };
+    }
+
+    aiInteract(req) {
+        const body = (req.body && typeof req.body === 'object') ? req.body : {};
+        const query = typeof body.query === 'string' ? body.query.trim() : '';
+        if (!query) {
+            throw new Error("Query is required for AI interaction");
+        }
+        return {
+            query,
+            columns: Array.isArray(body.columns) ? body.columns : [],
+            current_rows: Array.isArray(body.current_rows) ? body.current_rows : [],
+            selected_row_ids: Array.isArray(body.selected_row_ids) ? body.selected_row_ids.map(String) : [],
+            active_filters: (body.active_filters && typeof body.active_filters === 'object') ? body.active_filters : {},
+            table_key: body.table_key || 'users_table_1234'
+        };
+    }
 }

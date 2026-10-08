@@ -962,6 +962,22 @@ export class UserRoute {
          */
         router.get('/users/config/actions', user.getUserActionsConfig.bind(user));
 
+        /** =========================================================================
+         * AI SUMMARY & INTERACTION OPERATIONS
+         * ========================================================================= */
+
+        /**
+         * @route   POST /users/ai/summary
+         * @desc    AI Summary of whole table or selected rows
+         */
+        router.post('/users/ai/summary', user.aiSummary.bind(user));
+
+        /**
+         * @route   POST /users/ai/interact
+         * @desc    Interact with table via AI (add/remove filters, propose data edits, generate sample data)
+         */
+        router.post('/users/ai/interact', user.aiInteract.bind(user));
+
         return router;
     }
 }

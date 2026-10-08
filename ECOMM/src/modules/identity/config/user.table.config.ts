@@ -40,6 +40,9 @@ export const UserTableConfig = {
 
         "live_talk_api" : "/identity/management/users/talk",
         "live_listen_api" : "/identity/management/users/listen",
+
+        "ai_summary_api" : "/identity/management/users/ai/summary",
+        "ai_interact_api" : "/identity/management/users/ai/interact",
     },
 
     "show_title_header_section" : true,
