@@ -391,4 +391,137 @@ export class UserValidator {
             invalidRows
         };
     }
+
+    importUpdateUsers(req: any) {
+        const file = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+
+        let rawRows: any[] = [];
+
+        if (file && file.buffer) {
+            try {
+                const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+                const sheetName = workbook.SheetNames[0];
+                if (!sheetName || !workbook.Sheets[sheetName]) {
+                    throw new Error("No readable sheet found in uploaded file");
+                }
+                rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+            } catch (err: any) {
+                throw new Error(`Failed to parse Excel/CSV file: ${err.message}`);
+            }
+        } else if (Array.isArray(req.body?.users)) {
+            rawRows = req.body.users;
+        } else if (Array.isArray(req.body?.data)) {
+            rawRows = req.body.data;
+        } else if (Array.isArray(req.body)) {
+            rawRows = req.body;
+        } else {
+            throw new Error("Excel or CSV file (user_detail.xlsx / user_detail.csv) is required");
+        }
+
+        if (rawRows.length === 0) {
+            throw new Error("The uploaded file does not contain any data rows");
+        }
+
+        let options: any = {};
+        if (req.body?.options) {
+            if (typeof req.body.options === 'string') {
+                try {
+                    options = { ...JSON.parse(req.body.options) };
+                } catch (_) {}
+            } else if (typeof req.body.options === 'object') {
+                options = { ...req.body.options };
+            }
+        }
+
+        const normalizeKey = (key: string): string => {
+            const k = key.trim().toLowerCase().replace(/[\s_-]+/g, "");
+            if (k === "firstname" || k === "first") return "first_name";
+            if (k === "lastname" || k === "last") return "last_name";
+            if (k === "email" || k === "emailaddress" || k === "mail") return "email";
+            if (k === "status" || k === "userstatus") return "status";
+            if (k === "password" || k === "passwordhash") return "password_hash";
+            if (k === "id" || k === "userid") return "id";
+            return key.trim().toLowerCase().replace(/\s+/g, "_");
+        };
+
+        let rawIdentifierKey = req.body?.identifier_key 
+            || options?.identifier_key 
+            || req.query?.identifier_key 
+            || "email";
+
+        const identifierKey = normalizeKey(String(rawIdentifierKey));
+
+        const validUpdates: any[] = [];
+        const invalidRows: any[] = [];
+
+        rawRows.forEach((rawRow: any, index: number) => {
+            const rowNumber = index + 2;
+            const normalizedRow: any = {};
+
+            Object.entries(rawRow).forEach(([k, v]) => {
+                normalizedRow[normalizeKey(k)] = typeof v === 'string' ? v.trim() : v;
+            });
+
+            const idVal = normalizedRow[identifierKey] !== undefined ? String(normalizedRow[identifierKey]).trim() : "";
+
+            if (!idVal) {
+                invalidRows.push({
+                    row: rowNumber,
+                    error: `Missing identifier column '${identifierKey}'`,
+                    data: rawRow
+                });
+                return;
+            }
+
+            const updateData: any = {};
+            if (normalizedRow.first_name !== undefined && normalizedRow.first_name !== "") {
+                updateData.first_name = String(normalizedRow.first_name).trim();
+            }
+            if (normalizedRow.last_name !== undefined && normalizedRow.last_name !== "") {
+                updateData.last_name = String(normalizedRow.last_name).trim();
+            }
+            if (normalizedRow.status !== undefined && normalizedRow.status !== "") {
+                const s = String(normalizedRow.status).trim().toLowerCase();
+                updateData.status = ['active', 'inactive', 'pending'].includes(s)
+                    ? s.toUpperCase()
+                    : normalizedRow.status;
+            }
+            if (normalizedRow.password_hash !== undefined && normalizedRow.password_hash !== "") {
+                updateData.password_hash = String(normalizedRow.password_hash).trim();
+            } else if (normalizedRow.password !== undefined && normalizedRow.password !== "") {
+                updateData.password_hash = bcrypt.hashSync(String(normalizedRow.password).trim(), 10);
+            }
+
+            if (identifierKey !== 'email' && normalizedRow.email !== undefined && normalizedRow.email !== "") {
+                updateData.email = String(normalizedRow.email).trim();
+            }
+
+            if (Object.keys(updateData).length === 0) {
+                invalidRows.push({
+                    row: rowNumber,
+                    [identifierKey]: idVal,
+                    error: "No fields provided to update"
+                });
+                return;
+            }
+
+            validUpdates.push({
+                rowNumber,
+                identifierKey,
+                identifierValue: idVal,
+                data: updateData
+            });
+        });
+
+        if (validUpdates.length === 0 && invalidRows.length > 0) {
+            throw new Error(`Failed to process file: ${invalidRows[0].error}`);
+        }
+
+        return {
+            updates: validUpdates,
+            identifierKey,
+            invalidRows,
+            options
+        };
+    }
 }

@@ -353,7 +353,7 @@ export class UserRoute {
          *     "code": 400
          * }
          */
-        router.post('/users/update/import', user.importUpdateUsers.bind(user));
+        router.post('/users/update/import', upload.any(), user.importUpdateUsers.bind(user));
 
         /**
          * @route   PUT /users/update/:id

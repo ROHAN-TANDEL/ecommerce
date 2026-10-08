@@ -275,6 +275,67 @@ export class UserRepository {
         }
     }
 
+    async importUpdateUsers(updates: any[], options: any = {}) {
+        try {
+            if (!updates || updates.length === 0) {
+                return { updated: [], not_found: [], errors: [] };
+            }
+
+            const updated: any[] = [];
+            const not_found: any[] = [];
+            const errors: any[] = [];
+
+            for (const item of updates) {
+                const { rowNumber, identifierKey, identifierValue, data } = item;
+                if (!data || Object.keys(data).length === 0) {
+                    continue;
+                }
+
+                try {
+                    const clauseInfo = this.queryBuilder.binding(data);
+                    if (!clauseInfo) continue;
+                    const { setClause, values, nextIndex } = clauseInfo;
+
+                    let query = '';
+                    let whereVal = identifierValue;
+                    if (identifierKey === 'email') {
+                        query = `UPDATE master.users SET ${setClause}, updated_at = NOW() WHERE LOWER(email) = LOWER($${nextIndex}) RETURNING id, first_name, last_name, email, status, updated_at`;
+                    } else if (identifierKey === 'id') {
+                        query = `UPDATE master.users SET ${setClause}, updated_at = NOW() WHERE id = $${nextIndex} RETURNING id, first_name, last_name, email, status, updated_at`;
+                    } else {
+                        query = `UPDATE master.users SET ${setClause}, updated_at = NOW() WHERE ${identifierKey} = $${nextIndex} RETURNING id, first_name, last_name, email, status, updated_at`;
+                    }
+
+                    const result = await db.master.query(query, [...values, whereVal]);
+                    if (result?.rows && result.rows.length > 0) {
+                        updated.push({
+                            row: rowNumber,
+                            ...result.rows[0]
+                        });
+                    } else {
+                        not_found.push({
+                            row: rowNumber,
+                            [identifierKey]: identifierValue,
+                            reason: `User with ${identifierKey} '${identifierValue}' not found in database`
+                        });
+                    }
+                } catch (err: any) {
+                    console.error("Error updating user row:", rowNumber, err);
+                    errors.push({
+                        row: rowNumber,
+                        [identifierKey]: identifierValue,
+                        error: err?.message || "Failed to update user"
+                    });
+                }
+            }
+
+            return { updated, not_found, errors };
+        } catch (error: any) {
+            console.error("Error in importUpdateUsers:", error);
+            throw error;
+        }
+    }
+
     async updateBulkUsers(updates) {
         try {
             const results = [];

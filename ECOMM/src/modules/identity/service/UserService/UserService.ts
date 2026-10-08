@@ -8,6 +8,7 @@ export default class UserService {
     createBulkUsers(users?: any);
     createAllUsers(users?: any);
     importUsers(users?: any, options?: any);
+    importUpdateUsers(updates?: any, options?: any);
     updateUserStatus();
     getViews(tableKey?: string, userId?: any);
     saveView(data: any);

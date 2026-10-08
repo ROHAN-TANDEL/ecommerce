@@ -590,5 +590,48 @@ export class UserController {
             });
         }
     }
-    async importUpdateUsers(req, res) {}
+    async importUpdateUsers(req, res)
+    {
+        try {
+            const { updates, identifierKey, invalidRows, options } = this.userValidator.importUpdateUsers(req);
+            const { updated, not_found, errors: dbErrors } = await this.userService.importUpdateUsers(updates, options);
+
+            const allErrors = [
+                ...(invalidRows || []),
+                ...(dbErrors || []),
+                ...(not_found || []).map((nf: any) => ({
+                    row: nf.row,
+                    [identifierKey]: nf[identifierKey],
+                    error: nf.reason
+                }))
+            ];
+
+            const updatedCount = (updated || []).length;
+            const failedCount = allErrors.length;
+
+            return res.status(200).json({
+                data: {
+                    updated_count: updatedCount,
+                    failed_count: failedCount,
+                    updated: updated || [],
+                    not_found: not_found || [],
+                    errors: allErrors,
+                    identifier_key: identifierKey,
+                    options
+                },
+                message: "user updates imported successfully",
+                status: "success",
+                code: 200
+            });
+        } catch (errors: any) {
+            console.log({ error: errors });
+
+            return res.status(400).json({
+                data: null,
+                message: errors?.message ?? "failed to import user updates",
+                status: "failed",
+                code: 400
+            });
+        }
+    }
 }

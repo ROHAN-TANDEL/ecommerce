@@ -102,6 +102,10 @@ export class UserServiceImpl implements UserService {
         return await this.userRepo.importUsers(users, options);
     }
 
+    async importUpdateUsers(updates: any[], options: any = {}) {
+        return await this.userRepo.importUpdateUsers(updates, options);
+    }
+
     async updateBulkUsers(updates) {
         return await this.userRepo.updateBulkUsers(updates);
     }
