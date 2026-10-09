@@ -3,6 +3,11 @@ export default class Config {
     // public so SchemaManager and migrator can call it directly
     public config(): any {
         return {
+            navigation: {
+                routes: ["SidebarRoute"],
+                identification: '/navigation',
+                database: {}
+            },
             identity_management: {
                 routes: ["UserRoute", "CustomerRoute"],
                 identification: '/identity/management',

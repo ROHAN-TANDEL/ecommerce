@@ -27,4 +27,7 @@ register("customerService", CustomerServiceImpl);
 register("customerRepository", CustomerRepository);
 register("customerResponse", CustomerResponse);
 
+import { SidebarController } from "../modules/navigation/controller/SidebarController.js";
+register("sidebarController", SidebarController);
+
 export default register;

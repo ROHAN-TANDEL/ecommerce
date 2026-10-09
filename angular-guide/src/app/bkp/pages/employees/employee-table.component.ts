@@ -112,6 +112,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // ══════════════════════════════════════════════════════════════════════
   @Input() user_table_key = 'users_table_1234';
   @Input() user_table_identifier?: string;
+  @Input() product?: string;
+  @Input() basePath?: string;
+  @Input() routePrefix?: string;
 
   // CamelCase property aliases
   @Input() set userTableKey(val: string) {
@@ -1299,8 +1302,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
 
     const activeTableKey = this.user_table_key || this.tableConfig.table_key || 'users_table_1234';
+    const effectiveBasePath = this.basePath || (this.routePrefix ? `${this.routePrefix}/${activeTableKey.replace(/_table(_\w+)?$/, '')}` : undefined);
 
-    this.apiService.bootstrap(this.apiBaseUrl, activeTableKey).subscribe({
+    this.apiService.bootstrap(this.apiBaseUrl, activeTableKey, this.product, effectiveBasePath).subscribe({
       next: res => {
         if (res.isLive && res.tableConfig && res.columnsConfig && res.actionsConfig) {
           this.tableConfig = JSON.parse(JSON.stringify(res.tableConfig));

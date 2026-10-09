@@ -267,7 +267,8 @@ export class EmployeesApiService {
    *  'employees_table_1234' -> '/identity/management/employees'
    *  '/identity/management/invoices' -> '/identity/management/invoices'
    */
-  resolveEntityPath(tableKeyOrPath: string = 'users_table_1234'): string {
+  resolveEntityPath(tableKeyOrPath: string = 'users_table_1234', productName?: string, basePath?: string): string {
+    if (basePath) return basePath.replace(/\/+$/, '');
     if (!tableKeyOrPath) return '/identity/management/users';
     if (tableKeyOrPath.startsWith('/')) return tableKeyOrPath.replace(/\/+$/, '');
 
@@ -282,7 +283,9 @@ export class EmployeesApiService {
       if (plural.endsWith('y')) plural = plural.slice(0, -1) + 'ies';
       else plural = plural + 's';
     }
-    return `/identity/management/${plural}`;
+
+    const prefix = productName ? `/${productName.replace(/_/g, '/')}` : '/identity/management';
+    return `${prefix}/${plural}`;
   }
 
   /**
@@ -349,7 +352,7 @@ export class EmployeesApiService {
   /**
    * Loads all configurations in parallel for any tableKeyOrPath
    */
-  bootstrap(baseUrl = this.defaultBaseUrl, tableKeyOrPath = 'users_table_1234'): Observable<{
+  bootstrap(baseUrl = this.defaultBaseUrl, tableKeyOrPath = 'users_table_1234', productName?: string, entityBasePath?: string): Observable<{
     tableConfig: TableConfigPayload;
     columnsConfig: ColumnConfigMap;
     columnOptionsConfig?: ColumnOptionsConfigPayload;
@@ -358,7 +361,7 @@ export class EmployeesApiService {
     rowActionsConfig?: RowActionsConfigPayload;
     isLive: boolean;
   }> {
-    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const basePath = this.resolveEntityPath(tableKeyOrPath, productName, entityBasePath);
     return forkJoin({
       tableConfig: this.fetchTableConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
       columnsData: this.fetchColumnsConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),

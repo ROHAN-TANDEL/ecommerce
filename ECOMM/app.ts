@@ -2,6 +2,7 @@ import express from "express";
 import { KernelContext } from "./src/bootstrap/app/app-context.js";
 import Context from "./src/platformdb/context.js";
 import SchemaConnect from "./src/platformdb/schema-connect.js";
+import { SidebarRoute } from "./src/modules/navigation/routes/SidebarRoute.js";
 
 class Application {
 
@@ -82,6 +83,9 @@ let context = application.buildContext();
 
 //routes go here
 app.use('/health', context.scripts.health.check);
+const sidebarRoute = (new SidebarRoute()).route();
+app.use('/sidebar', sidebarRoute);
+app.use('/api/sidebar', sidebarRoute);
 
 application.appAfterMiddleware(app);
 

@@ -19,6 +19,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2508,6 +2509,23 @@ export async function run(): Promise<void> {
     console.log(`🎉 Successfully finished! Created: ${createdCount}, Preserved (skipped): ${skippedCount}`);
     console.log(`Base Route: ${cfg.routePrefix}/${cfg.tableName}`);
   }
+
+  // ── Auto-generate Angular Master Table with dual-table parity ──────────────
+  try {
+    const angularScript = path.join(ROOT_DIR, 'scripts', 'generate-angular-table.ts');
+    if (fs.existsSync(angularScript)) {
+      console.log('\n================================================================');
+      console.log('🚀 Triggering Angular Master-Table generator with dual-table parity...');
+      const tsxCli = path.join(ROOT_DIR, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+      const dryRunFlag = cfg.dryRun ? ' --dry-run' : '';
+      execSync(`node "${tsxCli}" "${angularScript}" --entity "${cfg.entityName}" --table-key "${cfg.tableKey}" --product "${cfg.productName}"${dryRunFlag}`, {
+        stdio: 'inherit'
+      });
+    }
+  } catch (err: any) {
+    console.warn('[WARN] Could not automatically generate Angular table:', err?.message || err);
+  }
+
   console.log('================================================================\n');
 }
 

@@ -1,10 +1,10 @@
 import { Component, ViewChild } from '@angular/core';
-import {VerticalSection} from "../../../components/layouts/vertical-section/vertical-section";
-import {Sections} from '../../../components/sections/sections';
-import {FormField} from '../../../components/form/form-field/form-field';
-import {InputField} from '../../../components/form/input/input';
-import {ButtonComponent} from '../../../components/form/button/button';
-import {FormBuilder} from '../../../components/form/form-builder/form-builder';
+import {VerticalSection} from "../../../../components/layouts/vertical-section/vertical-section";
+import {Sections} from '../../../../components/sections/sections';
+import {FormField} from '../../../../components/form/form-field/form-field';
+import {InputField} from '../../../../components/form/input/input';
+import {ButtonComponent} from '../../../../components/form/button/button';
+import {FormBuilder} from '../../../../components/form/form-builder/form-builder';
 
 @Component({
   selector: 'app-create',
