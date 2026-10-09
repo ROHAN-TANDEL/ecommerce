@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
         type="button"
         [disabled]="disabled || refreshing"
         (click)="onClick($event)"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-3 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         [title]="infoNote || label"
       >
         <svg

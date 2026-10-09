@@ -8,12 +8,12 @@ import { LiveTableEvent, TableUserPresence } from '../employees.types';
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe],
   template: `
-    <div class="border border-emerald-200/90 bg-gradient-to-b from-emerald-50/50 via-white to-white rounded-2xl shadow-sm overflow-hidden animate-slide-up transition-all duration-200">
+    <div class="border border-slate-200/90 bg-white rounded-xl shadow-xs overflow-hidden animate-slide-up transition-all duration-200">
 
       <!-- ═══════════════════════════════════════════════════════════════ -->
       <!-- 1. LIVE PANEL HEADER BAR                                        -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      <div class="px-4 py-3 bg-white/80 backdrop-blur-xs border-b border-emerald-100 flex flex-wrap items-center justify-between gap-3">
+      <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <!-- Radar Pulse -->
           <div class="relative flex h-3 w-3">

@@ -32,18 +32,18 @@ export class ButtonComponent {
 
   get buttonClasses(): Record<string, boolean> {
     return {
-      // Primary (Black / Slate)
-      'bg-slate-900 text-white shadow-xs hover:bg-slate-800 active:scale-98 border border-transparent': this.variant === 'primary',
-      // Secondary / Outline (White / Slate)
-      'bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 hover:border-slate-300': this.variant === 'secondary' || this.variant === 'outline',
+      // Primary (Nexora Brand Blue)
+      'bg-[#436CF3] text-white shadow-2xs hover:bg-[#365BD4] active:scale-[0.99] border border-transparent font-medium': this.variant === 'primary',
+      // Secondary / Outline (Subtle Neutral White/Slate)
+      'bg-white text-slate-700 border border-slate-200/90 shadow-2xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:bg-slate-100': this.variant === 'secondary' || this.variant === 'outline',
       // Ghost
       'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent': this.variant === 'ghost',
-      // Danger
-      'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100': this.variant === 'danger',
-      // Sizes
-      'px-2.5 py-1 text-[11px]': this.size === 'sm',
-      'px-3.5 py-2 text-xs': this.size === 'md',
-      'px-4 py-2.5 text-sm': this.size === 'lg',
+      // Danger (Restrained Semantic Red)
+      'bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300': this.variant === 'danger',
+      // Standardized Heights & Padding
+      'h-7 px-2.5 text-[11px]': this.size === 'sm',
+      'h-8 px-3 text-xs': this.size === 'md',
+      'h-9.5 px-4 text-sm': this.size === 'lg',
     };
   }
 

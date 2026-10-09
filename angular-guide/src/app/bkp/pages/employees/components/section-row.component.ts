@@ -18,7 +18,7 @@ import { EnrichedColumn } from '../employees.types';
         class="w-[50px] min-w-[50px] max-w-[50px] px-2 py-1.5 bg-blue-50/90 sticky left-0 z-30 border-r border-blue-200 text-center"
         title="Master Edit Filter Active"
       >
-        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs shadow-2xs select-none" title="Master Edit Filter Active">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#436CF3] text-white font-bold text-xs shadow-2xs select-none" title="Master Edit Filter Active">
           ✎
         </span>
       </th>
@@ -46,7 +46,7 @@ import { EnrichedColumn } from '../employees.types';
             <select
               [value]="values[col.key] || ''"
               (change)="onSelectChange(col, $any($event.target).value)"
-              class="w-full h-8 rounded-lg border border-blue-400 bg-white px-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs transition-colors"
+              class="w-full h-8 rounded-lg border border-blue-300 bg-white px-2.5 text-xs font-medium text-slate-700 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 cursor-pointer shadow-2xs transition-colors"
             >
               <option value="">Apply {{ col.header_name }}...</option>
               <option *ngFor="let opt of col.filter_data" [value]="opt.key">
@@ -63,7 +63,7 @@ import { EnrichedColumn } from '../employees.types';
                 [placeholder]="'Apply ' + col.header_name + '...'"
                 [value]="values[col.key] || ''"
                 (input)="onInputChange(col, $any($event.target).value)"
-                class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 pr-6 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-normal transition-colors shadow-2xs"
+                class="w-full h-8 rounded-lg border border-blue-300 bg-white px-3 pr-6 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 font-normal transition-colors shadow-2xs"
               />
               <button
                 *ngIf="values[col.key]"
@@ -105,7 +105,7 @@ import { EnrichedColumn } from '../employees.types';
           <button
             type="button"
             (click)="onApplyAll($event)"
-            class="px-3 py-1 rounded-lg bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700 shadow-2xs transition-colors cursor-pointer"
+            class="px-3 py-1 rounded-lg bg-[#436CF3] text-xs font-medium text-white hover:bg-[#365BD4] shadow-2xs transition-colors cursor-pointer"
             title="Apply master filters to selected rows"
           >
             Apply

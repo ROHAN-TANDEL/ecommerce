@@ -182,7 +182,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
                 <button
                   type="button"
                   (click)="addPendingMultiSearchTag(col, multiSearchInput, $event)"
-                  class="h-5 px-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
+                  class="h-5 px-1.5 rounded bg-[#436CF3] hover:bg-[#365BD4] text-white font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
                   title="Add search item"
                 >
                   +
@@ -198,7 +198,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
               <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1.5 bg-slate-50/80 rounded-lg border border-slate-100 whitespace-normal min-h-[50px]">
                 <span
                   *ngFor="let tag of getFilteredPendingMultiTags(col); let tagIdx = index"
-                  class="inline-flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-2.5 py-1 rounded-md shadow-2xs transition-colors shrink-0"
+                  class="inline-flex items-center gap-1.5 bg-[#436CF3] hover:bg-[#365BD4] text-white text-xs font-medium px-2.5 py-1 rounded-md shadow-2xs transition-colors shrink-0"
                 >
                   <span>{{ tag }}</span>
                   <button
@@ -383,7 +383,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
             *ngIf="getSingleNumberValue(col.filter_key); else emptySingleNumber"
             class="flex items-center w-full h-7 rounded-md border border-slate-200 bg-white px-1.5"
           >
-            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-500 text-white truncate shadow-2xs">
+            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#436CF3] text-white truncate shadow-2xs">
               <span class="truncate">{{ getSingleNumberValue(col.filter_key) }}</span>
               <button
                 type="button"

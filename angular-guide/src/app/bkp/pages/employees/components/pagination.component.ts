@@ -32,7 +32,7 @@ import { PaginationState } from '../employees.types';
           ‹
         </button>
         <span
-          class="h-7 min-w-[28px] px-2 rounded-lg bg-slate-900 text-white font-medium text-xs flex items-center justify-center shadow-xs"
+          class="h-7 min-w-[28px] px-2 rounded-lg bg-[#436CF3] text-white font-medium text-xs flex items-center justify-center shadow-2xs"
         >
           {{ pagination.page }}
         </span>
@@ -40,7 +40,7 @@ import { PaginationState } from '../employees.types';
           type="button"
           [disabled]="pagination.page >= pagination.totalPages"
           (click)="onPage(pagination.page + 1)"
-          class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 text-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center transition-all"
+          class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 text-xs shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center transition-all"
           title="Next page"
         >
           ›
@@ -52,7 +52,7 @@ import { PaginationState } from '../employees.types';
         <span class="text-slate-500">Rows per page:</span>
         <select
           (change)="onLimit(+$any($event.target).value)"
-          class="h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-900 shadow-2xs cursor-pointer"
+          class="h-7.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer"
         >
           <option *ngFor="let size of pageSizeOptions" [value]="size" [selected]="size === pagination.limit">
             {{ size }}

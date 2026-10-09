@@ -106,10 +106,21 @@ import { ScrollerComponent } from './scroller.component';
               <!-- Submenu indicator or accessory -->
               <div class="flex items-center gap-1.5 shrink-0">
                 <span *ngIf="action.key === 'refresh'" class="text-[10px] text-slate-400 font-mono">5s</span>
+                <button
+                  *ngIf="action.key !== 'scroller' && action.component !== 'scroller_component'"
+                  type="button"
+                  (click)="onTogglePinAction(action.key, $event)"
+                  class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-[#436CF3] hover:bg-blue-50 transition-colors cursor-pointer"
+                  [title]="'Pin ' + (action.name || action.key) + ' to toolbar'"
+                >
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" />
+                  </svg>
+                </button>
                 <svg
                   *ngIf="isSubmenuAction(action)"
                   class="w-3 h-3 transition-colors shrink-0"
-                  [ngClass]="activeSubmenuKey === action.key ? 'text-blue-600' : 'text-slate-400'"
+                  [ngClass]="activeSubmenuKey === action.key ? 'text-[#436CF3]' : 'text-slate-400'"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -345,6 +356,7 @@ export class DropdownSectionsComponent {
   String = String;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
+  @Output() togglePinAction = new EventEmitter<string>();
   @Output() toggleColumn = new EventEmitter<string>();
   @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
   @Output() resetColumns = new EventEmitter<void>();
@@ -364,6 +376,11 @@ export class DropdownSectionsComponent {
   private hoverTimeout: any = null;
 
   constructor(private readonly elRef: ElementRef) {}
+
+  onTogglePinAction(actionKey: string, e: MouseEvent): void {
+    e.stopPropagation();
+    this.togglePinAction.emit(actionKey);
+  }
 
   toggleMenu(e: MouseEvent): void {
     e.stopPropagation();

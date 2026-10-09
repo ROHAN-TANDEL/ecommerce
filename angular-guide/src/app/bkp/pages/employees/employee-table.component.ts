@@ -1553,6 +1553,21 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     });
   }
 
+  toggleActionPin(actionKey: string): void {
+    if (!this.rawActionPanelConfig?.actions) return;
+    const action = this.rawActionPanelConfig.actions[actionKey];
+    if (!action) return;
+    const isPinned = action.pinned === true || String(action.pinned) === 'true';
+    action.pinned = !isPinned;
+    this.processActions();
+    this.cdr.markForCheck();
+    this.showToast(
+      action.pinned ? 'Action Pinned' : 'Action Restored',
+      `"${action.name || actionKey}" ${action.pinned ? 'pinned to toolbar' : 'restored to dropdown'}`,
+      'dropdown'
+    );
+  }
+
   // ── Global Document Click Listener ──────────────────────────────────
   // ── Global Document Click & Keydown Listeners ────────────────────────
   @HostListener('document:click')

@@ -31,14 +31,14 @@ import { EnrichedColumn } from '../employees.types';
           <span *ngIf="column.sorting" class="flex flex-col gap-[1px] items-center shrink-0 ml-0.5">
             <svg
               class="w-2.5 h-2 transition-colors"
-              [class.text-blue-600]="sortDirection === 'asc'"
+              [class.text-[#436CF3]]="sortDirection === 'asc'"
               [class.text-slate-300]="sortDirection !== 'asc'"
               viewBox="0 0 10 6" fill="currentColor">
               <path d="M5 0.5L9.5 5.5H0.5L5 0.5Z" />
             </svg>
             <svg
               class="w-2.5 h-2 transition-colors"
-              [class.text-blue-600]="sortDirection === 'desc'"
+              [class.text-[#436CF3]]="sortDirection === 'desc'"
               [class.text-slate-300]="sortDirection !== 'desc'"
               viewBox="0 0 10 6" fill="currentColor">
               <path d="M5 5.5L0.5 0.5H9.5L5 5.5Z" />

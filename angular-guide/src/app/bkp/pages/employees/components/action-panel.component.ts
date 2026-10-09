@@ -32,6 +32,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           (resetColumns)="resetColumns.emit()"
           (scrollTable)="scrollTable.emit($event)"
           (actionSelect)="actionSelect.emit($event)"
+          (togglePinAction)="togglePinAction.emit($event)"
         ></dropdown-sections-component>
       </ng-container>
 
@@ -55,6 +56,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
           (resetColumns)="resetColumns.emit()"
           (scrollTable)="scrollTable.emit($event)"
           (actionSelect)="actionSelect.emit($event)"
+          (togglePinAction)="togglePinAction.emit($event)"
         ></dropdown-sections-component>
       </div>
 
@@ -75,6 +77,7 @@ export class ActionPanelComponent {
   @Input() isLoadingViews = false;
 
   @Output() actionSelect = new EventEmitter<{ actionKey: string; optionKey?: string }>();
+  @Output() togglePinAction = new EventEmitter<string>();
   @Output() toggleColumn = new EventEmitter<string>();
   @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
   @Output() resetColumns = new EventEmitter<void>();

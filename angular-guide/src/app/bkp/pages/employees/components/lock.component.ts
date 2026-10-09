@@ -12,10 +12,10 @@ import { CommonModule } from '@angular/common';
         [disabled]="disabled"
         (click)="onClick($event)"
         [ngClass]="{
-          'bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-xs active:scale-[0.99]': locked,
-          'bg-white text-slate-700 border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99]': !locked
+          'bg-slate-800 text-white border-slate-800 hover:bg-slate-700 shadow-2xs active:scale-[0.99]': locked,
+          'bg-white text-slate-700 border-slate-200/90 shadow-2xs hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99]': !locked
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         [title]="infoNote || label"
       >
         <svg class="w-3.5 h-3.5" [class.text-white]="locked" [class.text-slate-500]="!locked" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

@@ -16,7 +16,7 @@ import { ActionDropdownOption } from '../employees.types';
           'bg-slate-100 border-slate-300 text-slate-900': isOpen,
           'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
         [title]="infoNote || label"
       >
         <ng-container [ngSwitch]="actionKey">

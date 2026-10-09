@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
           'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100': active,
           'bg-white text-slate-700 border-slate-200 hover:bg-slate-50': !active
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
         [title]="infoNote || (label + ' Feed')"
       >
         <span class="relative flex h-2 w-2">

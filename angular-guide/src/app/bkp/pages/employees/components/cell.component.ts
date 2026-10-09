@@ -37,7 +37,7 @@ import { EnrichedColumn } from '../employees.types';
           <button
             type="button"
             (click)="toggleDropdown($event)"
-            class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs flex items-center justify-between text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer text-left transition-colors"
+            class="w-full h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs flex items-center justify-between text-slate-800 outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer text-left transition-colors"
           >
             <span class="capitalize truncate font-medium">{{ getSelectedOptionName() }}</span>
             <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1 transition-transform" [class.rotate-180]="isDropdownOpen" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -45,23 +45,23 @@ import { EnrichedColumn } from '../employees.types';
             </svg>
           </button>
 
-          <!-- Custom Dark Dropdown Popover (Image 1) -->
+          <!-- Custom Light Dropdown Popover -->
           <div
             *ngIf="isDropdownOpen"
-            class="absolute left-0 top-full mt-1.5 z-50 min-w-[125px] rounded-xl bg-[#2D3748] p-1 shadow-2xl border border-slate-700/60 space-y-0.5 animate-slide-up"
+            class="absolute left-0 top-full mt-1.5 z-50 min-w-[130px] rounded-xl bg-white p-1 shadow-xl border border-slate-200/90 space-y-0.5 animate-slide-up"
           >
             <button
               *ngFor="let opt of column.filter_data"
               type="button"
               (click)="selectOption(opt.key, $event)"
               [ngClass]="{
-                'bg-[#3B82F6] text-white font-medium': isOptionSelected(opt.key),
-                'text-white/90 hover:bg-slate-700/80 font-normal': !isOptionSelected(opt.key)
+                'bg-blue-50 text-[#365BD4] font-medium': isOptionSelected(opt.key),
+                'text-slate-700 hover:bg-slate-50 font-normal': !isOptionSelected(opt.key)
               }"
-              class="w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-colors text-left"
+              class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-colors text-left"
             >
-              <span *ngIf="isOptionSelected(opt.key)" class="font-bold text-[11px] leading-none shrink-0">✓</span>
-              <span class="capitalize">{{ opt.name }}</span>
+              <span class="capitalize truncate">{{ opt.name }}</span>
+              <span *ngIf="isOptionSelected(opt.key)" class="font-bold text-[11px] text-[#436CF3] leading-none shrink-0">✓</span>
             </button>
           </div>
         </div>
@@ -74,19 +74,19 @@ import { EnrichedColumn } from '../employees.types';
               placeholder="YYYY-MM-DD"
               [ngModel]="row[column.key]"
               (ngModelChange)="onModelChange($event)"
-              class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs font-mono transition-colors"
+              class="w-full h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs font-mono transition-colors"
             />
           </div>
         </ng-template>
 
-        <!-- Case 3: Search / Text Editor (Image 1: rounded-lg, border-blue-400, bg-white) -->
+        <!-- Case 3: Search / Text Editor -->
         <ng-template #textEditor>
           <input
             type="text"
             [placeholder]="'Enter ' + column.header_name"
             [ngModel]="row[column.key]"
             (ngModelChange)="onModelChange($event)"
-            class="w-full h-8 rounded-lg border border-blue-400 bg-white px-3 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-2xs transition-colors"
+            class="w-full h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs transition-colors"
           />
         </ng-template>
 

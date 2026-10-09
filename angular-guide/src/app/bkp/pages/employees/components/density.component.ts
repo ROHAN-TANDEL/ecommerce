@@ -16,7 +16,7 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
           'bg-slate-100 border-slate-300 text-slate-900': isOpen,
           'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
         [title]="infoNote || 'Density'"
       >
         <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -58,13 +58,13 @@ export type TableDensity = 'compact' | 'comfortable' | 'spacious';
           type="button"
           (click)="selectDensity(opt.value)"
           [ngClass]="{
-            'bg-slate-100 font-semibold text-slate-900': density === opt.value,
+            'bg-blue-50 font-semibold text-[#365BD4]': density === opt.value,
             'text-slate-700 hover:bg-slate-50': density !== opt.value
           }"
           class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer text-left"
         >
           <span>{{ opt.label }}</span>
-          <span *ngIf="density === opt.value" class="text-xs font-bold text-slate-900">✓</span>
+          <span *ngIf="density === opt.value" class="text-xs font-bold text-[#436CF3]">✓</span>
         </button>
       </div>
     </div>

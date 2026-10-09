@@ -12,11 +12,11 @@ import { CommonModule } from '@angular/common';
         [disabled]="disabled || saving"
         (click)="onClick($event)"
         [ngClass]="{
-          'bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-xs active:scale-[0.99] cursor-pointer': !disabled && !saving,
+          'bg-[#436CF3] text-white border-transparent hover:bg-[#365BD4] shadow-2xs active:scale-[0.99] cursor-pointer': !disabled && !saving,
           'bg-slate-50 text-slate-400 border-slate-200 opacity-40 shadow-none cursor-not-allowed': disabled,
-          'bg-slate-100 text-slate-500 border-slate-200 cursor-wait': saving
+          'bg-[#365BD4] text-white border-transparent cursor-wait': saving
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all select-none"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all select-none"
         [title]="infoNote || label"
       >
         <span *ngIf="saving" class="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"></span>

@@ -13,9 +13,9 @@ import { CommonModule } from '@angular/common';
         (click)="onClick($event)"
         [ngClass]="{
           'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400 border-slate-200 shadow-none': disabled,
-          'bg-white text-slate-700 border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] cursor-pointer': !disabled
+          'bg-white text-slate-700 border-slate-200/90 shadow-2xs hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] cursor-pointer': !disabled
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all select-none"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-all select-none"
         [title]="infoNote || label"
       >
         <ng-container [ngSwitch]="actionKey">
