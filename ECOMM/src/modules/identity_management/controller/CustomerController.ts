@@ -66,14 +66,27 @@ export class CustomerController {
         }
     }
 
-    async list(req: any, res: any) {
+    async getCustomers(req: any, res: any) {
         try {
-            const { page, limit, ...filterInputs } = this.validator.getcustomers(req);
-            const result = await this.service.getcustomers(page, limit, filterInputs);
-            return res.status(200).json({ status: "success", code: 200, data: result.records, pagination: result.pagination, message: "Customer list" });
+            const validated = this.validator.getCustomers(req);
+            const { page, limit, ...filterInputs } = validated;
+            const result = await this.service.getCustomers(page, limit, filterInputs);
+            const records = result?.records ?? result?.data ?? (Array.isArray(result) ? result : []);
+            return res.status(200).json({
+                data: records,
+                records: records,
+                pagination: result.pagination,
+                message: "Customer list",
+                status: "success",
+                code: 200
+            });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Listing failed", data: [] });
         }
+    }
+
+    async list(req: any, res: any) {
+        return this.getCustomers(req, res);
     }
 
     async update(req: any, res: any) {
@@ -99,8 +112,8 @@ export class CustomerController {
 
     async createAll(req: any, res: any) {
         try {
-            const records = this.validator.createAllcustomers(req);
-            const data = await this.service.createAllcustomers(records);
+            const records = this.validator.createAllCustomers(req);
+            const data = await this.service.createAllCustomers(records);
             return res.status(200).json({ status: "success", code: 200, message: "All records created successfully", data });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Batch create failed", data: null });
@@ -109,18 +122,46 @@ export class CustomerController {
 
     async updateBulk(req: any, res: any) {
         try {
-            const updates = this.validator.updateBulkcustomers(req);
-            const data = await this.service.updateBulkcustomers(updates);
+            const updates = this.validator.updateBulkCustomers(req);
+            const data = await this.service.updateBulkCustomers(updates);
             return res.status(200).json({ status: "success", code: 200, message: "Bulk updates applied successfully", data });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Bulk update failed", data: null });
         }
     }
 
+    async updateStatus(req: any, res: any) {
+        try {
+            const id = req.body?.id || req.query?.id;
+            const status = req.body?.status || req.query?.status;
+            if (!id || !status) {
+                return res.status(400).json({ status: "failed", code: 400, message: "id and status are required", data: null });
+            }
+            const data = await this.service.updateCustomer(id, { status });
+            return res.status(200).json({ status: "success", code: 200, message: "Status updated successfully", data });
+        } catch (error: any) {
+            return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Status update failed", data: null });
+        }
+    }
+
+    async updateBulkStatus(req: any, res: any) {
+        try {
+            const ids = req.body?.ids || [];
+            const status = req.body?.status;
+            if (!Array.isArray(ids) || ids.length === 0 || !status) {
+                return res.status(400).json({ status: "failed", code: 400, message: "ids array and status are required", data: null });
+            }
+            const data = await this.service.updateAllCustomers(ids, { status });
+            return res.status(200).json({ status: "success", code: 200, message: "Bulk status updated successfully", data });
+        } catch (error: any) {
+            return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Bulk status update failed", data: null });
+        }
+    }
+
     async updateAll(req: any, res: any) {
         try {
-            const { ids, data: updateData } = this.validator.updateAllcustomers(req);
-            const data = await this.service.updateAllcustomers(ids, updateData);
+            const { ids, data: updateData } = this.validator.updateAllCustomers(req);
+            const data = await this.service.updateAllCustomers(ids, updateData);
             return res.status(200).json({ status: "success", code: 200, message: "All records updated successfully", data });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Batch update failed", data: null });
@@ -129,8 +170,8 @@ export class CustomerController {
 
     async deleteAll(req: any, res: any) {
         try {
-            const ids = this.validator.deleteAllcustomers(req);
-            const data = await this.service.deleteAllcustomers(ids);
+            const ids = this.validator.deleteAllCustomers(req);
+            const data = await this.service.deleteAllCustomers(ids);
             return res.status(200).json({ status: "success", code: 200, message: "All records deleted successfully", data });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Batch delete failed", data: null });
@@ -143,8 +184,8 @@ export class CustomerController {
 
     async importCreate(req: any, res: any) {
         try {
-            const result = this.validator.importCreatecustomers(req);
-            const inserted = await this.service.importcustomers(result.records);
+            const result = this.validator.importCreateCustomers(req);
+            const inserted = await this.service.importCustomers(result.records);
             return res.status(200).json({ status: "success", code: 200, message: `Imported ${result.records.length} records successfully`, data: inserted });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Import failed", data: null });
@@ -153,8 +194,8 @@ export class CustomerController {
 
     async importUpdate(req: any, res: any) {
         try {
-            const result = this.validator.importUpdatecustomers(req);
-            const updated = await this.service.importUpdatecustomers(result.updates);
+            const result = this.validator.importUpdateCustomers(req);
+            const updated = await this.service.importUpdateCustomers(result.updates);
             return res.status(200).json({ status: "success", code: 200, message: "Import updates applied successfully", data: updated });
         } catch (error: any) {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "Import update failed", data: null });
@@ -328,4 +369,26 @@ export class CustomerController {
             return res.status(400).json({ status: "failed", code: 400, message: error?.message ?? "AI query failed", data: null });
         }
     }
+
+    // ── UserController 100% Parity Aliases ──
+    createUser = this.create.bind(this);
+    getCustomer = this.get.bind(this);
+    updateCustomer = this.update.bind(this);
+    deleteCustomer = this.delete.bind(this);
+    createAllCustomers = this.createAll.bind(this);
+    createBulkCustomers = this.createAll.bind(this);
+    updateBulkCustomers = this.updateBulk.bind(this);
+    updateAllCustomers = this.updateAll.bind(this);
+    deleteAllCustomers = this.deleteAll.bind(this);
+    deleteBulkCustomers = this.deleteBulk.bind(this);
+    importCreateCustomers = this.importCreate.bind(this);
+    importUpdateCustomers = this.importUpdate.bind(this);
+    getCustomerTableConfig = this.getTableConfig.bind(this);
+    getCustomerColumnsConfig = this.getColumnsConfig.bind(this);
+    getCustomerActionsConfig = this.getActionsConfig.bind(this);
+    getCustomerHeaderConfig = this.getHeaderConfig.bind(this);
+    getCustomerRowActionsConfig = this.getRowActionsConfig.bind(this);
+    updateCustomerStatus = this.updateStatus.bind(this);
+    updateBulkCustomerStatus = this.updateBulkStatus.bind(this);
+    updateAllCustomerStatus = this.updateBulkStatus.bind(this);
 }

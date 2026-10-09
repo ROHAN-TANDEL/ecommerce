@@ -21,15 +21,17 @@ export class CustomerRoute {
         router.get('/customers/config/row-actions', ctrl.getRowActionsConfig.bind(ctrl));
 
         // ── Data Endpoints ──
-        router.get('/customers', ctrl.list.bind(ctrl));
-        router.post('/customers', ctrl.list.bind(ctrl));
+        router.get('/customers', ctrl.getCustomers.bind(ctrl));
+        router.post('/customers', ctrl.getCustomers.bind(ctrl));
         router.get('/customers/:id', ctrl.get.bind(ctrl));
         router.post('/customers/create', ctrl.create.bind(ctrl));
         router.post('/customers/create/all', ctrl.createAll.bind(ctrl));
         router.post('/customers/create/bulk', ctrl.createAll.bind(ctrl));
         router.post('/customers/create/import', upload.any(), ctrl.importCreate.bind(ctrl));
         router.put('/customers/update/:id', ctrl.update.bind(ctrl));
+        router.post('/customers/update/status', ctrl.updateStatus.bind(ctrl));
         router.post('/customers/update/bulk', ctrl.updateBulk.bind(ctrl));
+        router.post('/customers/update/bulk/status', ctrl.updateBulkStatus.bind(ctrl));
         router.post('/customers/update/all', ctrl.updateAll.bind(ctrl));
         router.post('/customers/update/import', upload.any(), ctrl.importUpdate.bind(ctrl));
         router.delete('/customers/delete/:id', ctrl.delete.bind(ctrl));

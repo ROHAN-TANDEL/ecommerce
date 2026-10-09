@@ -1,15 +1,15 @@
 export default class CustomerService {
-    getcustomers: any;
+    getCustomers: any;
     getCustomer: any;
     deleteCustomer: any;
     updateCustomer: any;
     createCustomer: any;
-    createAllcustomers: any;
-    updateBulkcustomers: any;
-    updateAllcustomers: any;
-    deleteAllcustomers: any;
-    importcustomers: any;
-    importUpdatecustomers: any;
+    createAllCustomers: any;
+    updateBulkCustomers: any;
+    updateAllCustomers: any;
+    deleteAllCustomers: any;
+    importCustomers: any;
+    importUpdateCustomers: any;
     getViews: any;
     saveView: any;
     getView: any;

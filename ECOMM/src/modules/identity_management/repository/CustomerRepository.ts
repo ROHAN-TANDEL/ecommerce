@@ -31,7 +31,7 @@ export class CustomerRepository {
         }
     }
 
-    async getcustomers(limit: number, offset: number, inputs: any = {}) {
+    async getCustomers(limit: number, offset: number, inputs: any = {}) {
         try {
             const inputValues: any[] = [];
             const filterInputs = { ...inputs, values: inputValues };
@@ -60,12 +60,12 @@ export class CustomerRepository {
             const result = await db.master.query(query, inputValues);
             return result?.rows || [];
         } catch (error) {
-            console.error('[CustomerRepository:getcustomers] Error:', error);
+            console.error('[CustomerRepository:getCustomers] Error:', error);
             return [];
         }
     }
 
-    async getTotalcustomers(inputs: any = {}) {
+    async getTotalCustomers(inputs: any = {}) {
         try {
             const inputValues: any[] = [];
             const filterInputs = { ...inputs, values: inputValues };
@@ -77,7 +77,7 @@ export class CustomerRepository {
             const result = await db.master.query(query, inputValues);
             return parseInt(result?.rows?.[0]?.total || '0', 10);
         } catch (error) {
-            console.error('[CustomerRepository:getTotalcustomers] Error:', error);
+            console.error('[CustomerRepository:getTotalCustomers] Error:', error);
             return 0;
         }
     }
@@ -108,7 +108,7 @@ export class CustomerRepository {
         }
     }
 
-    async createBulkcustomers(records: any[]) {
+    async createBulkCustomers(records: any[]) {
         const results = [];
         for (const rec of records) {
             const res = await this.createCustomer(rec);
@@ -117,7 +117,7 @@ export class CustomerRepository {
         return results;
     }
 
-    async updateBulkcustomers(updates: any[]) {
+    async updateBulkCustomers(updates: any[]) {
         const results = [];
         for (const item of updates) {
             const { id, ...data } = item;
@@ -129,7 +129,7 @@ export class CustomerRepository {
         return results;
     }
 
-    async updateAllcustomers(ids: any[], data: any) {
+    async updateAllCustomers(ids: any[], data: any) {
         try {
             const keys = Object.keys(data);
             const vals = Object.values(data);
@@ -138,28 +138,28 @@ export class CustomerRepository {
             const result = await db.master.query(query, [...vals, ids]);
             return result.rows;
         } catch (error) {
-            console.error('[CustomerRepository:updateAllcustomers] Error:', error);
+            console.error('[CustomerRepository:updateAllCustomers] Error:', error);
             throw error;
         }
     }
 
-    async deleteAllcustomers(ids: any[]) {
+    async deleteAllCustomers(ids: any[]) {
         try {
             const query = `DELETE FROM master.customers WHERE id = ANY($1) RETURNING id`;
             const result = await db.master.query(query, [ids]);
             return result.rows;
         } catch (error) {
-            console.error('[CustomerRepository:deleteAllcustomers] Error:', error);
+            console.error('[CustomerRepository:deleteAllCustomers] Error:', error);
             throw error;
         }
     }
 
-    async importcustomers(records: any[], _options: any = {}) {
-        return await this.createBulkcustomers(records);
+    async importCustomers(records: any[], _options: any = {}) {
+        return await this.createBulkCustomers(records);
     }
 
-    async importUpdatecustomers(updates: any[], _options: any = {}) {
-        return await this.updateBulkcustomers(updates);
+    async importUpdateCustomers(updates: any[], _options: any = {}) {
+        return await this.updateBulkCustomers(updates);
     }
 
     // ── Table Views Methods ──

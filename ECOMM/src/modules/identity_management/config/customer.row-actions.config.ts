@@ -1,48 +1,62 @@
 export const CustomerRowActionsConfig = {
+    active: true,
     actions: {
         refresh: {
             key: "refresh",
             name: "Refresh",
             active: true,
-            info_note: "Reload row data from server",
-            popup_component: "refresh_row_modal",
+            info_note: "Refresh only this row from database",
             api: "/identity/management/customers/:id",
             method: "GET",
             icon: "refresh",
             order: 1
         },
+        disable: {
+            key: "disable",
+            name: "Disable / Enable",
+            active: true,
+            info_note: "Toggle active / inactive status for this row",
+            api: "/identity/management/customers/update/:id",
+            method: "PUT",
+            icon: "ban",
+            order: 2
+        },
+        revert: {
+            key: "revert",
+            name: "Revert",
+            active: true,
+            info_note: "Revert row edits back to original baseline",
+            icon: "undo",
+            order: 3
+        },
         view: {
             key: "view",
             name: "View",
             active: true,
-            info_note: "View complete record details",
-            popup_component: "view_record_modal",
+            info_note: "Open view details popup modal",
+            popup_component: "view_customer_modal",
             api: "/identity/management/customers/:id",
             method: "GET",
             icon: "eye",
-            order: 2
+            order: 4
         },
         pin: {
-            key: "pin",
+            key: "pin / unpin",
             name: "Pin / Unpin",
             active: true,
-            info_note: "Pin row to top of table",
-            popup_component: "pin_row_modal",
-            api: "/identity/management/customers/update/:id",
-            method: "PUT",
+            info_note: "Pin row to top or unpin",
             icon: "pin",
-            order: 3
+            order: 5
         },
         lock: {
             key: "lock",
-            name: "Lock / Unlock",
+            name: "Lock",
             active: true,
-            info_note: "Prevent edits to this row",
-            popup_component: "lock_row_modal",
+            info_note: "Lock or unlock this row for editing",
             api: "/identity/management/customers/lock/rows",
             method: "POST",
             icon: "lock",
-            order: 4
+            order: 6
         },
         edit: {
             key: "edit",
@@ -53,7 +67,7 @@ export const CustomerRowActionsConfig = {
             api: "/identity/management/customers/update/:id",
             method: "PUT",
             icon: "edit",
-            order: 5
+            order: 7
         },
         delete: {
             key: "delete",
@@ -64,7 +78,7 @@ export const CustomerRowActionsConfig = {
             api: "/identity/management/customers/delete/:id",
             method: "DELETE",
             icon: "trash",
-            order: 6
+            order: 8
         }
     }
 };

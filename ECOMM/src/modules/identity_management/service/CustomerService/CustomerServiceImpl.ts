@@ -16,11 +16,12 @@ export class CustomerServiceImpl implements CustomerService {
         return await this.repo.getCustomer(id);
     }
 
-    async getcustomers(page: number, limit: number, inputs: any = {}) {
+    async getCustomers(page: number, limit: number, inputs: any = {}) {
         const offset = (page - 1) * limit;
-        const records = await this.repo.getcustomers(limit, offset, inputs);
-        const total = await this.repo.getTotalcustomers(inputs);
+        const records = await this.repo.getCustomers(limit, offset, inputs);
+        const total = await this.repo.getTotalCustomers(inputs);
         return {
+            data: records,
             records,
             pagination: {
                 page,
@@ -39,28 +40,28 @@ export class CustomerServiceImpl implements CustomerService {
         return await this.repo.deleteCustomer(id);
     }
 
-    async createAllcustomers(records: any[]) {
-        return await this.repo.createBulkcustomers(records);
+    async createAllCustomers(records: any[]) {
+        return await this.repo.createBulkCustomers(records);
     }
 
-    async updateBulkcustomers(updates: any[]) {
-        return await this.repo.updateBulkcustomers(updates);
+    async updateBulkCustomers(updates: any[]) {
+        return await this.repo.updateBulkCustomers(updates);
     }
 
-    async updateAllcustomers(ids: any[], data: any) {
-        return await this.repo.updateAllcustomers(ids, data);
+    async updateAllCustomers(ids: any[], data: any) {
+        return await this.repo.updateAllCustomers(ids, data);
     }
 
-    async deleteAllcustomers(ids: any[]) {
-        return await this.repo.deleteAllcustomers(ids);
+    async deleteAllCustomers(ids: any[]) {
+        return await this.repo.deleteAllCustomers(ids);
     }
 
-    async importcustomers(records: any[], options: any = {}) {
-        return await this.repo.importcustomers(records, options);
+    async importCustomers(records: any[], options: any = {}) {
+        return await this.repo.importCustomers(records, options);
     }
 
-    async importUpdatecustomers(updates: any[], options: any = {}) {
-        return await this.repo.importUpdatecustomers(updates, options);
+    async importUpdateCustomers(updates: any[], options: any = {}) {
+        return await this.repo.importUpdateCustomers(updates, options);
     }
 
     async getViews(tableKey = 'customers_table_1234', userId = null) {
