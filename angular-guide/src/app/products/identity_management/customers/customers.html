@@ -1,0 +1,27 @@
+<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-6 pb-28 space-y-8">
+
+  <!-- Header Banner -->
+  <div class="max-w-[1400px] mx-auto bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="space-y-1">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          Customer Management
+        </span>
+        <span class="text-xs font-mono text-slate-400">table_key: {{ user_table_key }}</span>
+      </div>
+      <h1 class="text-lg font-bold text-slate-900 tracking-tight">Customer Records</h1>
+      <p class="text-xs text-slate-500">
+        Decoupled Master Table with dynamic API bootstrap, column options, filters, and isolated UI state.
+      </p>
+    </div>
+  </div>
+
+  <!-- Master Table Instance -->
+  <div class="max-w-[1400px] mx-auto space-y-2">
+    <master-table 
+      [user_table_key]="user_table_key" 
+      [user_table_identifier]="table_identifier">
+    </master-table>
+  </div>
+
+</div>
