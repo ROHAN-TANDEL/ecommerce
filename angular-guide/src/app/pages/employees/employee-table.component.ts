@@ -67,7 +67,7 @@ import {
 } from './components';
 
 @Component({
-  selector: 'app-employee-table',
+  selector: 'master-table, app-master-table, app-employee-table',
   standalone: true,
   imports: [
     CommonModule,
@@ -110,6 +110,17 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // ══════════════════════════════════════════════════════════════════════
   // INSTANCE IDENTITY & INPUTS / OUTPUTS
   // ══════════════════════════════════════════════════════════════════════
+  @Input() user_table_key = 'users_table_1234';
+  @Input() user_table_identifier?: string;
+
+  // CamelCase property aliases
+  @Input() set userTableKey(val: string) {
+    if (val) this.user_table_key = val;
+  }
+  @Input() set userTableIdentifier(val: string) {
+    if (val) this.user_table_identifier = val;
+  }
+
   @Input() instanceId = 'table_1';
   @Input() instanceLabel = 'Table 1';
 
@@ -1173,10 +1184,22 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   private toastCounter = 0;
 
   ngOnInit(): void {
-    this.bootstrapTable();
+    // ── Generate Unique UI Instance Identifier if not supplied ──
+    if (!this.user_table_identifier) {
+      this.user_table_identifier = this.instanceId || `random_unique_number_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+    this.instanceId = this.user_table_identifier;
+    if (!this.instanceLabel || this.instanceLabel === 'Table 1') {
+      this.instanceLabel = this.user_table_identifier;
+    }
+    if (this.user_table_key) {
+      this.tableConfig.table_key = this.user_table_key;
+    }
+
+    this.userTableConfig();
 
     // ── Connect to Backend Redis Pub/Sub Live SSE Stream ──
-    const tableKey = this.tableConfig.table_key || 'users_table_1234';
+    const tableKey = this.user_table_key || this.tableConfig.table_key || 'users_table_1234';
     this.apiService.connectRedisLiveFeed(tableKey, this.apiBaseUrl);
 
     // ── Listen to Shared Reactive Bus: Backend changes in ANY table trigger update here ──
@@ -1212,7 +1235,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       'CONNECT',
       false,
       'Session Connected',
-      `${this.instanceLabel} loaded table ${this.tableConfig.table_key}`
+      `${this.instanceLabel} loaded table ${tableKey}`
     );
   }
 
@@ -1226,11 +1249,17 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // ══════════════════════════════════════════════════════════════════════
 
   bootstrapTable(): void {
+    this.userTableConfig();
+  }
+
+  userTableConfig(): void {
     this.isLoading = true;
     this.apiStatus = 'connecting';
     this.cdr.markForCheck();
 
-    this.apiService.bootstrap(this.apiBaseUrl).subscribe({
+    const activeTableKey = this.user_table_key || this.tableConfig.table_key || 'users_table_1234';
+
+    this.apiService.bootstrap(this.apiBaseUrl, activeTableKey).subscribe({
       next: res => {
         if (res.isLive && res.tableConfig && res.columnsConfig && res.actionsConfig) {
           this.tableConfig = JSON.parse(JSON.stringify(res.tableConfig));
@@ -1248,7 +1277,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
           this.apiStatus = 'connected';
           this.showToast(
             'API Connected (Live)',
-            `Bootstrap successful from ${this.apiBaseUrl}`,
+            `Loaded config for ${this.tableConfig.display_name || activeTableKey}`,
             'header'
           );
         } else {
@@ -1515,7 +1544,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // ── Interactive Actions & Backend Handlers ──────────────────────────
 
   isBottomRow(index: number): boolean {
-    return index >= Math.floor(this.rows.length / 2);
+    if (this.rows.length < 3) return false;
+    return index >= this.rows.length - 2;
   }
 
   onHeaderAddDataClick(): void {
@@ -3501,3 +3531,5 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.broadcastAction('VIEW', false, 'Page Limit Changed', `${this.instanceLabel} set page size to ${limit}`);
   }
 }
+
+export { EmployeeTableComponent as MasterTableComponent };

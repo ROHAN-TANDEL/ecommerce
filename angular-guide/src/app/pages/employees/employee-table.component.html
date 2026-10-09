@@ -322,7 +322,7 @@
           [class.ring-1]="row['_needsReview']"
           [class.ring-inset]="row['_needsReview']"
           [class.ring-amber-300]="row['_needsReview']"
-          [class.z-40]="activeRowActionId === row['id']"
+          [class.z-[60]]="activeRowActionId === row['id']"
           [class.relative]="activeRowActionId === row['id']"
           class="hover:bg-slate-100/70 transition-colors"
         >
@@ -368,7 +368,7 @@
             *ngIf="tableConfig.action_column.active"
             style="width: 120px; min-width: 120px; max-width: 120px;"
             class="w-[120px] min-w-[120px] max-w-[120px] px-2 text-center sticky right-0 border-l border-slate-200"
-            [class.z-40]="activeRowActionId === row['id']"
+            [class.z-[60]]="activeRowActionId === row['id']"
             [class.z-10]="activeRowActionId !== row['id']"
             [class.bg-amber-50]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
             [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
@@ -414,7 +414,7 @@
 
               <div
                 *ngIf="activeRowActionId === row['id']"
-                class="absolute right-0 z-50 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-2xl space-y-0.5 text-left"
+                class="absolute right-0 z-[100] w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-2xl space-y-0.5 text-left"
                 [class.top-full]="!isBottomRow(i)"
                 [class.mt-1]="!isBottomRow(i)"
                 [class.bottom-full]="isBottomRow(i)"

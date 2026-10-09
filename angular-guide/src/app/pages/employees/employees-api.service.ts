@@ -260,56 +260,96 @@ export class EmployeesApiService {
   }
 
   /**
-   * Fetch Table Config from /identity/management/users/config/table
+   * Resolve base API route for any table key or route path.
+   * Examples:
+   *  'users_table_1234' -> '/identity/management/users'
+   *  'customers_table_1234' -> '/identity/management/customers'
+   *  'employees_table_1234' -> '/identity/management/employees'
+   *  '/identity/management/invoices' -> '/identity/management/invoices'
    */
-  fetchTableConfig(baseUrl = this.defaultBaseUrl): Observable<TableConfigPayload> {
-    const url = this.resolveUrl('/identity/management/users/config/table', baseUrl);
-    return this.http.get<TableConfigPayload>(url);
+  resolveEntityPath(tableKeyOrPath: string = 'users_table_1234'): string {
+    if (!tableKeyOrPath) return '/identity/management/users';
+    if (tableKeyOrPath.startsWith('/')) return tableKeyOrPath.replace(/\/+$/, '');
+
+    // Normalize string: e.g. 'users_table_1234' -> 'users'
+    const clean = tableKeyOrPath.toLowerCase()
+      .replace(/_table(_\w+)?$/, '')
+      .replace(/_unique_key$/, '');
+
+    // Determine plural resource name
+    let plural = clean;
+    if (!plural.endsWith('s')) {
+      if (plural.endsWith('y')) plural = plural.slice(0, -1) + 'ies';
+      else plural = plural + 's';
+    }
+    return `/identity/management/${plural}`;
   }
 
   /**
-   * Fetch Columns Config from /identity/management/users/config/columns
+   * Fetch Table Config from /identity/management/:entity/config/table
    */
-  fetchColumnsConfig(baseUrl = this.defaultBaseUrl): Observable<{ columns: ColumnConfigMap; options?: ColumnOptionsConfigPayload }> {
-    const url = this.resolveUrl('/identity/management/users/config/columns', baseUrl);
+  fetchTableConfig(tableKeyOrPath = 'users_table_1234', baseUrl = this.defaultBaseUrl): Observable<TableConfigPayload> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const url = this.resolveUrl(`${basePath}/config/table`, baseUrl);
+    return this.http.get<any>(url).pipe(
+      map(res => res?.data || res)
+    );
+  }
+
+  /**
+   * Fetch Columns Config from /identity/management/:entity/config/columns
+   */
+  fetchColumnsConfig(tableKeyOrPath = 'users_table_1234', baseUrl = this.defaultBaseUrl): Observable<{ columns: ColumnConfigMap; options?: ColumnOptionsConfigPayload }> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const url = this.resolveUrl(`${basePath}/config/columns`, baseUrl);
     return this.http.get<any>(url).pipe(
       map(res => {
-        if (res && res.columns) {
-          return { columns: res.columns as ColumnConfigMap, options: res.options as ColumnOptionsConfigPayload };
+        const data = res?.data || res;
+        if (data && data.columns) {
+          return { columns: data.columns as ColumnConfigMap, options: data.options as ColumnOptionsConfigPayload };
         }
-        return { columns: res as ColumnConfigMap, options: undefined };
+        return { columns: data as ColumnConfigMap, options: undefined };
       })
     );
   }
 
   /**
-   * Fetch Actions Config from /identity/management/users/config/actions
+   * Fetch Actions Config from /identity/management/:entity/config/actions
    */
-  fetchActionsConfig(baseUrl = this.defaultBaseUrl): Observable<ActionPanelConfigPayload> {
-    const url = this.resolveUrl('/identity/management/users/config/actions', baseUrl);
-    return this.http.get<ActionPanelConfigPayload>(url);
+  fetchActionsConfig(tableKeyOrPath = 'users_table_1234', baseUrl = this.defaultBaseUrl): Observable<ActionPanelConfigPayload> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const url = this.resolveUrl(`${basePath}/config/actions`, baseUrl);
+    return this.http.get<any>(url).pipe(
+      map(res => res?.data || res)
+    );
   }
 
   /**
-   * Fetch Header Config from /identity/management/users/config/header
+   * Fetch Header Config from /identity/management/:entity/config/header
    */
-  fetchHeaderConfig(baseUrl = this.defaultBaseUrl): Observable<HeaderConfigPayload> {
-    const url = this.resolveUrl('/identity/management/users/config/header', baseUrl);
-    return this.http.get<HeaderConfigPayload>(url);
+  fetchHeaderConfig(tableKeyOrPath = 'users_table_1234', baseUrl = this.defaultBaseUrl): Observable<HeaderConfigPayload> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const url = this.resolveUrl(`${basePath}/config/header`, baseUrl);
+    return this.http.get<any>(url).pipe(
+      map(res => res?.data || res)
+    );
   }
 
   /**
-   * Fetch Row Actions Config from /identity/management/users/config/row-actions
+   * Fetch Row Actions Config from /identity/management/:entity/config/row-actions
    */
-  fetchRowActionsConfig(baseUrl = this.defaultBaseUrl): Observable<RowActionsConfigPayload> {
-    const url = this.resolveUrl('/identity/management/users/config/row-actions', baseUrl);
-    return this.http.get<RowActionsConfigPayload>(url);
+  fetchRowActionsConfig(tableKeyOrPath = 'users_table_1234', baseUrl = this.defaultBaseUrl): Observable<RowActionsConfigPayload> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
+    const url = this.resolveUrl(`${basePath}/config/row-actions`, baseUrl);
+    return this.http.get<any>(url).pipe(
+      map(res => res?.data || res)
+    );
   }
 
   /**
-   * Loads all configurations in parallel
+   * Loads all configurations in parallel for any tableKeyOrPath
    */
-  bootstrap(baseUrl = this.defaultBaseUrl): Observable<{
+  bootstrap(baseUrl = this.defaultBaseUrl, tableKeyOrPath = 'users_table_1234'): Observable<{
     tableConfig: TableConfigPayload;
     columnsConfig: ColumnConfigMap;
     columnOptionsConfig?: ColumnOptionsConfigPayload;
@@ -318,12 +358,13 @@ export class EmployeesApiService {
     rowActionsConfig?: RowActionsConfigPayload;
     isLive: boolean;
   }> {
+    const basePath = this.resolveEntityPath(tableKeyOrPath);
     return forkJoin({
-      tableConfig: this.fetchTableConfig(baseUrl).pipe(catchError(() => of(null as any))),
-      columnsData: this.fetchColumnsConfig(baseUrl).pipe(catchError(() => of(null as any))),
-      actionsConfig: this.fetchActionsConfig(baseUrl).pipe(catchError(() => of(null as any))),
-      headerConfig: this.fetchHeaderConfig(baseUrl).pipe(catchError(() => of(null as any))),
-      rowActionsConfig: this.fetchRowActionsConfig(baseUrl).pipe(catchError(() => of(null as any))),
+      tableConfig: this.fetchTableConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
+      columnsData: this.fetchColumnsConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
+      actionsConfig: this.fetchActionsConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
+      headerConfig: this.fetchHeaderConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
+      rowActionsConfig: this.fetchRowActionsConfig(basePath, baseUrl).pipe(catchError(() => of(null as any))),
     }).pipe(
       map(res => {
         const isLive = !!(res.tableConfig && res.columnsData);
@@ -711,7 +752,7 @@ export class EmployeesApiService {
               summary: `This table manages core identity records, employee accounts, access permissions, and authentication baselines across the platform. Total records: ${payload.total_count || this.sharedMockRows.length}.`,
               highlights: [
                 `Total users: ${payload.total_count || this.sharedMockRows.length}`,
-                `Status breakdown: ${statusCounts.active} active, ${statusCounts.pending} pending, ${statusCounts.inactive} inactive`,
+                `Status breakdown: ${statusCounts['active'] || 0} active, ${statusCounts['pending'] || 0} pending, ${statusCounts['inactive'] || 0} inactive`,
                 payload.active_filters && Object.keys(payload.active_filters).length > 0
                   ? `Active filters: ${Object.keys(payload.active_filters).join(', ')}`
                   : 'Displaying unfiltered dataset'
