@@ -1119,10 +1119,51 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   // View Row Details Modal
   showViewModal = false;
   viewModalRowIndex = 0;
+  isViewModalEditing = false;
+  viewModalEditForm: Record<string, any> = {};
+  isSavingViewModalEdit = false;
 
   get currentViewRow(): Record<string, any> | null {
     return this.rows[this.viewModalRowIndex] || null;
   }
+
+  isBooleanCol(col: EnrichedColumn, val?: any): boolean {
+    return col.key === 'is_active' || col.key === 'editable' || typeof val === 'boolean';
+  }
+
+  isNumericCol(col: EnrichedColumn, val?: any): boolean {
+    return !this.isBooleanCol(col, val) && (col.filter_type === 'numeric' || typeof val === 'number');
+  }
+
+  isDateCol(col: EnrichedColumn, val?: any): boolean {
+    return !this.isBooleanCol(col, val) && !this.isNumericCol(col, val) && (col.filter_type === 'date_range' || col.filter_type === 'single_date');
+  }
+
+  getColDropdownOptions(col: EnrichedColumn): { key: string; name: string }[] {
+    if (col.filter_data && col.filter_data.length > 0) {
+      return col.filter_data.map(d => ({ key: String(d.key), name: String(d.name || d.key) }));
+    }
+    if (col.key === 'status') {
+      return [
+        { key: 'Active', name: 'Active' },
+        { key: 'Pending', name: 'Pending' },
+        { key: 'Suspended', name: 'Suspended' },
+        { key: 'Inactive', name: 'Inactive' }
+      ];
+    }
+    return [];
+  }
+
+  getStatusBadgeClass(status: any): string {
+    const s = String(status || '').toLowerCase();
+    if (s === 'active') return 'bg-emerald-100 text-emerald-800';
+    if (s === 'pending') return 'bg-amber-100 text-amber-800';
+    if (s === 'suspended') return 'bg-rose-100 text-rose-800';
+    if (s === 'inactive') return 'bg-slate-200 text-slate-700';
+    return 'bg-slate-100 text-slate-700';
+  }
+
+  readonly String = String;
 
   // ── AI Summary State ──────────────────────────────────────────────────────
   showAiSummaryModal = false;
@@ -1809,16 +1850,27 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   }
 
   // ── View Row Details Popup Navigation & Actions ─────────────────────
-  openViewModal(row: Record<string, any>): void {
+  openViewModal(row: Record<string, any>, startEditing = false): void {
     const idx = this.rows.findIndex(r => String(r['id']) === String(row['id']));
     this.viewModalRowIndex = idx >= 0 ? idx : 0;
+    this.isViewModalEditing = startEditing;
+    this.initViewModalEditForm();
     this.showViewModal = true;
     this.cdr.markForCheck();
+  }
+
+  initViewModalEditForm(): void {
+    if (this.currentViewRow) {
+      this.viewModalEditForm = { ...this.currentViewRow };
+    } else {
+      this.viewModalEditForm = {};
+    }
   }
 
   prevViewRow(): void {
     if (this.viewModalRowIndex > 0) {
       this.viewModalRowIndex--;
+      this.initViewModalEditForm();
       this.cdr.markForCheck();
     }
   }
@@ -1826,6 +1878,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   nextViewRow(): void {
     if (this.viewModalRowIndex < this.rows.length - 1) {
       this.viewModalRowIndex++;
+      this.initViewModalEditForm();
       this.cdr.markForCheck();
     }
   }
@@ -1840,6 +1893,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         if (user && typeof user === 'object') {
           Object.assign(row, user);
           this.originalRowData.set(String(row['id']), { ...row });
+          this.initViewModalEditForm();
         }
         this.showToast('Row Refreshed', `Refreshed User #${row['id']}`, 'row');
         this.cdr.markForCheck();
@@ -1860,11 +1914,13 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.apiService.updateUser(updateUrl, row['id'], { status: 'inactive' }, this.apiBaseUrl).subscribe({
       next: () => {
         this.originalRowData.set(String(row['id']), { ...row });
+        this.initViewModalEditForm();
         this.showToast('User Disabled', `User #${row['id']} marked inactive`, 'row');
         this.cdr.markForCheck();
       },
       error: () => {
         this.originalRowData.set(String(row['id']), { ...row });
+        this.initViewModalEditForm();
         this.showToast('User Disabled', `User #${row['id']} marked inactive`, 'row');
         this.cdr.markForCheck();
       },
@@ -1877,6 +1933,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     const orig = this.originalRowData.get(String(row['id']));
     if (!orig) return;
     Object.assign(row, { ...orig });
+    this.initViewModalEditForm();
     this.showToast('Row Reverted', `User #${row['id']} reverted to original baseline`, 'row');
     this.cdr.markForCheck();
   }
@@ -1884,15 +1941,60 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   editCurrentViewRow(): void {
     const row = this.currentViewRow;
     if (!row) return;
-    this.editForm = {
-      id: String(row['id']),
-      first_name: row['first_name'] || '',
-      last_name: row['last_name'] || '',
-      email: row['email'] || '',
-      status: row['status'] || 'active',
-    };
-    this.showEditModal = true;
+    this.isViewModalEditing = !this.isViewModalEditing;
+    if (this.isViewModalEditing) {
+      this.initViewModalEditForm();
+    }
     this.cdr.markForCheck();
+  }
+
+  cancelViewModalEdit(): void {
+    this.isViewModalEditing = false;
+    this.initViewModalEditForm();
+    this.cdr.markForCheck();
+  }
+
+  saveCurrentViewRowEdits(): void {
+    const row = this.currentViewRow;
+    if (!row) return;
+    const rowId = String(row['id']);
+    const updateUrl = this.tableConfig?.table_api?.update_api || '/identity/management/users/update/:id';
+
+    // Prepare payload of editable fields only
+    const payload: Record<string, any> = {};
+    this.allColumnsList.forEach(col => {
+      if (col.editable && col.key !== 'id') {
+        payload[col.key] = this.viewModalEditForm[col.key];
+      }
+    });
+
+    this.isSavingViewModalEdit = true;
+    this.cdr.markForCheck();
+
+    this.apiService.updateUser(updateUrl, rowId, payload, this.apiBaseUrl).subscribe({
+      next: (res) => {
+        this.isSavingViewModalEdit = false;
+        Object.assign(row, payload);
+        this.originalRowData.set(rowId, { ...row });
+        this.apiService.updateMockRow(rowId, payload);
+        this.apiService.notifyDataChanged();
+        this.isViewModalEditing = false;
+        this.showToast('Record Updated', res?.message || `Successfully updated record #${rowId}`, 'row');
+        this.broadcastAction('EDIT', true, 'Record Updated', `Updated record #${rowId}`);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isSavingViewModalEdit = false;
+        Object.assign(row, payload);
+        this.originalRowData.set(rowId, { ...row });
+        this.apiService.updateMockRow(rowId, payload);
+        this.apiService.notifyDataChanged();
+        this.isViewModalEditing = false;
+        this.showToast('Record Updated (Local)', `Applied changes to record #${rowId}`, 'row');
+        this.broadcastAction('EDIT', true, 'Record Updated', `Updated record #${rowId}`);
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   deleteCurrentViewRow(): void {
@@ -3307,24 +3409,17 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.activeRowActionId = null;
 
     // Check popup_component if defined
-    if (actionItem?.popup_component === 'view_row_modal' || optionKey === 'view') {
-      this.openViewModal(row);
+    if (actionItem?.popup_component?.includes('view') || optionKey === 'view') {
+      this.openViewModal(row, false);
       return;
     }
-    if (actionItem?.popup_component === 'edit_user_modal' || optionKey === 'edit') {
-      this.editForm = {
-        id: String(row['id']),
-        first_name: row['first_name'] || '',
-        last_name: row['last_name'] || '',
-        email: row['email'] || '',
-        status: row['status'] || 'active',
-      };
-      this.showEditModal = true;
+    if (actionItem?.popup_component?.includes('edit') || optionKey === 'edit') {
+      this.openViewModal(row, true);
       this.broadcastAction(
         'EDIT',
         false,
-        'Editing User',
-        `Opened edit modal for User #${row['id']} on ${this.instanceLabel}`
+        'Editing Record',
+        `Opened edit mode for #${row['id']} on ${this.instanceLabel}`
       );
       this.cdr.markForCheck();
       return;
@@ -3332,26 +3427,6 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     if (actionItem?.popup_component === 'delete_confirm_modal' || optionKey === 'delete') {
       this.deleteTargetRowIds = [String(row['id'])];
       this.showDeleteConfirmModal = true;
-      this.cdr.markForCheck();
-      return;
-    }
-
-    // 2. EDIT
-    if (optionKey === 'edit') {
-      this.editForm = {
-        id: String(row['id']),
-        first_name: row['first_name'] || '',
-        last_name: row['last_name'] || '',
-        email: row['email'] || '',
-        status: row['status'] || 'active',
-      };
-      this.showEditModal = true;
-      this.broadcastAction(
-        'EDIT',
-        false,
-        'Editing User',
-        `Opened edit modal for User #${row['id']} on ${this.instanceLabel}`
-      );
       this.cdr.markForCheck();
       return;
     }
