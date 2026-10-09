@@ -43,12 +43,12 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
             *ngIf="getSimpleSearchValue(col.filter_key); else emptySimpleSearch"
             class="flex items-center w-full h-7 rounded-md border border-slate-200 bg-white px-1.5"
           >
-            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-500 text-white truncate shadow-2xs">
+            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200/90 truncate">
               <span class="truncate">{{ getSimpleSearchValue(col.filter_key) }}</span>
               <button
                 type="button"
                 (click)="clearSimpleSearch(col, $event)"
-                class="text-blue-100 hover:text-white cursor-pointer ml-0.5 leading-none font-bold text-xs"
+                class="text-slate-400 hover:text-slate-700 cursor-pointer ml-0.5 leading-none font-bold text-xs"
                 title="Clear filter"
               >
                 &times;
@@ -62,7 +62,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
               [placeholder]="'Filter ' + col.header_name"
               (keydown.enter)="onSimpleSearch(col, $any($event.target).value)"
               (blur)="onSimpleSearch(col, $any($event.target).value)"
-              class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 font-normal transition-colors"
+              class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 font-normal transition-colors"
             />
           </ng-template>
         </div>
@@ -88,14 +88,14 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
           <!-- State B: 1 item added -> Fits in compact cell size limit -->
           <div
             *ngIf="getMultiSearchTags(col.filter_key).length === 1"
-            class="flex items-center justify-between w-full h-7 rounded-md border border-slate-200 bg-white px-1.5 gap-1 focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900 transition-colors"
+            class="flex items-center justify-between w-full h-7 rounded-md border border-slate-200 bg-white px-1.5 gap-1 focus-within:border-slate-400 focus-within:ring-1 focus-within:ring-slate-300 transition-colors"
           >
-            <span class="inline-flex items-center gap-1 max-w-[110px] px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500 text-white truncate shrink-0 shadow-2xs">
+            <span class="inline-flex items-center gap-1 max-w-[110px] px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200/90 truncate shrink-0">
               <span class="truncate">{{ getMultiSearchTags(col.filter_key)[0] }}</span>
               <button
                 type="button"
                 (click)="removeMultiSearchTagDirect(col, 0, $event)"
-                class="text-blue-100 hover:text-white cursor-pointer ml-0.5 leading-none"
+                class="text-slate-400 hover:text-slate-700 cursor-pointer ml-0.5 leading-none"
                 title="Remove"
               >
                 &times;
@@ -107,7 +107,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
               type="text"
               placeholder="+ more"
               (keydown.enter)="addMultiSearchTagDirect(col, singleInput)"
-              class="flex-1 min-w-[20px] text-[11px] placeholder:text-slate-400 outline-none bg-transparent font-normal"
+              class="flex-1 min-w-[20px] text-xs text-slate-800 placeholder:text-slate-400 outline-none bg-transparent font-normal"
             />
 
             <button
@@ -127,12 +127,12 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
             class="flex items-center justify-between w-full h-7 rounded-md border border-slate-200 bg-white px-1.5 cursor-pointer hover:border-slate-300 transition-colors gap-1"
           >
             <div class="flex items-center gap-1 overflow-hidden truncate">
-              <span class="inline-flex items-center gap-1 max-w-[85px] px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500 text-white shrink-0 truncate shadow-2xs">
+              <span class="inline-flex items-center gap-1 max-w-[85px] px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200/90 shrink-0 truncate">
                 <span class="truncate">{{ getMultiSearchTags(col.filter_key)[0] }}</span>
                 <button
                   type="button"
                   (click)="removeMultiSearchTagDirect(col, 0, $event)"
-                  class="text-blue-100 hover:text-white cursor-pointer ml-0.5 leading-none"
+                  class="text-slate-400 hover:text-slate-700 cursor-pointer ml-0.5 leading-none"
                   title="Remove"
                 >
                   &times;
@@ -254,12 +254,12 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
             *ngIf="getSingleDateValue(col.filter_key); else emptySingleDate"
             class="flex items-center w-full h-7 rounded-md border border-slate-200 bg-white px-1.5"
           >
-            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-500 text-white truncate shadow-2xs">
+            <span class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200/90 truncate">
               <span class="truncate">{{ getSingleDateValue(col.filter_key) }}</span>
               <button
                 type="button"
                 (click)="clearSingleDate(col, $event)"
-                class="text-blue-100 hover:text-white cursor-pointer ml-0.5 leading-none font-bold text-xs"
+                class="text-slate-400 hover:text-slate-700 cursor-pointer ml-0.5 leading-none font-bold text-xs"
                 title="Clear filter"
               >
                 &times;
@@ -271,7 +271,7 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
             <input
               type="date"
               (change)="onSingleDateChange(col, $any($event.target).value)"
-              class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 font-normal transition-colors cursor-pointer"
+              class="w-full h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 font-normal transition-colors cursor-pointer"
             />
           </ng-template>
         </div>

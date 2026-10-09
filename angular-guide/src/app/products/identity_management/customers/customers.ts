@@ -1,57 +1,67 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { MasterTableComponent } from '../../../pages/employees/employee-table.component';
+import { MasterTableComponent } from '../../../bkp/pages/employees/employee-table.component';
 
 @Component({
-    selector: 'app-customers',
-    standalone: true,
-    imports: [
-        CommonModule,
-        MasterTableComponent
-    ],
-    templateUrl: './customers.html',
+  selector: 'app-customers',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MasterTableComponent,
+  ],
+  templateUrl: './customers.html',
 })
 export class Customer implements OnInit {
-    private readonly http = inject(HttpClient);
-    private readonly cdr = inject(ChangeDetectorRef);
+  private readonly http = inject(HttpClient);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-    title = 'Customer';
-    user_table_key = 'customers_table_1234';
-    table_identifier = 'customers_instance_1';
-    tableConfig: any = null;
-    isLoading = true;
+  @ViewChildren(MasterTableComponent) tables!: QueryList<MasterTableComponent>;
 
-    ngOnInit(): void {
-        this.userTableConfig();
-    }
+  get table1(): MasterTableComponent | undefined {
+    return this.tables?.first;
+  }
 
-    userTableConfig(): void {
-        const configApi = 'http://localhost:3000/identity/management/customers/config/table';
-        this.isLoading = true;
+  get table2(): MasterTableComponent | undefined {
+    return this.tables?.last;
+  }
 
-        this.http.get<any>(configApi).subscribe({
-            next: (res) => {
-                // Unpack payload whether returned directly or nested in `data`
-                const configData = res?.data || res;
-                this.tableConfig = configData;
+  title = 'Customer Management';
+  user_table_key = 'customers_table_1234';
+  table_identifier = 'customers_instance';
+  product = 'identity_management';
+  basePath = '/identity/management/customers';
+  tableConfig: any = null;
+  isLoading = true;
 
-                // Sync table key & title from the backend configuration
-                if (configData?.table_key) {
-                    this.user_table_key = configData.table_key;
-                }
-                if (configData?.display_name) {
-                    this.title = configData.display_name;
-                }
+  ngOnInit(): void {
+    this.userTableConfig();
+  }
 
-                this.isLoading = false;
-                this.cdr.markForCheck();
-            },
-            error: (err) => {
-                console.warn('[Customer] Could not fetch table config from API, using fallback defaults', err);
-                this.isLoading = false;
-                this.cdr.markForCheck();
-            }
-        });
-    }
+  userTableConfig(): void {
+    const configApi = `http://localhost:3000${this.basePath}/config/table`;
+    this.isLoading = true;
+
+    this.http.get<any>(configApi).subscribe({
+      next: (res) => {
+        const configData = res?.data || res;
+        this.tableConfig = configData;
+
+        if (configData?.table_key) {
+          this.user_table_key = configData.table_key;
+        }
+        if (configData?.display_name) {
+          this.title = configData.display_name;
+        }
+
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.warn('[Customer] Could not fetch table config from API, using fallback defaults', err);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
 }

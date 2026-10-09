@@ -7,42 +7,43 @@ import { PaginationState } from '../employees.types';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <footer class="flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-200 rounded-xl bg-white px-5 py-3 text-xs text-slate-600 shadow-2xs">
+    <footer class="flex flex-col sm:flex-row items-center justify-between gap-3 border border-slate-200/90 rounded-xl bg-white px-4 py-2.5 text-xs text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
 
       <!-- Records Counter -->
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 select-none text-[12px]">
         <span>Showing</span>
-        <span class="font-medium text-slate-900">{{ currentCount === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1 }}</span>
+        <span class="font-semibold text-slate-900">{{ currentCount === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1 }}</span>
         <span>to</span>
-        <span class="font-medium text-slate-900">{{ (pagination.page - 1) * pagination.limit + currentCount }}</span>
+        <span class="font-semibold text-slate-900">{{ (pagination.page - 1) * pagination.limit + currentCount }}</span>
         <span>of</span>
-        <span class="font-medium text-slate-900">{{ pagination.total }}</span>
+        <span class="font-semibold text-slate-900">{{ pagination.total }}</span>
         <span>entries</span>
       </div>
 
       <!-- Page Jumpers -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 select-none">
         <button
           type="button"
           [disabled]="pagination.page <= 1"
           (click)="onPage(pagination.page - 1)"
-          class="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 text-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center transition-all"
+          title="Previous page"
         >
-          «
+          ‹
         </button>
-        <button
-          type="button"
-          class="px-2.5 py-1 rounded-md bg-slate-900 text-white font-medium text-xs shadow-2xs"
+        <span
+          class="h-7 min-w-[28px] px-2 rounded-lg bg-slate-900 text-white font-medium text-xs flex items-center justify-center shadow-xs"
         >
           {{ pagination.page }}
-        </button>
+        </span>
         <button
           type="button"
           [disabled]="pagination.page >= pagination.totalPages"
           (click)="onPage(pagination.page + 1)"
-          class="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          class="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 text-xs shadow-[0_1px_2px_rgba(0,0,0,0.02)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center transition-all"
+          title="Next page"
         >
-          »
+          ›
         </button>
       </div>
 

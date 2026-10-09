@@ -1,15 +1,15 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { DataTable, TableSaveRequest, TableBulkActionRequest } from '../../../components/data-table/table/data-table';
-import { Toast, pushToast, ToastMessage } from '../../../components/toast/toast';
-import { AddUserModal, AddUserPayload } from '../../../components/modals/add-user-modal';
-import { TableApiService } from '../../services/table-api.service';
+import { DataTable, TableSaveRequest, TableBulkActionRequest } from '../../../../components/data-table/table/data-table';
+import { Toast, pushToast, ToastMessage } from '../../../../components/toast/toast';
+import { AddUserModal, AddUserPayload } from '../../../../components/modals/add-user-modal';
+import { TableApiService } from '../../../services/table-api.service';
 
-import type { ColumnDef, PaginationState, SortState, FilterValues, CollabUser } from '../../../components/data-table/models/column-def.model';
-import type { TableConfigEntry } from '../../../components/data-table/models/table-config.model';
+import type { ColumnDef, PaginationState, SortState, FilterValues, CollabUser } from '../../../../components/data-table/models/column-def.model';
+import type { TableConfigEntry } from '../../../../components/data-table/models/table-config.model';
 
-import {ActionMenuItem, ActionMenuComponent} from '../../../components/data-table/table/action-menu';
+import {ActionMenuItem, ActionMenuComponent} from '../../../../components/data-table/table/action-menu';
 
 @Component({
   selector: 'app-nexora-user',

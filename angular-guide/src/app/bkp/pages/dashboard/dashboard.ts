@@ -1,13 +1,13 @@
 import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { DataTable } from '../../../components/data-table/table/data-table';
-import { TableApiService } from '../../services/table-api.service';
+import { DataTable } from '../../../../components/data-table/table/data-table';
+import { TableApiService } from '../../../services/table-api.service';
 
 import type {
   ColumnDef, PaginationState, SortState, FilterValues, CollabUser,
-} from '../../../components/data-table/models/column-def.model';
-import type { TableConfigEntry } from '../../../components/data-table/models/table-config.model';
+} from '../../../../components/data-table/models/column-def.model';
+import type { TableConfigEntry } from '../../../../components/data-table/models/table-config.model';
 
 // ── Minimal helper: build a TableConfigEntry without writing out every field ──
 function makeConfig(overrides: Partial<TableConfigEntry> = {}): TableConfigEntry {

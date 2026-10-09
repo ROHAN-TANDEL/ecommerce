@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HorizontalSection } from '../../../components/layouts/horizontal-section/horizontal-section';
-import { VerticalSection } from '../../../components/layouts/vertical-section/vertical-section';
+import { HorizontalSection } from '../../../../components/layouts/horizontal-section/horizontal-section';
+import { VerticalSection } from '../../../../components/layouts/vertical-section/vertical-section';
 import {
   AutoRefreshComponent,
   LockUpdateComponent,
@@ -16,10 +16,10 @@ import {
   CollapseToggleComponent,
   CollabToggleComponent,
   ActionButtonComponent,
-} from '../../../components/data-table/table';
-import type { TableDensity } from '../../../components/data-table/table/density';
-import type { ExportFormat } from '../../../components/data-table/table/export-action';
-import type { DownloadFormat } from '../../../components/data-table/table/download-action';
+} from '../../../../components/data-table/table';
+import type { TableDensity } from '../../../../components/data-table/table/density';
+import type { ExportFormat } from '../../../../components/data-table/table/export-action';
+import type { DownloadFormat } from '../../../../components/data-table/table/download-action';
 
 // Nexora Inputs Vocabulary components
 import {
@@ -68,7 +68,7 @@ import {
   NexoraCellUserComponent,
   NexoraCellProgressComponent,
   NexoraCellSparklineComponent,
-} from '../../../components/nexora-inputs';
+} from '../../../../components/nexora-inputs';
 
 // Nexora UI Element Families components
 import {
@@ -135,7 +135,7 @@ import {
   NexoraUserCardComponent,
   NexoraOrgIdentityComponent,
   NexoraEntityCardComponent,
-} from '../../../components/nexora-ui';
+} from '../../../../components/nexora-ui';
 
 @Component({
   selector: 'app-final',

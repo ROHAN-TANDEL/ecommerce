@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EnrichedColumn } from '../employees.types';
 
@@ -16,28 +16,29 @@ import { EnrichedColumn } from '../employees.types';
       [class.z-20]="column.isFrozen"
       [class.border-r]="column.isFrozen"
       [class.border-slate-200]="column.isFrozen"
-      [class.bg-slate-100]="column.isFrozen"
-      class="px-3.5 py-3 select-none transition-colors border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700 uppercase tracking-wider relative group/th"
+      [class.bg-slate-50/95]="column.isFrozen"
+      class="px-3.5 py-3 select-none transition-colors border-b border-slate-200 bg-slate-50/75 text-xs font-semibold text-slate-700 tracking-normal relative group/th"
     >
       <div class="flex items-center justify-between gap-1.5">
         <div
-          class="flex items-center gap-1.5 truncate cursor-pointer group"
+          class="flex items-center gap-1.5 min-w-0 truncate cursor-pointer group"
           (click)="onSort()"
+          [title]="'Sort by ' + column.header_name"
         >
-          <span class="truncate font-medium text-slate-800">{{ column.header_name }}</span>
+          <span class="truncate font-semibold text-slate-700" [title]="column.header_name">{{ column.header_name }}</span>
 
           <!-- Paired Chevron Sort SVG Indicator -->
-          <span *ngIf="column.sorting" class="flex flex-col gap-[1.5px] items-center shrink-0 ml-0.5">
+          <span *ngIf="column.sorting" class="flex flex-col gap-[1px] items-center shrink-0 ml-0.5">
             <svg
-              class="w-2 h-2 transition-colors"
-              [class.text-slate-900]="sortDirection === 'asc'"
+              class="w-2.5 h-2 transition-colors"
+              [class.text-blue-600]="sortDirection === 'asc'"
               [class.text-slate-300]="sortDirection !== 'asc'"
               viewBox="0 0 10 6" fill="currentColor">
               <path d="M5 0.5L9.5 5.5H0.5L5 0.5Z" />
             </svg>
             <svg
-              class="w-2 h-2 transition-colors"
-              [class.text-slate-900]="sortDirection === 'desc'"
+              class="w-2.5 h-2 transition-colors"
+              [class.text-blue-600]="sortDirection === 'desc'"
               [class.text-slate-300]="sortDirection !== 'desc'"
               viewBox="0 0 10 6" fill="currentColor">
               <path d="M5 5.5L0.5 0.5H9.5L5 5.5Z" />
@@ -111,16 +112,36 @@ import { EnrichedColumn } from '../employees.types';
           </div>
         </div>
       </div>
+      <!-- Column Drag Resize Handle -->
+      <div
+        *ngIf="isResizable"
+        class="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize z-30 group-hover/th:bg-slate-300 hover:!bg-blue-500 transition-colors select-none"
+        [class.!bg-blue-500]="isResizing"
+        [class.w-2]="isResizing"
+        (mousedown)="onResizeStart($event)"
+        (touchstart)="onTouchStart($event)"
+        (click)="$event.stopPropagation()"
+        title="Drag to resize column"
+        aria-hidden="true"
+      ></div>
     </th>
   `,
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnDestroy {
   @Input({ required: true }) column!: EnrichedColumn;
   @Input() sortDirection: 'asc' | 'desc' | null = null;
   @Output() sortChange = new EventEmitter<EnrichedColumn>();
   @Output() columnOption = new EventEmitter<{ colKey: string; option: 'pin' | 'readonly' | 'hide' }>();
+  @Output() columnResize = new EventEmitter<{ colKey: string; width: string }>();
 
   isMenuOpen = false;
+  isResizing = false;
+  private startX = 0;
+  private startW = 180;
+
+  get isResizable(): boolean {
+    return this.column?.column_resize === true || String(this.column?.column_resize).toLowerCase() === 'true';
+  }
 
   onSort(): void {
     if (this.column.sorting) {
@@ -142,6 +163,78 @@ export class HeaderComponent {
   @HostListener('document:click')
   onDocClick(): void {
     this.isMenuOpen = false;
+  }
+
+  onResizeStart(e: MouseEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.isResizing = true;
+    this.startX = e.clientX;
+    const currentPx = parseInt((this.column.computedWidth || this.column.width || '180').toString().replace('px', ''), 10) || 180;
+    this.startW = currentPx;
+    try {
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    } catch {}
+  }
+
+  onTouchStart(e: TouchEvent): void {
+    if (e.touches && e.touches.length > 0) {
+      e.stopPropagation();
+      this.isResizing = true;
+      this.startX = e.touches[0].clientX;
+      const currentPx = parseInt((this.column.computedWidth || this.column.width || '180').toString().replace('px', ''), 10) || 180;
+      this.startW = currentPx;
+    }
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(e: MouseEvent): void {
+    if (!this.isResizing) return;
+    const minWidth = 70;
+    const maxWidth = 800;
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, this.startW + (e.clientX - this.startX)));
+    const widthStr = `${newWidth}px`;
+    this.column.computedWidth = widthStr;
+    this.columnResize.emit({ colKey: this.column.key, width: widthStr });
+  }
+
+  @HostListener('document:touchmove', ['$event'])
+  onTouchMove(e: TouchEvent): void {
+    if (!this.isResizing || !e.touches || e.touches.length === 0) return;
+    const minWidth = 70;
+    const maxWidth = 800;
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, this.startW + (e.touches[0].clientX - this.startX)));
+    const widthStr = `${newWidth}px`;
+    this.column.computedWidth = widthStr;
+    this.columnResize.emit({ colKey: this.column.key, width: widthStr });
+  }
+
+  @HostListener('document:mouseup')
+  onMouseUp(): void {
+    if (this.isResizing) {
+      this.isResizing = false;
+      try {
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+      } catch {}
+    }
+  }
+
+  @HostListener('document:touchend')
+  onTouchEnd(): void {
+    if (this.isResizing) {
+      this.isResizing = false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.isResizing) {
+      try {
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+      } catch {}
+    }
   }
 }
 

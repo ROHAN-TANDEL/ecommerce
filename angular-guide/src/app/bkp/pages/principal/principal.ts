@@ -7,7 +7,7 @@ import {
   DataTable,
   TableSaveRequest,
   TableBulkActionRequest
-} from '../../../components/data-table/table/data-table';
+} from '../../../../components/data-table/table/data-table';
 
 // Table level
 import {
@@ -26,13 +26,13 @@ import {
   CollapseToggleComponent,
   CollabToggleComponent,
   ActionButtonComponent
-} from '../../../components/data-table/table';
-import { ActionMenuComponent, ActionMenuItem } from '../../../components/data-table/table/action-menu';
+} from '../../../../components/data-table/table';
+import { ActionMenuComponent, ActionMenuItem } from '../../../../components/data-table/table/action-menu';
 
 // Column level
-import { ColumnHeader, SortDirection } from '../../../components/data-table/column/header';
-import { SelectionColumn } from '../../../components/data-table/column/selection';
-import { ActionColumn, RowAction } from '../../../components/data-table/column/action';
+import { ColumnHeader, SortDirection } from '../../../../components/data-table/column/header';
+import { SelectionColumn } from '../../../../components/data-table/column/selection';
+import { ActionColumn, RowAction } from '../../../../components/data-table/column/action';
 
 // Row level (The 4 core row states)
 import {
@@ -40,7 +40,7 @@ import {
   EditableRow,
   DisabledRow,
   UnavailableRow
-} from '../../../components/data-table/row';
+} from '../../../../components/data-table/row';
 
 // Cell level (Atomic presentation units)
 import {
@@ -53,10 +53,10 @@ import {
   ReadonlyCell,
   DisabledCell,
   UnavailableCell
-} from '../../../components/data-table/cell';
+} from '../../../../components/data-table/cell';
 
-import type { ColumnDef, PaginationState, SortState, FilterValues, CollabUser } from '../../../components/data-table/models/column-def.model';
-import type { TableConfigEntry } from '../../../components/data-table/models/table-config.model';
+import type { ColumnDef, PaginationState, SortState, FilterValues, CollabUser } from '../../../../components/data-table/models/column-def.model';
+import type { TableConfigEntry } from '../../../../components/data-table/models/table-config.model';
 
 @Component({
   selector: 'app-principal',

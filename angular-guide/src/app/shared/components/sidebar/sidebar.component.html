@@ -1,0 +1,224 @@
+<aside
+  class="relative flex flex-col h-screen bg-white border-r border-slate-200 select-none transition-all duration-300 ease-in-out z-40 shadow-sm"
+  [class.w-64]="!collapsed()"
+  [class.w-18]="collapsed()">
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- HEADER & LOGO                                              -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="flex items-center justify-between h-16 px-4 border-b border-slate-100 shrink-0">
+    <!-- Brand / Title -->
+    <div class="flex items-center gap-2.5 overflow-hidden" *ngIf="!collapsed()">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold text-sm shadow-xs shrink-0">
+        N
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm font-bold text-slate-800 tracking-tight truncate leading-tight">
+          Nexora Platform
+        </span>
+        <span class="text-[10px] text-slate-400 font-medium truncate">
+          {{ displayName() }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Collapsed icon only -->
+    <div *ngIf="collapsed()" class="mx-auto">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold text-sm shadow-xs">
+        N
+      </div>
+    </div>
+
+    <!-- Collapse / Expand Toggle Button -->
+    <button
+      type="button"
+      (click)="toggleCollapse()"
+      class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
+      [title]="collapsed() ? 'Expand Sidebar' : 'Collapse Sidebar'">
+      <svg
+        class="w-4 h-4 transition-transform duration-200"
+        [class.rotate-180]="collapsed()"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- BACKEND STATUS PILL                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="px-3 pt-3 pb-1" *ngIf="!collapsed()">
+    <div class="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-slate-50 border border-slate-100 text-[11px]">
+      <div class="flex items-center gap-1.5">
+        <span
+          class="w-2 h-2 rounded-full shrink-0"
+          [class.bg-emerald-500]="apiStatus() === 'connected'"
+          [class.bg-amber-500]="apiStatus() === 'offline'"
+          [class.bg-blue-500]="apiStatus() === 'loading'"
+          [class.animate-pulse]="apiStatus() === 'loading'"></span>
+        <span class="font-medium text-slate-600">
+          {{ apiStatus() === 'connected' ? 'API Live' : apiStatus() === 'offline' ? 'Mock Config' : 'Connecting...' }}
+        </span>
+      </div>
+      <button
+        type="button"
+        (click)="fetchConfiguration()"
+        class="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+        title="Refresh sidebar config from backend API">
+        Sync
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- NAVIGATION SECTIONS & ITEMS                                -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-5">
+    <div *ngFor="let section of groupedSections(); let sIndex = index" class="space-y-1">
+      
+      <!-- Section Divider Header -->
+      <div class="px-2 pt-2 pb-1" *ngIf="!collapsed()">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {{ section.display_name || section.name }}
+          </span>
+          <span class="text-[9px] font-mono text-slate-300">#{{ section.id }}</span>
+        </div>
+        <div class="mt-1 h-px bg-slate-100"></div>
+      </div>
+
+      <!-- Collapsed Section Separator -->
+      <div *ngIf="collapsed()" class="my-2 border-t border-slate-100"></div>
+
+      <!-- Navigation Items in Section -->
+      <div *ngFor="let item of section.items" class="space-y-0.5">
+        
+        <!-- Main Item Row -->
+        <div
+          class="group relative flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium cursor-pointer transition-all"
+          [class.bg-blue-50]="isItemActive(item.path)"
+          [class.text-blue-700]="isItemActive(item.path)"
+          [class.font-semibold]="isItemActive(item.path)"
+          [class.text-slate-600]="!isItemActive(item.path)"
+          [class.hover:bg-slate-50]="!isItemActive(item.path)"
+          [class.hover:text-slate-900]="!isItemActive(item.path)"
+          (click)="onItemClick(item)">
+          
+          <!-- Active Indicator Pill on Left -->
+          <div
+            *ngIf="isItemActive(item.path)"
+            class="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-md bg-blue-600">
+          </div>
+
+          <!-- Left: Icon + Label -->
+          <div class="flex items-center gap-2.5 min-w-0">
+            
+            <!-- Users Icon -->
+            <span *ngIf="item.key === 'users'" class="w-4 h-4 shrink-0" [class.text-blue-600]="isItemActive(item.path)" [class.text-slate-400]="!isItemActive(item.path)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </span>
+
+            <!-- Clients Icon -->
+            <span *ngIf="item.key === 'clients'" class="w-4 h-4 shrink-0" [class.text-blue-600]="isItemActive(item.path)" [class.text-slate-400]="!isItemActive(item.path)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </span>
+
+            <!-- Partners Icon -->
+            <span *ngIf="item.key === 'partners'" class="w-4 h-4 shrink-0" [class.text-blue-600]="isItemActive(item.path)" [class.text-slate-400]="!isItemActive(item.path)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+            </span>
+
+            <!-- Label -->
+            <span *ngIf="!collapsed()" class="truncate text-xs">
+              {{ item.display_name || item.name }}
+            </span>
+          </div>
+
+          <!-- Right: Dropdown Chevron (for items with dropdowns like 'users') -->
+          <div *ngIf="!collapsed() && item.has_dropdown" class="flex items-center gap-1">
+            <button
+              type="button"
+              (click)="toggleDropdown(item.key, $event)"
+              class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors"
+              [title]="isDropdownOpen(item.key) ? 'Collapse submenu' : 'Expand submenu'">
+              <svg
+                class="w-3.5 h-3.5 transition-transform duration-200"
+                [class.rotate-180]="isDropdownOpen(item.key)"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Hover Tooltip for Collapsed Mode -->
+          <div
+            *ngIf="collapsed()"
+            class="hidden group-hover:block absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-medium rounded-md shadow-md whitespace-nowrap z-50">
+            {{ item.display_name || item.name }}
+          </div>
+        </div>
+
+        <!-- ── Submenu / Dropdown Options for Item (e.g. users) ── -->
+        <div
+          *ngIf="!collapsed() && item.has_dropdown && isDropdownOpen(item.key)"
+          class="ml-6 pl-2.5 border-l-2 border-slate-100 space-y-1 my-1 py-0.5 animate-fadeIn">
+          
+          <div
+            *ngFor="let opt of getDropdownOptions(item)"
+            (click)="onDropdownOptionClick(opt, $event)"
+            class="flex items-center justify-between px-2 py-1.5 rounded-md text-[11px] font-medium cursor-pointer transition-colors"
+            [class.bg-blue-50]="isOptionActive(opt.path)"
+            [class.text-blue-700]="isOptionActive(opt.path)"
+            [class.font-semibold]="isOptionActive(opt.path)"
+            [class.text-slate-500]="!isOptionActive(opt.path)"
+            [class.hover:bg-slate-50]="!isOptionActive(opt.path)"
+            [class.hover:text-slate-800]="!isOptionActive(opt.path)">
+            
+            <div class="flex items-center gap-2 truncate">
+              <!-- Bullet / icon indicator -->
+              <span
+                class="w-1.5 h-1.5 rounded-full shrink-0"
+                [class.bg-blue-600]="isOptionActive(opt.path)"
+                [class.bg-slate-300]="!isOptionActive(opt.path)">
+              </span>
+              <span class="truncate">{{ opt.display_name || opt.name }}</span>
+            </div>
+
+            <!-- Optional note/badge -->
+            <span *ngIf="opt.key === 'active_users'" class="text-[9px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 font-semibold shrink-0">
+              live
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FOOTER                                                     -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="p-3 border-t border-slate-100 bg-slate-50/50 shrink-0" *ngIf="!collapsed()">
+    <div class="flex items-center justify-between text-[11px] text-slate-400">
+      <span class="font-mono text-[10px]">API /sidebar</span>
+      <span class="text-slate-400 hover:text-slate-600 cursor-pointer" (click)="fetchConfiguration()" title="Sync with backend">
+        ⟳ Sync
+      </span>
+    </div>
+  </div>
+
+</aside>

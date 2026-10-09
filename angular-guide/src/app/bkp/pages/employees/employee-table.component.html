@@ -272,13 +272,14 @@
             [sortDirection]="sortState[col.key]"
             (sortChange)="onHeaderSortClick($event)"
             (columnOption)="onColumnOptionSelect($event)"
+            (columnResize)="onColumnResize($event)"
           ></header-component>
 
           <!-- Action column header -->
           <th
             *ngIf="tableConfig.action_column.active"
             style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-3 py-3 bg-slate-50 sticky right-0 z-30 border-l border-slate-200 text-center text-xs font-bold text-[#0F172A] tracking-tight uppercase"
+            class="w-[120px] min-w-[120px] max-w-[120px] px-3.5 py-3 bg-slate-50 sticky right-0 z-20 border-b border-l border-slate-200 text-center text-xs font-semibold text-slate-700 tracking-normal"
           >
             Actions
           </th>
@@ -316,25 +317,26 @@
         <!-- Data Rows -->
         <tr
           *ngFor="let row of rows; let i = index; let even = even"
-          [class.bg-amber-50]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
-          [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
-          [class.bg-blue-50]="selectedRowIds.has(row['id'])"
+          [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+          [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+          [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
+          [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
           [class.ring-1]="row['_needsReview']"
           [class.ring-inset]="row['_needsReview']"
           [class.ring-amber-300]="row['_needsReview']"
           [class.z-[60]]="activeRowActionId === row['id']"
           [class.relative]="activeRowActionId === row['id']"
-          class="hover:bg-slate-100/70 transition-colors"
+          class="hover:bg-slate-100/60 transition-colors border-b border-slate-200/60"
         >
           <!-- Row Checkbox Cell -->
           <td
             *ngIf="hasCheckboxColumn"
             style="width: 50px; min-width: 50px; max-width: 50px;"
-            class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 text-center sticky left-0 z-10 border-r border-slate-200"
-            [class.bg-amber-50]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
-            [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+            class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 text-center sticky left-0 z-10 border-r border-b border-slate-200/60"
+            [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+            [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
             [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
-            [class.bg-blue-50]="selectedRowIds.has(row['id'])"
+            [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
           >
             <input
               *ngIf="enableRowLevelCheckboxes"
@@ -367,13 +369,13 @@
           <td
             *ngIf="tableConfig.action_column.active"
             style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-2 text-center sticky right-0 border-l border-slate-200"
+            class="w-[120px] min-w-[120px] max-w-[120px] px-2 text-center sticky right-0 border-l border-b border-slate-200/60"
             [class.z-[60]]="activeRowActionId === row['id']"
             [class.z-10]="activeRowActionId !== row['id']"
-            [class.bg-amber-50]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
-            [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+            [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+            [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
             [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
-            [class.bg-blue-50]="selectedRowIds.has(row['id'])"
+            [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
           >
             <div class="relative inline-flex items-center gap-1.5 justify-center text-left" (click)="$event.stopPropagation()">
               <!-- Review Action Pill (When AI altered/generated row requires review) -->

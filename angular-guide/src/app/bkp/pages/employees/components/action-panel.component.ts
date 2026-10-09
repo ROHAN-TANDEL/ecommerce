@@ -8,7 +8,7 @@ import { DropdownSectionsComponent } from './dropdown-sections.component';
   standalone: true,
   imports: [CommonModule, DropdownSectionsComponent],
   template: `
-    <div class="relative z-40 flex flex-wrap items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs overflow-visible">
+    <div class="relative z-40 flex flex-wrap items-center gap-1.5 bg-white px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-visible">
 
       <!-- Pinned Toolbar Actions Slot -->
       <ng-content></ng-content>

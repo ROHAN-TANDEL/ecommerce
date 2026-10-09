@@ -902,6 +902,24 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     }
   }
 
+  onColumnResize(event: { colKey: string; width: string }): void {
+    const col = this.allColumnsList.find(c => c.key === event.colKey);
+    if (col) {
+      col.computedWidth = event.width;
+      col.width = event.width;
+      if (this.rawColumnConfig[event.colKey]) {
+        this.rawColumnConfig[event.colKey].width = event.width;
+      }
+    }
+    const visibleCol = this.columnsList.find(c => c.key === event.colKey);
+    if (visibleCol) {
+      visibleCol.computedWidth = event.width;
+      visibleCol.width = event.width;
+    }
+    this.recomputeColumnOffsets(this.allColumnsList);
+    this.cdr.markForCheck();
+  }
+
   // UI Interactive States (Isolated to this table instance)
   actionsMenuOpen = false;
   activeSubmenuKey: string | null = null;
@@ -2751,6 +2769,7 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         if (this.rawColumnConfig[sc.key]) {
           if (sc.order !== undefined) this.rawColumnConfig[sc.key].order = sc.order;
           if (sc.active !== undefined) this.rawColumnConfig[sc.key].active = sc.active !== false;
+          if (sc.width !== undefined) this.rawColumnConfig[sc.key].width = sc.width;
           if (sc.isFrozen || pinnedLeft.has(sc.key)) {
             this.rawColumnConfig[sc.key].freez = { freez_side: 'left', order: sc.order || 1, active: true };
           } else {

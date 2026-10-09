@@ -6,42 +6,42 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-4 rounded-xl border border-slate-200 shadow-2xs">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-base font-semibold text-slate-900 tracking-tight">
+          <h1 class="text-sm font-semibold text-slate-900 tracking-tight">
             {{ displayName }}
           </h1>
 
-          <span *ngIf="tableKey" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          <span *ngIf="tableKey" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-50 text-slate-500 border border-slate-200/80">
             {{ tableKey }}
           </span>
 
           <!-- API Connection Status Badge -->
           <span
             *ngIf="apiStatus"
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium border"
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border"
             [ngClass]="{
-              'bg-emerald-50 text-emerald-700 border-emerald-200': apiStatus === 'connected',
-              'bg-amber-50 text-amber-700 border-amber-200': apiStatus === 'connecting',
-              'bg-slate-100 text-slate-600 border-slate-200': apiStatus === 'offline-mock'
+              'bg-emerald-50/70 text-emerald-700 border-emerald-200/70 ring-1 ring-emerald-500/10': apiStatus === 'connected',
+              'bg-amber-50/70 text-amber-700 border-amber-200/70 ring-1 ring-amber-500/10': apiStatus === 'connecting',
+              'bg-slate-50 text-slate-600 border-slate-200/80': apiStatus === 'offline-mock'
             }"
           >
             <span
-              class="w-1.5 h-1.5 rounded-full"
+              class="w-1.5 h-1.5 rounded-full shrink-0"
               [ngClass]="{
-                'bg-emerald-500 animate-pulse': apiStatus === 'connected',
-                'bg-amber-500 animate-spin': apiStatus === 'connecting',
+                'bg-emerald-500': apiStatus === 'connected',
+                'bg-amber-500 animate-pulse': apiStatus === 'connecting',
                 'bg-slate-400': apiStatus === 'offline-mock'
               }"
             ></span>
             <span>
-              {{ apiStatus === 'connected' ? 'Live API Connected (:3000)' : apiStatus === 'connecting' ? 'Connecting...' : 'Offline Fallback Active' }}
+              {{ apiStatus === 'connected' ? 'API Live' : apiStatus === 'connecting' ? 'Connecting...' : 'Mock Offline' }}
             </span>
           </span>
         </div>
 
-        <p *ngIf="description" class="text-xs text-slate-500 mt-0.5">
+        <p *ngIf="description" class="text-xs text-slate-500 mt-1 leading-normal">
           {{ description }}
         </p>
       </div>

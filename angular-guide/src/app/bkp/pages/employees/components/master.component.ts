@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <th
       style="width: 50px; min-width: 50px; max-width: 50px;"
-      class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 bg-slate-50 sticky left-0 z-30 border-r border-slate-200 text-center select-none"
+      class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 bg-slate-50 sticky left-0 z-30 border-b border-r border-slate-200 text-center select-none"
     >
       <input
         *ngIf="showCheckbox"

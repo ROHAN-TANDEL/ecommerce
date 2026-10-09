@@ -49,7 +49,7 @@ import {
   NexoraComplianceBadgeComponent,
   NexoraPermissionMatrixComponent,
   PermissionRow
-} from '../../../components/nexora-starter';
+} from '../../../../components/nexora-starter';
 
 export interface KanbanCardItem {
   id: string;

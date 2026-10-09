@@ -12,11 +12,11 @@ import { CommonModule } from '@angular/common';
         [disabled]="disabled"
         (click)="onClick($event)"
         [ngClass]="{
-          'bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-xs cursor-pointer': editing && !disabled,
-          'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 cursor-pointer': !editing && !disabled,
-          'bg-white text-slate-400 border-slate-200 opacity-50 cursor-not-allowed': disabled
+          'bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-xs active:scale-[0.99] cursor-pointer': editing && !disabled,
+          'bg-white text-slate-700 border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] cursor-pointer': !editing && !disabled,
+          'bg-slate-50 text-slate-400 border-slate-200 opacity-40 shadow-none cursor-not-allowed': disabled
         }"
-        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors"
+        class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all select-none"
         [title]="infoNote || label"
       >
         <svg class="w-3.5 h-3.5" [class.text-white]="editing && !disabled" [class.text-slate-500]="!editing && !disabled" [class.text-slate-400]="disabled" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
