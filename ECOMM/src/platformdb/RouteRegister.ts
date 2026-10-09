@@ -57,7 +57,7 @@ export default class RouteRegister {
             {
                 const router = express.Router();
 
-                const routerData = api[routeName];
+                const routerData = (api as any)[routeName];
 
                 if (routerData !== undefined) {
                     const registerRoute = (new routerData()).route(dbs);
