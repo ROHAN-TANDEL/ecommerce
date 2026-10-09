@@ -4,7 +4,7 @@ export default class Config {
     public config(): any {
         return {
             identity_management: {
-                routes: ["HealthRoute", "AuthRoute", "UserRoute"],
+                routes: ["HealthRoute", "AuthRoute", "UserRoute", "EmployeeRoute", "CustomerRoute"],
                 identification: '/identity/management',
                 database: {
                     master: {
