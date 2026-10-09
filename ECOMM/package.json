@@ -19,7 +19,9 @@
     "db:migrate": "tsx src/database/migration-cli.ts",
     "db:seed": "tsx src/database/seeder-cli.ts",
     "dba:migrate": "tsx src/platformdb/run-migrator.ts",
-    "dba:seed": "tsx src/platformdb/run-seeder.ts"
+    "dba:seed": "tsx src/platformdb/run-seeder.ts",
+    "generate:entity": "tsx scripts/generate-entity.ts",
+    "generate:angular-table": "tsx scripts/generate-angular-table.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.1106.0",
