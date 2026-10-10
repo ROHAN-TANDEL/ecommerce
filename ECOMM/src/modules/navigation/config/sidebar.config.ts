@@ -47,7 +47,7 @@ export const SidebarConfig = {
     sections: {
         section_1: {
             id: "section_1",
-            name: "Section 1",
+            name: "User Section",
             display_name: "Section 1",
             component: "dropdown_sections_component",
             order: 1,
@@ -57,7 +57,7 @@ export const SidebarConfig = {
         },
         section_2: {
             id: "section_2",
-            name: "Section 2",
+            name: "Partner Section",
             display_name: "Section 2",
             component: "dropdown_sections_component",
             order: 2,

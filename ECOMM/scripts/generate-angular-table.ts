@@ -216,90 +216,26 @@ export interface ${entityPascal}FilterPayload {
 }
 `;
 
-    // 2. HTML Template (Full dual-table verification parity with nexora/emp)
-    const htmlContent = `<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-6 pb-28 space-y-8">
+    // 2. HTML Template (Production single master-table layout)
+    const htmlContent = `<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-4 sm:p-5 pb-20 space-y-4">
 
-  <!-- Header Banner Explaining Dual Table Setup -->
-  <div class="max-w-[1400px] mx-auto bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div class="space-y-1">
-      <div class="flex items-center gap-2.5">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-          Dual Table Verification
-        </span>
-        <span class="text-xs font-mono text-slate-400">table_key: {{ user_table_key }}</span>
-      </div>
-      <h1 class="text-lg font-bold text-slate-900 tracking-tight">{{ title }} — Shared Backend, Isolated UI State</h1>
-      <p class="text-xs text-slate-500 max-w-3xl leading-relaxed">
-        Both tables share the exact same backend <code class="bg-slate-100 text-slate-700 px-1 py-0.5 rounded text-[11px]">table_key: "{{ user_table_key }}"</code>.
-        <strong>UI level actions</strong> (collapse, column reordering & visibility, density, selection, filters, sort) remain strictly isolated to each respective table.
-        <strong>Backend level actions</strong> (view, delete, edit, create, bulk save) impact and synchronize across both tables.
-      </p>
-    </div>
-  </div>
+  <!-- Enterprise Page Header -->
+  <header class="max-w-[1400px] mx-auto">
+    <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug">{{ title }}</h1>
+    <p class="text-xs text-slate-500 mt-0.5 max-w-2xl">
+      Manage and monitor ${entityPascal.toLowerCase()} records, settings, and operations.
+    </p>
+  </header>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- TABLE 1 (INSTANCE 1)                                            -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="max-w-[1400px] mx-auto space-y-2">
-    <div class="flex items-center justify-between px-1">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">1</span>
-        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Table 1</h2>
-        <span class="text-[11px] text-slate-400 font-medium">(UI actions here will NOT impact Table 2)</span>
-      </div>
-      <div class="text-[11px] text-slate-400">
-        Try collapsing or changing column order here — Table 2 below stays intact.
-      </div>
-    </div>
-
+  <!-- Master Data Table -->
+  <div class="max-w-[1400px] mx-auto">
     <master-table 
       [user_table_key]="user_table_key" 
-      [user_table_identifier]="table_identifier + '_1'"
+      [user_table_identifier]="table_identifier"
       [product]="product"
       [basePath]="basePath"
-      instanceId="table-1" 
-      instanceLabel="Table 1">
-    </master-table>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- VISUAL DIVIDER                                                  -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="max-w-[1400px] mx-auto relative py-3">
-    <div class="absolute inset-0 flex items-center" aria-hidden="true">
-      <div class="w-full border-t-2 border-dashed border-slate-300"></div>
-    </div>
-    <div class="relative flex justify-center">
-      <span class="bg-[#F8FAFC] px-4 text-xs font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-        <span>▼</span>
-        <span>Table 2 Duplicated Below</span>
-        <span>▼</span>
-      </span>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- TABLE 2 (INSTANCE 2 - DUPLICATED BELOW TABLE 1)                 -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="max-w-[1400px] mx-auto space-y-2">
-    <div class="flex items-center justify-between px-1">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">2</span>
-        <h2 class="text-sm font-bold text-slate-900 tracking-tight">Table 2</h2>
-        <span class="text-[11px] text-slate-400 font-medium">(Duplicated Instance — Same table_key)</span>
-      </div>
-      <div class="text-[11px] text-slate-400">
-        Backend actions (edit, delete, view, add) here will sync with Table 1.
-      </div>
-    </div>
-
-    <master-table 
-      [user_table_key]="user_table_key" 
-      [user_table_identifier]="table_identifier + '_2'"
-      [product]="product"
-      [basePath]="basePath"
-      instanceId="table-2" 
-      instanceLabel="Table 2">
+      instanceId="${entitySlug}-table" 
+      instanceLabel="${entityPascal}">
     </master-table>
   </div>
 
@@ -307,10 +243,10 @@ export interface ${entityPascal}FilterPayload {
 `;
 
     // 3. Component File
-    const componentContent = `import { Component, OnInit, inject, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
+    const componentContent = `import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { MasterTableComponent } from '../../../pages/employees/employee-table.component';
+import { MasterTableComponent } from '../../../bkp/pages/employees/employee-table.component';
 
 @Component({
   selector: 'app-${entitySlug}',
@@ -325,16 +261,6 @@ export class ${entityPascal} implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  @ViewChildren(MasterTableComponent) tables!: QueryList<MasterTableComponent>;
-
-  get table1(): MasterTableComponent | undefined {
-    return this.tables?.first;
-  }
-
-  get table2(): MasterTableComponent | undefined {
-    return this.tables?.last;
-  }
-
   title = '${entityPascal} Management';
   user_table_key = '${cfg.tableKey}';
   table_identifier = '${entitySlug}_instance';
@@ -344,10 +270,10 @@ export class ${entityPascal} implements OnInit {
   isLoading = true;
 
   ngOnInit(): void {
-    this.userTableConfig();
+    this.fetchTableConfig();
   }
 
-  userTableConfig(): void {
+  fetchTableConfig(): void {
     const configApi = \`http://localhost:3000\${this.basePath}/config/table\`;
     this.isLoading = true;
 

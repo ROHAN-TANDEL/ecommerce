@@ -9,6 +9,8 @@ export const UserRowActionsConfig = {
             api: "/identity/management/users/:id",
             method: "GET",
             icon: "refresh",
+            pinned:true,
+            icon_only:true,
             order: 1
         },
         disable: {
@@ -19,6 +21,8 @@ export const UserRowActionsConfig = {
             api: "/identity/management/users/update/:id",
             method: "PUT",
             icon: "ban",
+            pinned:true,
+            icon_only:true,
             order: 2
         },
         revert: {
@@ -75,6 +79,7 @@ export const UserRowActionsConfig = {
             popup_component: "delete_confirm_modal",
             api: "/identity/management/users/delete/:id",
             method: "DELETE",
+            icon_only:true,
             icon: "trash",
             order: 8
         }
