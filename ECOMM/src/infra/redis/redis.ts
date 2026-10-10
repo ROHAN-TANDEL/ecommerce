@@ -49,6 +49,12 @@ export default class RedisRedis {
 
         const server = await redisClient.connect();
 
+        try {
+            // Ensure pub/sub channel permissions are active for admin/app users
+            await server.sendCommand(['ACL', 'SETUSER', 'admin', '&*']);
+            await server.sendCommand(['ACL', 'SETUSER', 'app', '&*']);
+        } catch (_) {}
+
         this.context.logger.info({
             redis_status: "Redis Connected"
         });

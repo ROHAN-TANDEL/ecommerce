@@ -1,17 +1,26 @@
-import {HealthRoute} from "../modules/identity/routes/HealthRoute.js";
-import AuthRoute from "../modules/auth/AuthRoute.js";
-import {ClientRoute} from "../modules/tenant/routes/ClientRoute.js";
-import {ProductRoute} from "../modules/tenant/routes/ProductRoute.js";
-import {BusinessRoute} from "../modules/tenant/routes/BusinessRoute.js";
-import {BusinessProductRoute} from "../modules/tenant/routes/BusinessProductRoute.js";
-import {UserRoute} from "../modules/identity/routes/UserRoute.js";
+import {ClientUserRoute} from "../modules/client_management/routes/ClientUserRoute.js";
+import {ClientProductRoute} from "../modules/client_management/routes/ClientProductRoute.js";
+import {ProductRoute} from "../modules/client_management/routes/ProductRoute.js";
+import {ClientRoute} from "../modules/client_management/routes/ClientRoute.js";
+import {PartnerRoute} from "../modules/client_management/routes/PartnerRoute.js";
+import {CustomerRoute} from "../modules/identity_management/routes/CustomerRoute.js";
+import {UserRoute} from "../modules/identity_management/routes/UserRoute.js";
+import {SidebarRoute} from "../modules/navigation/routes/SidebarRoute.js";
 
 export const api = {
-    'HealthRoute': HealthRoute,
-    'UserRoute': UserRoute,
-    'AuthRoute': AuthRoute,
-    'ClientRoute': ClientRoute,
+    'ClientUserRoute': ClientUserRoute,
+
+    'ClientProductRoute': ClientProductRoute,
+
     'ProductRoute': ProductRoute,
-    'BusinessRoute': BusinessRoute,
-    'BusinessProductRoute': BusinessProductRoute,
+
+    'ClientRoute': ClientRoute,
+
+    'PartnerRoute': PartnerRoute,
+
+    'CustomerRoute': CustomerRoute,
+
+    'UserRoute': UserRoute,
+
+    'SidebarRoute': SidebarRoute
 };

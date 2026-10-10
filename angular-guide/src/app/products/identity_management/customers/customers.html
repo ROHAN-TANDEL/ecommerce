@@ -1,0 +1,23 @@
+<div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased p-4 sm:p-5 pb-20 space-y-4">
+
+  <!-- Enterprise Page Header -->
+  <header class="max-w-[1400px] mx-auto">
+    <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-snug">{{ title }}</h1>
+    <p class="text-xs text-slate-500 mt-0.5 max-w-2xl">
+      Manage customer records, accounts, compliance profiles, and enterprise client operations.
+    </p>
+  </header>
+
+  <!-- Master Data Table -->
+  <div class="max-w-[1400px] mx-auto">
+    <master-table 
+      [user_table_key]="user_table_key" 
+      [user_table_identifier]="table_identifier"
+      [product]="product"
+      [basePath]="basePath"
+      instanceId="customers-table" 
+      instanceLabel="Customers">
+    </master-table>
+  </div>
+
+</div>

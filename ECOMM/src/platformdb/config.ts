@@ -3,8 +3,13 @@ export default class Config {
     // public so SchemaManager and migrator can call it directly
     public config(): any {
         return {
+            navigation: {
+                routes: ["SidebarRoute"],
+                identification: '/navigation',
+                database: {}
+            },
             identity_management: {
-                routes: ["HealthRoute", "AuthRoute", "UserRoute"],
+                routes: ["UserRoute", "CustomerRoute"],
                 identification: '/identity/management',
                 database: {
                     master: {
@@ -34,7 +39,7 @@ export default class Config {
                 }
             },
             client_management: {
-                routes: ["ProductRoute", "BusinessRoute", "BusinessProductRoute", "ClientRoute"],
+                routes: [, "PartnerRoute", "ClientRoute", "ProductRoute", "ClientProductRoute", "ClientUserRoute"],
                 identification: '/client/management',
                 database: {
                     master: {

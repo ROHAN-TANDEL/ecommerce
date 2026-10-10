@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "generate:angular-table": "node ../ECOMM/node_modules/tsx/dist/cli.mjs ../ECOMM/scripts/generate-angular-table.ts",
+    "generate:entity": "node ../ECOMM/node_modules/tsx/dist/cli.mjs ../ECOMM/scripts/generate-entity.ts"
   },
   "prettier": {
     "printWidth": 100,

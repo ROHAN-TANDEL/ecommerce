@@ -1,0 +1,182 @@
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SavedTableView } from '../employees.types';
+
+@Component({
+  selector: 'view-component',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="relative inline-block text-left group">
+      <!-- Trigger Button -->
+      <button
+        type="button"
+        (click)="toggleOpen($event)"
+        [ngClass]="{
+          'bg-slate-100 border-slate-300 text-slate-900': isOpen,
+          'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen,
+          'w-8 px-0 justify-center': iconOnly,
+          'px-3': !iconOnly
+        }"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border text-xs font-medium shadow-2xs transition-colors cursor-pointer"
+        [title]="infoNote || 'Saved views'"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        <ng-container *ngIf="!iconOnly">
+          <span>{{ label }}</span>
+          <span *ngIf="activeViewName" class="text-[10px] text-slate-400 font-normal">({{ activeViewName }})</span>
+          <svg
+            class="w-3 h-3 text-slate-400 transition-transform shrink-0"
+            [class.rotate-180]="isOpen"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </ng-container>
+      </button>
+
+      <!-- Hover Tooltip -->
+      <div
+        *ngIf="infoNote && !isOpen"
+        class="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-[120] whitespace-nowrap rounded bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white shadow-md"
+      >
+        {{ infoNote }}
+      </div>
+
+      <!-- Saved Views Popover -->
+      <div
+        *ngIf="isOpen"
+        [ngClass]="[
+          dropdownAlign === 'right' ? 'right-0' : 'left-0',
+          menuVAlign === 'bottom' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+        ]"
+        class="absolute z-[110] w-56 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl space-y-0.5 max-h-[calc(100vh-100px)] overflow-y-auto"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between px-2.5 py-1">
+          <span class="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">SAVED VIEWS</span>
+          <span *ngIf="isLoadingViews" class="text-[10px] text-blue-500 animate-pulse">Loading...</span>
+        </div>
+
+        <!-- Default View -->
+        <button
+          type="button"
+          (click)="onSelect('default_view')"
+          [ngClass]="activeViewId === 'default_view' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-800 hover:bg-slate-100'"
+          class="flex w-full items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left"
+        >
+          <span class="font-medium">Default</span>
+          <span *ngIf="activeViewId === 'default_view'" class="text-blue-600 font-bold text-xs leading-none">✓</span>
+        </button>
+
+        <!-- Dynamic List of Saved Views by Users -->
+        <div *ngIf="savedViews && savedViews.length > 0" class="border-t border-slate-100 my-1 pt-1 space-y-0.5 max-h-48 overflow-y-auto">
+          <button
+            *ngFor="let v of savedViews"
+            type="button"
+            (click)="onSelect(String(v.id || v.name))"
+            [ngClass]="String(activeViewId) === String(v.id || v.name) ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-800 hover:bg-slate-100'"
+            class="flex w-full items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left"
+            [title]="v.name"
+          >
+            <div class="flex items-center gap-2 truncate">
+              <span class="truncate">{{ v.name }}</span>
+              <span *ngIf="v.is_default" class="text-[9px] bg-slate-100 text-slate-500 rounded px-1 py-0.2 shrink-0">Default</span>
+            </div>
+            <span *ngIf="String(activeViewId) === String(v.id || v.name)" class="text-blue-600 font-bold text-xs leading-none">✓</span>
+          </button>
+        </div>
+
+        <div class="border-t border-slate-100 my-1"></div>
+
+        <!-- Save current view -->
+        <button
+          type="button"
+          (click)="onSelect('current_view')"
+          class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer text-left"
+        >
+          <span class="text-slate-400 text-sm leading-none font-medium">+</span>
+          <span class="font-medium">Save current view</span>
+        </button>
+
+        <!-- Delete current view -->
+        <button
+          type="button"
+          (click)="onSelect('delete_view')"
+          [ngClass]="activeViewId === 'default_view' ? 'opacity-40 cursor-not-allowed text-slate-400 hover:bg-transparent' : 'text-slate-700 hover:bg-red-50 hover:text-red-600 cursor-pointer'"
+          class="flex w-full items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left"
+          [title]="activeViewId === 'default_view' ? 'Cannot delete default view' : 'Delete currently loaded view from database'"
+        >
+          <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span class="font-medium">Delete current view</span>
+        </button>
+      </div>
+    </div>
+  `,
+})
+export class ViewComponent {
+  @Input() label = 'View';
+  @Input() infoNote?: string;
+  @Input() savedViews: SavedTableView[] = [];
+  @Input() activeViewId: string | number = 'default_view';
+  @Input() activeViewName = 'Default';
+  @Input() isLoadingViews = false;
+  @Input() iconOnly = false;
+  @Output() viewSelect = new EventEmitter<string>();
+
+  String = String;
+  readonly menuId = 'view_' + Math.random().toString(36).substring(2, 9);
+  isOpen = false;
+  dropdownAlign: 'left' | 'right' = 'left';
+  menuVAlign: 'top' | 'bottom' = 'top';
+
+  constructor(private readonly elRef: ElementRef) {}
+
+  toggleOpen(e: MouseEvent): void {
+    if (!this.isOpen) {
+      const rect = this.elRef.nativeElement.getBoundingClientRect();
+      const menuWidth = 220;
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+
+      const spaceBottom = window.innerHeight - rect.bottom;
+      this.menuVAlign = (spaceBottom < 260 && rect.top >= spaceBottom) ? 'bottom' : 'top';
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.menuId }));
+    }
+    this.isOpen = !this.isOpen;
+  }
+
+  onSelect(viewKey: string): void {
+    this.isOpen = false;
+    this.viewSelect.emit(viewKey);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(e: MouseEvent): void {
+    if (this.isOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
+      this.isOpen = false;
+    }
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.menuId && this.isOpen) {
+      this.isOpen = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.isOpen = false;
+  }
+}

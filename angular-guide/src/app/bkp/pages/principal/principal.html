@@ -1,0 +1,1052 @@
+<div class="min-h-screen bg-[#F3F6FC] text-slate-900 font-sans antialiased pb-24">
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TOP APPLICATION NAVIGATION HEADER                               -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-4 shadow-xs">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+            Nexora Principal
+          </span>
+          <h1 class="text-xl font-bold text-[#0A173D] tracking-tight">Nexora Table Architectural Dissection</h1>
+        </div>
+        <p class="text-xs text-slate-500 mt-0.5">
+          Deconstructed modular components of the enterprise master table architecture — explore each building block, action, and row state.
+        </p>
+      </div>
+
+      <!-- Action Status Ticker -->
+      <div class="flex items-center gap-2 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-slate-700 font-mono truncate max-w-sm">{{ lastActionMessage }}</span>
+      </div>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="max-w-7xl mx-auto mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+        <button
+          type="button"
+          (click)="viewMode = 'dissected-components'"
+          [class]="viewMode === 'dissected-components' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span>🧩</span>
+          <span>Dissected Table Components (10 Layers)</span>
+        </button>
+        <button
+          type="button"
+          (click)="viewMode = 'assembled-table'"
+          [class]="viewMode === 'assembled-table' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+          class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+        >
+          <span>🏆</span>
+          <span>The Assembled Master Table (&lt;dt-table&gt;)</span>
+        </button>
+      </div>
+
+      <!-- Density Global Switcher for Dissection -->
+      <div *ngIf="viewMode === 'dissected-components'" class="flex items-center gap-2 text-xs">
+        <span class="text-slate-500 font-medium">Density:</span>
+        <div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
+          <button
+            type="button"
+            (click)="onDissectedDensityChange('compact')"
+            [class]="dissectedDensity === 'compact' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2.5 py-1 rounded-md text-[11px] transition-colors cursor-pointer"
+          >
+            Compact
+          </button>
+          <button
+            type="button"
+            (click)="onDissectedDensityChange('comfortable')"
+            [class]="dissectedDensity === 'comfortable' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2.5 py-1 rounded-md text-[11px] transition-colors cursor-pointer"
+          >
+            Comfortable
+          </button>
+          <button
+            type="button"
+            (click)="onDissectedDensityChange('spacious')"
+            [class]="dissectedDensity === 'spacious' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2.5 py-1 rounded-md text-[11px] transition-colors cursor-pointer"
+          >
+            Spacious
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 pt-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: DISSECTED TABLE COMPONENTS ANATOMY                      -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    @if (viewMode === 'dissected-components') {
+      <div class="space-y-8">
+
+        <!-- Layer Filter Navigation Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 text-xs">
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'all'"
+            [class]="activeDissectionLayer === 'all' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            All 10 Layers (Full Anatomy)
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'header'"
+            [class]="activeDissectionLayer === 'header' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            1. Frame &amp; Page Header
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'toolbar'"
+            [class]="activeDissectionLayer === 'toolbar' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            2. Toolbar &amp; Actions
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'collab'"
+            [class]="activeDissectionLayer === 'collab' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            3. Live Collaboration Bar
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'columns'"
+            [class]="activeDissectionLayer === 'columns' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            4. Column Headers &amp; Selection
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'filter'"
+            [class]="activeDissectionLayer === 'filter' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            5. In-Table Filter Row
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'master-edit'"
+            [class]="activeDissectionLayer === 'master-edit' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            6. Master Edit Row
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'rows'"
+            [class]="activeDissectionLayer === 'rows' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            7. Row Resolution (4 States)
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'actions'"
+            [class]="activeDissectionLayer === 'actions' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            8. Row Actions Column
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'cells'"
+            [class]="activeDissectionLayer === 'cells' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            9. Cell Presentation Vocabulary
+          </button>
+          <button
+            type="button"
+            (click)="activeDissectionLayer = 'pagination'"
+            [class]="activeDissectionLayer === 'pagination' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            class="px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+          >
+            10. Pagination Bar
+          </button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 1: TABLE FRAME & PAGE HEADER                          -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'header') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 1: Table Frame &amp; Page Header</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Title, Record Count Badge, Status Banners &amp; Projected Header Actions</h3>
+                <p class="text-xs text-slate-500">Provides table identity, real-time total record badges, breadcrumb navigation, and slot for header actions.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+                Slot: [tableHeaderAction]
+              </span>
+            </div>
+
+            <!-- Header Demo Box -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs divide-y divide-slate-100">
+              <!-- Page Header Bar -->
+              <div class="flex items-center justify-between bg-white px-5 py-3.5">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-base font-semibold text-[#0A173D]">Enterprise Customers</h2>
+                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-[#436CF3] border border-blue-100">
+                      {{ pagination.total | number }} Records
+                    </span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-slate-400">Manage high-growth enterprise accounts and annual contract values.</p>
+                </div>
+
+                <!-- Projected Actions Slot -->
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    (click)="logAction('+ Add Customer clicked in header')"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-[#436CF3] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#3557d4] cursor-pointer"
+                  >
+                    <span>＋</span>
+                    <span>Add Customer</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="logAction('⚙ Actions clicked in header')"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <span>⚙ Actions</span>
+                    <span class="text-[10px] text-slate-400">⌄</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Status Banners Comparison -->
+              <div class="bg-slate-50 p-4 space-y-2.5">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Contextual Status Banners:</div>
+                <div class="flex items-center justify-between border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-medium text-amber-700 rounded-lg">
+                  <span class="flex items-center gap-1.5">
+                    <span>🔒</span>
+                    <span>Read-only mode — editing is disabled for this audit view</span>
+                  </span>
+                  <span class="text-[10px] font-mono uppercase bg-amber-100 px-2 py-0.5 rounded text-amber-800">tableReadonly = true</span>
+                </div>
+                <div class="flex items-center justify-between border border-red-200 bg-red-50 px-4 py-1.5 text-xs font-medium text-red-600 rounded-lg">
+                  <span class="flex items-center gap-1.5">
+                    <span>⊘</span>
+                    <span>Table disabled — all interactions and keyboard events are locked</span>
+                  </span>
+                  <span class="text-[10px] font-mono uppercase bg-red-100 px-2 py-0.5 rounded text-red-700">tableDisabled = true</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 2: TOOLBAR & COMMAND CENTER                           -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'toolbar') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 2: Toolbar &amp; Operational Command Center</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Toolbar Actions, Column Manager, Views, Density &amp; Export</h3>
+                <p class="text-xs text-slate-500">Houses table operations, column visibility customization, saved view presets, auto-polling rates, and export triggers.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
+                &lt;dt-toolbar-actions&gt;
+              </span>
+            </div>
+
+            <!-- Complete Toolbar Actions Live Component -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+              <dt-toolbar-actions
+                [actions]="tableConfig?.actions!"
+                [exportConfig]="tableConfig?.export!"
+                [downloadConfig]="tableConfig?.download!"
+                [columnMgmt]="tableConfig?.column_management!"
+                [features]="tableConfig?.features!"
+                [columns]="columns"
+                [density]="dissectedDensity"
+                (actionClicked)="logAction('Toolbar action clicked: ' + $event)"
+                (exportClicked)="logAction('Export format clicked: ' + $event)"
+                (downloadClicked)="logAction('Download clicked: ' + $event)"
+              />
+            </div>
+
+            <!-- Dissected Sub-Widgets Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <!-- Auto-Refresh -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Auto-Refresh Widget</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-auto-refresh&gt;</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Configures live polling rates (5s, 15s, 1m, 5m, or WebSocket sync).</p>
+                <div class="pt-2">
+                  <dt-auto-refresh (intervalChange)="logAction('Auto-refresh interval: ' + $event)" />
+                </div>
+              </div>
+
+              <!-- Columns Manager -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Columns Manager</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-columns-manager&gt;</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Toggles column visibility, reordering, and default reset.</p>
+                <div class="pt-2">
+                  <dt-columns-manager
+                    [columns]="columns"
+                    (columnsChange)="logAction('Columns visibility updated')"
+                  />
+                </div>
+              </div>
+
+              <!-- Views Manager -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Saved Views Manager</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-views-manager&gt;</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Preserves custom filter presets, column orders, and density layouts.</p>
+                <div class="pt-2">
+                  <dt-views-manager
+                    [activeView]="'Default view'"
+                    [savedViews]="['Default view', 'Executive Summary', 'Compact Audit View']"
+                    (viewChange)="logAction('View switched to: ' + $event)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 3: LIVE COLLABORATION BAR                             -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'collab') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 3: Live Collaboration Bar</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Real-Time Concurrent Viewing &amp; Editing Presence</h3>
+                <p class="text-xs text-slate-500">Displays concurrent presence avatars and active editor banners when another team member is modifying rows.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-violet-50 text-violet-700 rounded-md border border-violet-200 font-mono">
+                &lt;dt-collab-bar&gt;
+              </span>
+            </div>
+
+            <!-- Collaboration Component Preview -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+              <dt-collab-bar [users]="collabUsers" />
+            </div>
+
+            <div class="p-3 bg-violet-50/50 border border-violet-200 rounded-xl flex items-center justify-between text-xs text-violet-900">
+              <div class="flex items-center gap-2">
+                <span class="text-base">👥</span>
+                <span>Active Presence: <strong>Sarah Connor (SC)</strong> is currently editing row <code>usr_002</code>. Other users see lock indicators on conflicting cells.</span>
+              </div>
+              <span class="text-[10px] font-mono bg-violet-100 text-violet-700 px-2 py-0.5 rounded font-bold">WebSocket Sync</span>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 4: COLUMN HEADERS & SELECTION CONTROLS               -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'columns') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 4: Column Headers &amp; Selection Controls</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Master Checkbox, Sorting Indicators, Tooltips &amp; Column Resizing</h3>
+                <p class="text-xs text-slate-500">Vertical contract definitions: sticky pinned columns, tri-state master selection checkbox, sort directions, and resizers.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
+                &lt;dt-column-header&gt; + &lt;dt-col-selection&gt;
+              </span>
+            </div>
+
+            <!-- Table <thead> Preview -->
+            <div class="border border-slate-200 rounded-xl overflow-x-auto bg-white shadow-2xs">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50">
+                    <!-- Master Selection Checkbox -->
+                    <dt-col-selection
+                      class="contents"
+                      [visible]="true"
+                      [selectedCount]="dissectedSelectedCount"
+                      [totalCount]="4"
+                      [density]="dissectedDensity"
+                      (masterChange)="onDissectedMasterSelect($event)"
+                    />
+
+                    <!-- Customer Name: Frozen Left, Sortable ASC -->
+                    <dt-column-header
+                      class="contents"
+                      label="Customer Name"
+                      width="260px"
+                      [sortable]="true"
+                      [sortDirection]="dissectedSorts['customer_name']"
+                      [frozen]="true"
+                      frozenSide="left"
+                      [frozenOffset]="'54px'"
+                      [infoNote]="'Primary customer identity with contact email'"
+                      [density]="dissectedDensity"
+                      (sortChange)="onDissectedSort('customer_name', $event)"
+                    />
+
+                    <!-- Status: Sortable, Required -->
+                    <dt-column-header
+                      class="contents"
+                      label="Status"
+                      width="150px"
+                      [sortable]="true"
+                      [sortDirection]="dissectedSorts['status']"
+                      [required]="true"
+                      [infoNote]="'Account activation status in database'"
+                      [density]="dissectedDensity"
+                      (sortChange)="onDissectedSort('status', $event)"
+                    />
+
+                    <!-- Registration Date: Non-sortable, Readonly -->
+                    <dt-column-header
+                      class="contents"
+                      label="Registration Date"
+                      width="180px"
+                      [sortable]="false"
+                      [infoNote]="'Account onboarding timestamp'"
+                      [density]="dissectedDensity"
+                    />
+
+                    <!-- Country -->
+                    <dt-column-header
+                      class="contents"
+                      label="Country"
+                      width="160px"
+                      [sortable]="true"
+                      [sortDirection]="dissectedSorts['country']"
+                      [density]="dissectedDensity"
+                      (sortChange)="onDissectedSort('country', $event)"
+                    />
+
+                    <!-- Revenue: Sortable DESC, Resizable -->
+                    <dt-column-header
+                      class="contents"
+                      label="Revenue"
+                      width="170px"
+                      [sortable]="true"
+                      [sortDirection]="dissectedSorts['revenue']"
+                      [resizable]="true"
+                      [infoNote]="'Annual contract value in local currency'"
+                      [density]="dissectedDensity"
+                      (sortChange)="onDissectedSort('revenue', $event)"
+                    />
+
+                    <!-- Actions Column Header -->
+                    <th class="w-[120px] bg-slate-50 px-3 align-middle text-center text-[11px] font-semibold text-[#0A173D] border-l border-slate-200">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="bg-white text-xs text-slate-500 italic">
+                    <td colspan="7" class="px-4 py-3 text-center">
+                      Interactive Header Demo: Click column titles to cycle ASC/DESC sort, or click the master checkbox.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 5: IN-TABLE FILTER ROW                                -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'filter') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 5: In-Table Filter Row</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Filter Controls Driven by Column Filter Types</h3>
+                <p class="text-xs text-slate-500">Embedded filter row: search inputs, checklist dropdowns, date ranges, number ranges, and instant reset triggers.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200 font-mono">
+                &lt;tr dt-filter-row&gt;
+              </span>
+            </div>
+
+            <!-- In-Table Filter Row Live Demo -->
+            <div class="border border-slate-200 rounded-xl overflow-x-auto bg-white shadow-2xs">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600">
+                    <th class="w-[54px] px-3 py-2 text-left">Select</th>
+                    <th *ngFor="let col of columns" [style.width]="col.width" class="px-3 py-2 text-center">
+                      {{ col.label }}
+                    </th>
+                    <th class="w-[120px] px-3 py-2 text-center border-l border-slate-200">Actions</th>
+                  </tr>
+
+                  <!-- In-Table Filter Row -->
+                  <tr
+                    dt-filter-row
+                    [columns]="columns"
+                    [values]="dissectedFilterValues"
+                    [showCheckboxes]="true"
+                    [showActions]="true"
+                    [density]="dissectedDensity"
+                    [frozenOffset]="frozenOffset.bind(this)"
+                    (filterChange)="onDissectedFilterChange($event)"
+                    (filterClear)="onDissectedFilterClear()"
+                    class="border-b border-slate-200 bg-white"
+                  ></tr>
+                </thead>
+                <tbody>
+                  <tr class="bg-slate-50/50 text-xs text-slate-600">
+                    <td colspan="9" class="px-4 py-3">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold">Active Filter State:</span>
+                          <span class="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-blue-600">
+                            {{ (dissectedFilterValues | json) === '{}' ? 'None (showing all)' : (dissectedFilterValues | json) }}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="onDissectedFilterClear()"
+                          class="px-2.5 py-1 text-xs font-semibold rounded bg-white border border-slate-300 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                        >
+                          Clear All Filters
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 6: MASTER EDIT ROW                                    -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'master-edit') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 6: Master Edit Row (Bulk In-Place Multi-Row Editor)</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Bulk Inline Input Propagation Across Selected Rows</h3>
+                <p class="text-xs text-slate-500">Activated when rows are selected in edit mode: typing into a column immediately propagates changes across all selected rows.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
+                masterEditAllow = true
+              </span>
+            </div>
+
+            <!-- Master Edit Row Demo -->
+            <div class="border border-slate-200 rounded-xl overflow-x-auto bg-white shadow-2xs">
+              <table class="w-full border-collapse">
+                <thead>
+                  <!-- The Master Edit Row -->
+                  <tr class="border-b border-[#436CF3]/30 bg-blue-50">
+                    <td class="w-[54px] px-3 py-2 bg-blue-50 align-middle">
+                      <span class="text-[10px] font-bold text-[#436CF3] uppercase tracking-wide">All</span>
+                    </td>
+
+                    <td *ngFor="let col of columns" class="px-3 py-2 bg-blue-50 align-middle" [style.width]="col.width">
+                      <ng-container *ngIf="col.editable && col.masterEditAllow; else masterRoCell">
+                        <input
+                          type="text"
+                          class="h-7 w-full rounded-md border border-[#436CF3]/50 bg-white px-2 text-[11px] outline-none placeholder:text-slate-400 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-200/70"
+                          [placeholder]="'All ' + col.label"
+                          [(ngModel)]="dissectedMasterEditValues[col.key]"
+                          (ngModelChange)="onDissectedMasterEditChange(col.key, $event)"
+                        />
+                      </ng-container>
+                      <ng-template #masterRoCell>
+                        <span class="text-[10px] text-slate-400 italic">Locked</span>
+                      </ng-template>
+                    </td>
+
+                    <td class="w-[120px] px-3 py-2 bg-blue-50 align-middle text-center border-l border-[#436CF3]/20">
+                      <button
+                        type="button"
+                        (click)="dissectedMasterEditValues = {}; logAction('Master edit cleared')"
+                        class="h-7 rounded-md border border-slate-300 bg-white px-2.5 text-[10px] font-medium text-slate-600 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                      >
+                        Clear
+                      </button>
+                    </td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Live propagation target row -->
+                  <tr class="bg-white border-b border-slate-100 text-xs">
+                    <td class="px-3 py-2.5 text-center">
+                      <input type="checkbox" checked class="h-4 w-4 rounded accent-[#436CF3]" />
+                    </td>
+                    <td class="px-3 py-2.5 font-semibold text-slate-800">
+                      {{ dissectedMasterEditValues['customer_name'] || sampleEditableRow.customer_name }}
+                    </td>
+                    <td class="px-3 py-2.5 text-center">
+                      <dt-cell-status-badge [status]="dissectedMasterEditValues['status'] || sampleEditableRow.status" />
+                    </td>
+                    <td class="px-3 py-2.5 text-center text-slate-500">{{ sampleEditableRow.registration_date }}</td>
+                    <td class="px-3 py-2.5 text-center">{{ sampleEditableRow.country }}</td>
+                    <td class="px-3 py-2.5 text-right font-mono font-bold">
+                      <dt-cell-number [value]="sampleEditableRow.revenue" prefix="₹" />
+                    </td>
+                    <td class="px-3 py-2.5 text-center">{{ sampleEditableRow.industry }}</td>
+                    <td class="px-3 py-2.5 text-center">{{ sampleEditableRow.owner }}</td>
+                    <td class="px-3 py-2.5 text-center">
+                      <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded">Synced</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 7: ROW ARCHITECTURE & STATE RESOLUTION                -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'rows') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 7: Row Architecture &amp; State Resolution</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">The 4 Row States: Readonly, Editable, Disabled &amp; Unavailable</h3>
+                <p class="text-xs text-slate-500">
+                  Priority Resolution Chain: <code>row.disabled</code> (DisabledRow) &rarr; <code>row.rowState</code> (UnavailableRow) &rarr; <code>editModeActive</code> (EditableRow) &rarr; <code>ReadonlyRow</code> (Default).
+                </p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200 font-mono">
+                &lt;dt-row-*&gt;
+              </span>
+            </div>
+
+            <!-- 4 Rows Side-by-Side Comparison Table -->
+            <div class="border border-slate-200 rounded-xl overflow-x-auto bg-white shadow-2xs">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700">
+                    <th class="w-[54px] px-3 py-2.5 text-left">Select</th>
+                    <th *ngFor="let col of columns" [style.width]="col.width" class="px-3 py-2.5 text-center">
+                      {{ col.label }}
+                    </th>
+                    <th class="w-[120px] px-3 py-2.5 text-center border-l border-slate-200">Row Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  <!-- 1. READONLY ROW (Default State) -->
+                  <dt-row-readonly
+                    class="contents"
+                    [row]="sampleReadonlyRow"
+                    [columns]="columns"
+                    [showCheckboxes]="true"
+                    [showActions]="true"
+                    [selected]="false"
+                    [zebra]="false"
+                    [density]="dissectedDensity"
+                    [frozenOffset]="frozenOffset.bind(this)"
+                    (selectedChange)="logAction('Readonly row selection changed')"
+                  >
+                    <ng-container rowActions>
+                      <dt-col-action
+                        [row]="sampleReadonlyRow"
+                        [actions]="buildDissectedRowActions(sampleReadonlyRow)"
+                        (actionFired)="logAction('Readonly action: ' + $event.action)"
+                      />
+                    </ng-container>
+                  </dt-row-readonly>
+
+                  <!-- 2. EDITABLE ROW (Active Edit Mode) -->
+                  <dt-row-editable
+                    class="contents"
+                    [row]="sampleEditableRow"
+                    [columns]="columns"
+                    [showCheckboxes]="true"
+                    [showActions]="true"
+                    [selected]="true"
+                    [masterSelected]="false"
+                    [masterEditValues]="dissectedMasterEditValues"
+                    [density]="dissectedDensity"
+                    [frozenOffset]="frozenOffset.bind(this)"
+                    (selectedChange)="logAction('Editable row selection changed')"
+                    (cellChange)="onDissectedCellChange($event)"
+                  >
+                    <ng-container rowActions>
+                      <dt-col-action
+                        [row]="sampleEditableRow"
+                        [actions]="buildDissectedRowActions(sampleEditableRow)"
+                        (actionFired)="logAction('Editable action: ' + $event.action)"
+                      />
+                    </ng-container>
+                  </dt-row-editable>
+
+                  <!-- 3. UNAVAILABLE ROW (Validation Error / Warning) -->
+                  <dt-row-unavailable
+                    class="contents"
+                    [row]="sampleUnavailableRow"
+                    [columns]="columns"
+                    [showCheckboxes]="true"
+                    [showActions]="true"
+                    [rowState]="'error'"
+                    [errorCells]="['revenue', 'status']"
+                    [warningCells]="[]"
+                    [errorMessage]="'Invalid contract currency code'"
+                    [selected]="false"
+                    [density]="dissectedDensity"
+                    [frozenOffset]="frozenOffset.bind(this)"
+                    (selectedChange)="logAction('Unavailable row selection changed')"
+                  >
+                    <ng-container rowActions>
+                      <dt-col-action
+                        [row]="sampleUnavailableRow"
+                        [actions]="buildDissectedRowActions(sampleUnavailableRow)"
+                        (actionFired)="logAction('Unavailable action: ' + $event.action)"
+                      />
+                    </ng-container>
+                  </dt-row-unavailable>
+
+                  <!-- 4. DISABLED ROW (Completely Muted & Locked) -->
+                  <dt-row-disabled
+                    class="contents"
+                    [row]="sampleDisabledRow"
+                    [columns]="columns"
+                    [showCheckboxes]="true"
+                    [showActions]="true"
+                    [density]="dissectedDensity"
+                    [frozenOffset]="frozenOffset.bind(this)"
+                  >
+                    <ng-container rowActions>
+                      <dt-col-action
+                        [row]="sampleDisabledRow"
+                        [actions]="buildDissectedRowActions(sampleDisabledRow)"
+                      />
+                    </ng-container>
+                  </dt-row-disabled>
+
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Legend for the 4 Row States -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs pt-1">
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-slate-300"></span>
+                <span><strong>1. ReadonlyRow:</strong> Standard zebra display with hover highlight</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-blue-200 bg-blue-50/50 flex items-center gap-2 text-blue-900">
+                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span><strong>2. EditableRow:</strong> Blue left border, live inline inputs with focus</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-red-200 bg-red-50/50 flex items-center gap-2 text-red-900">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span><strong>3. UnavailableRow:</strong> Error/warning badges on faulty cells</span>
+              </div>
+              <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-100 flex items-center gap-2 text-slate-500">
+                <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+                <span><strong>4. DisabledRow:</strong> 40% opacity, pointer-events none, strikethrough</span>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 8: ROW ACTIONS COLUMN                                 -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'actions') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 8: Row Actions Column</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Quick Row Action Buttons &amp; Contextual Overflow Kebab Menu</h3>
+                <p class="text-xs text-slate-500">Quick actions (Edit, Delete, Revert) with overflow popover menu for extended operations.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
+                &lt;dt-col-action&gt;
+              </span>
+            </div>
+
+            <!-- Row Action Live Showcase -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">Standard Row Action Bar:</div>
+                  <div class="text-[11px] text-slate-500">Edit, Delete, Revert, and Overflow menu</div>
+                </div>
+                <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+                  <dt-col-action
+                    [row]="sampleReadonlyRow"
+                    [actions]="buildDissectedRowActions(sampleReadonlyRow)"
+                    (actionFired)="logAction('Action triggered: ' + $event.action)"
+                  />
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">Standalone Action Menu Popover:</div>
+                  <div class="text-[11px] text-slate-500">Global or table context dropdown menu</div>
+                </div>
+                <dt-action-menu
+                  triggerLabel="Test Action Menu"
+                  [items]="demoMenuItems"
+                  (itemSelected)="onDemoMenuItemSelected($event)"
+                />
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 9: ATOMIC CELL PRESENTATION VOCABULARY                -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'cells') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 9: Atomic Cell Presentation Vocabulary</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Cell Format Renderers &amp; Cell State Wrappers</h3>
+                <p class="text-xs text-slate-500">The granular visual building blocks: pure presentation components with zero knowledge of table rows or columns.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-violet-50 text-violet-700 rounded-md border border-violet-200 font-mono">
+                &lt;dt-cell-*&gt;
+              </span>
+            </div>
+
+            <!-- Formats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Avatar + Text -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Image &amp; Plain Text Cell</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-image-text&gt;</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                  <dt-cell-image-text
+                    primary="Acme Corporation"
+                    secondary="billing@acme.com"
+                  />
+                </div>
+              </div>
+
+              <!-- Status Badges -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Status Badge Cell</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-status-badge&gt;</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-2">
+                  <dt-cell-status-badge status="ACTIVE" />
+                  <dt-cell-status-badge status="PENDING" />
+                  <dt-cell-status-badge status="INACTIVE" />
+                </div>
+              </div>
+
+              <!-- Flag & Country -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Flag &amp; Country Cell</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-flag-text&gt;</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-4">
+                  <dt-cell-flag-text flag="🇮🇳" country="India" />
+                  <dt-cell-flag-text flag="🇩🇪" country="Germany" />
+                  <dt-cell-flag-text flag="🇺🇸" country="USA" />
+                </div>
+              </div>
+
+              <!-- Formatted Number -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Number with Comma Separation</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-number&gt;</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-4 font-mono font-bold text-xs">
+                  <span><dt-cell-number [value]="50000000" prefix="₹" /></span>
+                  <span><dt-cell-number [value]="1250000" prefix="$" /></span>
+                </div>
+              </div>
+
+              <!-- Inline Editable Cell -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Editable Cell Wrapper</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-editable&gt;</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                  <dt-cell-editable
+                    [value]="dissectedEditableCellVal"
+                    inputType="text"
+                    (valueChange)="dissectedEditableCellVal = $event; logAction('Cell value edited: ' + $event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Cell Error & Warning States -->
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700">Unavailable State Wrapper</span>
+                  <span class="text-[10px] font-mono text-slate-400">&lt;dt-cell-unavailable&gt;</span>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-3">
+                  <dt-cell-unavailable state="error" message="Invalid revenue format" />
+                  <dt-cell-unavailable state="warning" message="Pending approval" />
+                  <dt-cell-unavailable state="empty" />
+                </div>
+              </div>
+            </div>
+          </section>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- LAYER 10: PAGINATION CONTROLLER                             -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        @if (activeDissectionLayer === 'all' || activeDissectionLayer === 'pagination') {
+          <section class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-mono uppercase text-blue-600 font-bold">Layer 10: Pagination Controller</span>
+                <h3 class="text-base font-bold text-[#0A173D] mt-0.5">Record Range Calculator, Page Size Selector &amp; Navigation Jumper</h3>
+                <p class="text-xs text-slate-500">Calculates starting and ending record indices, provides rows per page dropdown, and fast page jumpers.</p>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-mono">
+                &lt;dt-pagination&gt;
+              </span>
+            </div>
+
+            <!-- Live Pagination Bar Preview -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+              <dt-pagination
+                [state]="dissectedPagination"
+                (pageChange)="onDissectedPageChange($event)"
+                (pageSizeChange)="onDissectedPageSizeChange($event)"
+              />
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+              <span>Current Page: <strong class="text-slate-800">{{ dissectedPagination.page }}</strong> of <strong class="text-slate-800">{{ dissectedPagination.totalPages }}</strong></span>
+              <span>Total Dataset: <strong class="text-slate-800">{{ dissectedPagination.total }} records</strong></span>
+            </div>
+          </section>
+        }
+
+      </div>
+    }
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: THE FULL ASSEMBLED MASTER TABLE (<dt-table>)            -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    @if (viewMode === 'assembled-table') {
+      <div class="space-y-4">
+        <!-- Master Table Banner -->
+        <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2.5">
+            <span class="text-lg">✨</span>
+            <div>
+              <span class="font-bold text-blue-950">Complete Orchestrated Master Table:</span>
+              <span class="text-blue-800 ml-1">
+                All 10 dissected layers orchestrated together into a unified, high-performance enterprise data table with live client-side sorting, filtering, editing, and bulk actions.
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              (click)="onReset()"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-blue-300 text-blue-700 hover:bg-blue-50 cursor-pointer shadow-2xs"
+            >
+              Reset Mock Data
+            </button>
+          </div>
+        </div>
+
+        <!-- Master Table Component -->
+        <dt-table
+          title="Customers"
+          subtitle="Manage enterprise customer accounts across the platform."
+          [columns]="columns"
+          [rows]="rows"
+          [tableConfig]="tableConfig"
+          [pagination]="pagination"
+          [sorts]="sorts"
+          [filterValues]="filterValues"
+          [loading]="loading"
+          [collabUsers]="collabUsers"
+          [hasHeaderAction]="true"
+          [toolbarActionsOpen]="actionsOpen"
+          [toolbarActionsDropTop]="actionsDropTop"
+          [toolbarActionsDropRight]="actionsDropRight"
+          primaryKey="id"
+          tableMinWidth="900px"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+          (sortChange)="onSortChange($event)"
+          (filterChange)="onFilterChange($event)"
+          (cellChanged)="onCellChanged($event)"
+          (saveRequested)="onSave($event)"
+          (bulkActionFired)="onBulkAction($event)"
+          (rowActionFired)="onRowAction($event)"
+          (exportRequested)="onExport($event)"
+          (generateRequested)="onGenerate()"
+          (downloadRequested)="onDownload($event)"
+          (columnsChanged)="onColumnsChanged($event)"
+          (selectionChange)="onSelectionChange($event)"
+          (copyRequested)="onCopyRows($event)"
+          (resetRequested)="onReset()"
+          (toolbarActionsOpenChange)="actionsOpen = $event"
+        >
+          <!-- Projected Header Action: Add Customer + ⚙ Actions Menu Trigger -->
+          <div tableHeaderAction class="flex items-center gap-2" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              (click)="logAction('+ Add Customer clicked in master table')"
+              class="inline-flex items-center gap-2 rounded-lg bg-[#436CF3] px-3.5 py-2 text-[12px] font-semibold text-white shadow-sm transition-colors hover:bg-[#3557d4] active:scale-95 cursor-pointer"
+            >
+              <span class="text-base font-bold leading-none">＋</span>
+              <span>Add Customer</span>
+            </button>
+
+            <!-- ⚙ Actions Trigger Button -->
+            <div class="relative" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                (click)="toggleActionsMenu($event)"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-300 cursor-pointer"
+              >
+                <span>⚙ Actions</span>
+                <span
+                  class="text-[10px] text-slate-400 inline-block transition-transform"
+                  [style.transform]="actionsOpen ? 'rotate(180deg)' : 'rotate(0deg)'"
+                >
+                  ⌄
+                </span>
+              </button>
+            </div>
+          </div>
+        </dt-table>
+      </div>
+    }
+
+  </main>
+</div>

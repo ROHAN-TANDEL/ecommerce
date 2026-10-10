@@ -3,15 +3,39 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Nexora Design Tokens */
+  --nx-primary: #436CF3;
+  --nx-primary-hover: #365BD4;
+  --nx-primary-subtle: #EFF6FF;
+  --nx-primary-border: #BFDBFE;
+  
+  --nx-text-primary: #0F172A;
+  --nx-text-secondary: #64748B;
+  --nx-text-muted: #94A3B8;
+
+  --nx-bg-app: #F8FAFC;
+  --nx-bg-surface: #FFFFFF;
+  --nx-bg-subtle: #F1F5F9;
+
+  --nx-border-subtle: #E2E8F0;
+  --nx-border-hover: #CBD5E1;
+  --nx-border-active: #94A3B8;
+
+  --nx-control-height-sm: 28px;
+  --nx-control-height-md: 32px;
+  --nx-control-height-lg: 38px;
+}
 
 .app-color-primary {
-  color : #2e5cda;
+  color: #436CF3;
 }
 
 .app-color-white {
-  color : white;
+  color: white;
 }
 
 .app-bg-color-primary {
-  background-color : #2e5cda;
+  background-color: #436CF3;
 }
+

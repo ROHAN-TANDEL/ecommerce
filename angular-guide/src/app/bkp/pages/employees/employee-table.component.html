@@ -1,0 +1,1821 @@
+<div
+  class="w-full bg-[#F8FAFC] text-slate-900 font-sans antialiased transition-all duration-200"
+  [class.fixed]="isFullscreen"
+  [class.inset-0]="isFullscreen"
+  [class.z-[150]]="isFullscreen"
+  [class.overflow-auto]="isFullscreen"
+  [class.p-6]="isFullscreen"
+>
+  <!-- Fullscreen Floating Exit Pill -->
+  <div *ngIf="isFullscreen" class="fixed top-4 right-6 z-[160] flex items-center gap-2 bg-slate-900 text-white px-3.5 py-1.5 rounded-full shadow-2xl text-xs font-medium animate-slide-up">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span>{{ instanceLabel }} Full Screen Mode</span>
+    <button type="button" (click)="toggleFullscreen()" class="ml-2 text-slate-400 hover:text-white font-semibold cursor-pointer">✕ Exit</button>
+  </div>
+
+  <div class="space-y-3">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 1. HEADER SECTION & BUTTONS                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <header-section-component
+      *ngIf="tableConfig.show_title_header_section"
+      [displayName]="(rawHeaderConfig?.title?.display_name || tableConfig.display_name) + ' — ' + instanceLabel"
+      [tableKey]="rawHeaderConfig?.title?.table_key || tableConfig.table_key"
+      [apiStatus]="apiStatus"
+      [description]="rawHeaderConfig?.title?.description || 'Component-based data architecture: granular headers, action components, cells, and filters.'"
+      [style.z-index]="showAddUserDropdown ? '150' : '50'"
+      class="relative"
+    >
+      <button-component
+        *ngIf="rawHeaderConfig?.sync?.active !== false"
+        variant="secondary"
+        size="md"
+        (clicked)="onHeaderSyncClick()"
+        [title]="rawHeaderConfig?.sync?.info_note || 'Re-sync from API'"
+      >
+        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span>{{ rawHeaderConfig?.sync?.name || 'Sync API' }}</span>
+      </button-component>
+
+      <!-- Add User Dropdown Button -->
+      <div #addUserDropdownContainer class="relative inline-block text-left z-[150]" *ngIf="tableConfig.enable_add_data_button && rawHeaderConfig?.add_button?.active !== false">
+        <button-component
+          variant="primary"
+          size="md"
+          (clicked)="toggleAddUserDropdown($event)"
+        >
+          <svg class="w-3.5 h-3.5 stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>{{ cleanAddButtonName }}</span>
+          <svg class="w-3 h-3 ml-0.5 stroke-white transition-transform" [class.rotate-180]="showAddUserDropdown" fill="none" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button-component>
+
+        <!-- Dropdown Menu Options (Config-Driven) -->
+        <div
+          *ngIf="showAddUserDropdown"
+          [ngClass]="addUserDropdownVAlign === 'bottom' ? 'bottom-full mb-2' : 'top-full mt-2'"
+          class="absolute right-0 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl z-[160] animate-slide-up space-y-1 pointer-events-auto"
+          (click)="$event.stopPropagation()"
+        >
+          <button
+            *ngFor="let opt of headerAddDropdownOptions"
+            type="button"
+            (click)="onHeaderAddOptionClick(opt, $event)"
+            class="flex items-start gap-2.5 w-full p-2 rounded-lg text-left hover:bg-slate-100 transition-colors cursor-pointer group select-none"
+          >
+            <div
+              class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-slate-50 text-slate-500 border border-slate-200/80 group-hover:bg-blue-50 group-hover:text-[#436CF3] group-hover:border-blue-200 transition-colors"
+            >
+              <svg *ngIf="opt.key === 'single_add'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <svg *ngIf="opt.key === 'batch_add'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <svg *ngIf="opt.key === 'import_create'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <svg *ngIf="opt.key === 'import_update'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold text-slate-800 group-hover:text-[#436CF3] transition-colors">{{ opt.display_name }}</div>
+              <div class="text-[11px] text-slate-400 truncate">{{ opt.description }}</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </header-section-component>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2. ACTION PANEL COMPONENT & INDIVIDUAL ACTION COMPONENTS        -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <action-panel-component
+      *ngIf="tableConfig.action_panel"
+      [sectionGroups]="sectionGroups"
+      [isIndividualSelected]="isIndividualRowSelectionActive"
+      [isMasterChecked]="isMasterCheckboxChecked || isMasterSelected"
+      [hasDirtyRows]="hasDirtyRows"
+      [columns]="allColumnsList"
+      [scrollPercentage]="scrollPercentage"
+      [isScrollable]="isTableScrollable"
+      [density]="density"
+      [savedViews]="savedViews"
+      [activeView]="activeViewId"
+      [isLoadingViews]="isLoadingViews"
+      (actionSelect)="onActionPanelSelect($event)"
+      (toggleColumn)="toggleColumnVisibility($event)"
+      (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
+      (resetColumns)="resetColumns()"
+      (scrollTable)="scrollTableHorizontally($event)"
+      (togglePinAction)="toggleActionPin($event)"
+    >
+      <!-- Config-Driven Pinned Action Components (Driven by actions API pinned: true) -->
+      <ng-container *ngFor="let item of pinnedActions">
+        <refresh-component
+          *ngIf="item.component === 'refresh_component'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (refresh)="bootstrapTable()"
+        ></refresh-component>
+
+        <lock-component
+          *ngIf="item.component === 'lock_component'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [locked]="isLocked"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (lockToggle)="onLockToggle($event)"
+        ></lock-component>
+
+        <edit-component
+          *ngIf="item.component === 'edit_component'"
+          [label]="item.name"
+          [infoNote]="editButtonTooltip"
+          [disabled]="selectedRowIds.size === 0"
+          [editing]="isEditModeActive"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (edit)="onEditClick()"
+        ></edit-component>
+
+        <save-component
+          *ngIf="item.component === 'save_component'"
+          [label]="item.name"
+          [infoNote]="saveButtonTooltip"
+          [disabled]="!hasDirtyRows"
+          [saving]="isSaving"
+          [dirtyCount]="dirtyRowCount"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (save)="onSaveClick()"
+        ></save-component>
+
+        <density-component
+          *ngIf="item.component === 'density_component'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [density]="density"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (densityChange)="onDensityChange($event)"
+        ></density-component>
+
+        <live-component
+          *ngIf="item.component === 'live_component_option'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [active]="isLiveFeedActive"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (liveToggle)="onLiveToggle($event)"
+        ></live-component>
+
+        <!-- Scroller Component -->
+        <scroller-component
+          *ngIf="item.component === 'scroller_component' || item.key === 'scroller'"
+          [percentage]="scrollPercentage"
+          [totalColumns]="columnsList.length || 12"
+          [isScrollable]="isTableScrollable"
+          (scroll)="onScrollerScroll($event)"
+        ></scroller-component>
+
+        <!-- Columns Dropdown Component -->
+        <columns-component
+          *ngIf="item.component === 'column_component' || item.key === 'columns'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [columns]="allColumnsList"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (toggleColumn)="toggleColumnVisibility($event)"
+          (togglePin)="onToggleColumnPin($event)"
+          (toggleReadonly)="onToggleColumnReadonly($event)"
+          (reorderColumn)="reorderColumn($event.colKey, $event.direction)"
+          (resetColumns)="resetColumns()"
+        ></columns-component>
+
+        <!-- View Dropdown Component -->
+        <view-component
+          *ngIf="item.component === 'view_component' || item.key === 'view'"
+          [label]="item.name"
+          [infoNote]="item.info_note"
+          [savedViews]="savedViews"
+          [activeViewId]="activeViewId"
+          [activeViewName]="activeViewName"
+          [isLoadingViews]="isLoadingViews"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (viewSelect)="onActionPanelSelect({ actionKey: 'view', optionKey: $event })"
+        ></view-component>
+
+        <!-- Options Dropdown Component (e.g. Export, Download) -->
+        <options-dropdown-component
+          *ngIf="item.dropdown_options && item.key !== 'view' && item.key !== 'columns'"
+          [label]="item.name"
+          [actionKey]="item.key"
+          [infoNote]="item.info_note"
+          [options]="item.dropdown_options"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (optionSelect)="onActionPanelSelect($event)"
+        ></options-dropdown-component>
+
+        <!-- Action Button Component -->
+        <action-btn-component
+          *ngIf="item.component !== 'refresh_component' && item.key !== 'refresh' && item.component !== 'lock_component' && item.key !== 'lock' && item.component !== 'edit_component' && item.key !== 'edit' && item.component !== 'save_component' && item.key !== 'save' && item.component !== 'density_component' && item.key !== 'density' && item.component !== 'live_component_option' && item.key !== 'live' && item.component !== 'scroller_component' && item.key !== 'scroller' && item.component !== 'column_component' && item.key !== 'columns' && item.component !== 'view_component' && item.key !== 'view' && !item.dropdown_options"
+          [actionKey]="item.key"
+          [label]="item.name"
+          [infoNote]="getActionTooltip(item)"
+          [disabled]="isActionDisabled(item.key)"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
+          (btnClick)="onActionPanelSelect({ actionKey: item.key })"
+        ></action-btn-component>
+      </ng-container>
+    </action-panel-component>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 2B. LIVE PANEL COMPONENT (Positioned between Action Panel & Table) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <live-panel-component
+      *ngIf="isLiveFeedActive"
+      [tableKey]="tableConfig.table_key"
+      [instanceId]="instanceId"
+      [instanceLabel]="instanceLabel"
+      [events]="liveEvents"
+      [activePresences]="activePresences"
+      (closePanel)="onLiveToggle(false)"
+      (clearEvents)="onClearLiveEvents()"
+    ></live-panel-component>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 3. TABLE COMPONENT WITH COMPOSABLE SUB-COMPONENTS               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <table-component
+      [isLoading]="isDataLoading"
+      [minHeight]="tableMinHeight"
+      [maxHeight]="tableMaxHeight"
+      (scrollProgress)="onTableScrollProgress($event)"
+      (scrollableChange)="onTableScrollableChange($event)"
+    >
+      <!-- Table Header Wrapper -->
+      <table-header-component *ngIf="tableConfig.show_table_headers" class="contents">
+        <!-- Row 1: Column Headers -->
+        <tr class="border-b border-slate-200">
+          <master-component
+            *ngIf="hasCheckboxColumn"
+            class="contents"
+            [showCheckbox]="enableMasterLevelCheckbox"
+            [checked]="isMasterCheckboxChecked"
+            [indeterminate]="isMasterCheckboxIndeterminate"
+            (masterToggle)="toggleSelectAll()"
+          ></master-component>
+
+          <header-component
+            *ngFor="let col of columnsList"
+            class="contents"
+            [column]="col"
+            [columnOptionsConfig]="rawColumnOptionsConfig"
+            [sortDirection]="sortState[col.key]"
+            (sortChange)="onHeaderSortClick($event)"
+            (columnOption)="onColumnOptionSelect($event)"
+            (columnResize)="onColumnResize($event)"
+          ></header-component>
+
+          <!-- Action column header -->
+          <th
+            *ngIf="tableConfig.action_column.active"
+            [style.width]="actionColumnWidth"
+            [style.min-width]="actionColumnWidth"
+            class="px-3.5 py-3 bg-slate-50 sticky right-0 z-20 border-b border-l border-slate-200 text-right text-xs font-semibold text-slate-700 tracking-normal shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
+          >
+            Actions
+          </th>
+        </tr>
+
+        <!-- Row 2: Dynamic Filter Row -->
+        <filter-row-component
+          *ngIf="tableConfig.enable_table_search_filters"
+          class="contents"
+          [columns]="columnsList"
+          [activeFilters]="activeFilters"
+          [hasCheckboxColumn]="hasCheckboxColumn"
+          [hasActionColumn]="tableConfig.action_column.active"
+          (filterChange)="onFilterChange($event)"
+          (filterTrigger)="onFilterTrigger($event)"
+        ></filter-row-component>
+
+        <!-- Row 3: Secondary Section Row (Active & visible when rows are selected) -->
+        <section-row-component
+          *ngIf="isSecondSectionActive"
+          class="contents"
+          [columns]="columnsList"
+          [values]="sectionRowValues"
+          [hasCheckboxColumn]="hasCheckboxColumn"
+          [hasActionColumn]="tableConfig.action_column.active"
+          (sectionChange)="onSectionRowChange($event)"
+          (sectionAction)="onSectionRowAction($event)"
+          (clearMasterFilters)="onClearMasterFilters()"
+          (applyMasterFilters)="onApplyMasterFilters()"
+        ></section-row-component>
+      </table-header-component>
+
+      <!-- Table Body Component (Collapsed toggle support) -->
+      <table-body-component class="contents" *ngIf="!isTableCollapsed">
+        <!-- Data Rows -->
+        <tr
+          *ngFor="let row of rows; let i = index; let even = even"
+          [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+          [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+          [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
+          [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
+          [class.ring-1]="row['_needsReview']"
+          [class.ring-inset]="row['_needsReview']"
+          [class.ring-amber-300]="row['_needsReview']"
+          [class.opacity-75]="isRowDisabled(row)"
+          [class.z-[60]]="activeRowActionId === row['id']"
+          [class.relative]="activeRowActionId === row['id']"
+          class="hover:bg-slate-100/60 transition-colors border-b border-slate-200/60"
+        >
+          <!-- Row Checkbox Cell -->
+          <td
+            *ngIf="hasCheckboxColumn"
+            style="width: 50px; min-width: 50px; max-width: 50px;"
+            class="w-[50px] min-w-[50px] max-w-[50px] px-3 py-3 text-center sticky left-0 z-10 border-r border-b border-slate-200/60"
+            [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+            [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+            [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
+            [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
+          >
+            <input
+              *ngIf="enableRowLevelCheckboxes"
+              type="checkbox"
+              [checked]="selectedRowIds.has(row['id'])"
+              [disabled]="isRowDisabled(row)"
+              (click)="toggleRowSelect($event, row['id'])"
+              class="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              [title]="isRowDisabled(row) ? 'Row disabled' : (selectedRowIds.has(row['id']) ? 'Uncheck to exclude from changes' : 'Check to apply changes')"
+            />
+            <span *ngIf="!enableRowLevelCheckboxes" class="text-[11px] text-slate-400 font-mono">
+              {{ (pagination.page - 1) * pagination.limit + i + 1 }}
+            </span>
+          </td>
+
+          <!-- Dynamic Cells Rendered by <cell-component> with Density Support -->
+          <cell-component
+            *ngFor="let col of columnsList"
+            class="contents"
+            [column]="col"
+            [row]="row"
+            [isEven]="even"
+            [isSelected]="selectedRowIds.has(row['id'])"
+            [isEditing]="isEditModeActive && !isMasterCheckboxChecked && !isMasterSelected && selectedRowIds.has(row['id']) && isRowEditable(row)"
+            [density]="density"
+            (valueChange)="onCellValueChange($event)"
+          ></cell-component>
+
+          <td
+            *ngIf="tableConfig.action_column.active"
+            [style.width]="actionColumnWidth"
+            [style.min-width]="actionColumnWidth"
+            class="px-2.5 text-right sticky right-0 border-l border-b border-slate-200/80 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
+            [class.z-[60]]="activeRowActionId === row['id']"
+            [class.z-10]="activeRowActionId !== row['id']"
+            [class.bg-[#FEF3C7]]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+            [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+            [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
+            [class.bg-[#EEF2FF]]="selectedRowIds.has(row['id'])"
+          >
+            <div class="relative flex items-center justify-end gap-1.5 w-full text-right" (click)="$event.stopPropagation()">
+              <!-- Review Action Pill (When AI altered/generated row requires review) -->
+              <button
+                *ngIf="row['_needsReview']"
+                type="button"
+                (click)="markRowReviewed(row, $event)"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer shrink-0 shadow-2xs mr-auto"
+                title="Click to mark this AI altered row as reviewed"
+              >
+                <svg class="w-2.5 h-2.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Review</span>
+              </button>
+
+              <!-- Reviewed Checkmark Tag -->
+              <span
+                *ngIf="row['_reviewed'] && !row['_needsReview']"
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 mr-auto"
+                title="AI changes reviewed"
+              >
+                ✓ OK
+              </span>
+
+              <!-- Pinned Row Actions (Right-aligned / right-to-left layout matching Action Panel) -->
+              <ng-container *ngFor="let act of pinnedRowActions">
+                <button
+                  type="button"
+                  (click)="onRowActionClick($event, act.key, row, act)"
+                  class="inline-flex items-center justify-center h-7 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer text-xs font-medium shrink-0"
+                  [ngClass]="{
+                    'w-7 px-0': act.icon_only,
+                    'px-2 gap-1.5': !act.icon_only,
+                    'text-red-600 hover:bg-red-50 hover:border-red-200': act.key === 'delete'
+                  }"
+                  [title]="act.info_note || act.name"
+                >
+                  <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                    <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                    <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                    <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                    <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg *ngSwitchCase="'copy'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <svg *ngSwitchCase="'save'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                    <svg *ngSwitchCase="'download'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    <svg *ngSwitchCase="'upload'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                  </ng-container>
+                  <span *ngIf="!act.icon_only">{{ act.name }}</span>
+                </button>
+              </ng-container>
+
+              <!-- 3-Dots Menu Button for Unpinned Row Actions -->
+              <button
+                *ngIf="unpinnedRowActions.length > 0 || pinnedRowActions.length > 0"
+                type="button"
+                (click)="toggleRowActionMenu($event, row['id'])"
+                class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer shrink-0"
+                title="Row Actions"
+              >
+                <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="1.75"></circle>
+                  <circle cx="12" cy="12" r="1.75"></circle>
+                  <circle cx="12" cy="19" r="1.75"></circle>
+                </svg>
+              </button>
+
+              <div
+                *ngIf="activeRowActionId === row['id']"
+                class="absolute right-0 z-[100] w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 text-left"
+                [class.top-full]="!isBottomRow(i)"
+                [class.mt-1]="!isBottomRow(i)"
+                [class.bottom-full]="isBottomRow(i)"
+                [class.mb-1]="isBottomRow(i)"
+              >
+                <!-- Unpinned Actions (Executable & Pinnable to Row) -->
+                <ng-container *ngFor="let act of unpinnedRowActions">
+                  <div *ngIf="act.key === 'delete'" class="my-1 border-t border-slate-100"></div>
+                  <div
+                    class="flex items-center justify-between gap-1.5 w-full px-2 py-1.5 text-xs rounded-lg transition-colors group/rowact hover:bg-slate-100"
+                    [class.hover:bg-red-50]="act.key === 'delete'"
+                  >
+                    <button
+                      type="button"
+                      (click)="onRowActionClick($event, act.key, row, act)"
+                      class="flex flex-1 items-center gap-2 cursor-pointer text-left truncate"
+                      [class.text-red-600]="act.key === 'delete'"
+                      [class.text-slate-700]="act.key !== 'delete'"
+                      [title]="act.info_note || act.name"
+                    >
+                      <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                        <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                        <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                        <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                        <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg *ngSwitchCase="'copy'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        <svg *ngSwitchCase="'save'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        <svg *ngSwitchCase="'download'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <svg *ngSwitchCase="'upload'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                      </ng-container>
+                      <span class="truncate">{{ act.name }}</span>
+                    </button>
+                    <!-- Pin button to pin this action to the row -->
+                    <button
+                      type="button"
+                      (click)="toggleRowActionPin(act.key, $event)"
+                      class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-[#436CF3] hover:bg-blue-50 transition-colors cursor-pointer shrink-0"
+                      [title]="'Pin ' + act.name + ' to row'"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" />
+                      </svg>
+                    </button>
+                  </div>
+                </ng-container>
+
+                <!-- Pinned Actions Section (to allow unpinning directly from the menu) -->
+                <ng-container *ngIf="pinnedRowActions.length > 0">
+                  <div *ngIf="unpinnedRowActions.length > 0" class="my-1 border-t border-slate-100"></div>
+                  <div class="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider font-semibold text-slate-400">
+                    Pinned to row
+                  </div>
+                  <div
+                    *ngFor="let act of pinnedRowActions"
+                    class="flex items-center justify-between gap-1.5 w-full px-2 py-1 text-xs rounded-lg transition-colors group/pinnedact hover:bg-slate-100"
+                  >
+                    <div class="flex items-center gap-2 text-slate-600 truncate flex-1 min-w-0">
+                      <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                        <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                        <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                        <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                        <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                      </ng-container>
+                      <span class="truncate">{{ act.name }}</span>
+                    </div>
+                    <!-- Unpin button -->
+                    <button
+                      type="button"
+                      (click)="toggleRowActionPin(act.key, $event)"
+                      class="w-5 h-5 flex items-center justify-center rounded text-amber-600 hover:text-slate-500 hover:bg-amber-50 transition-colors cursor-pointer shrink-0"
+                      [title]="'Unpin ' + act.name + ' from row'"
+                    >
+                      <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" />
+                      </svg>
+                    </button>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Table Footer Component (Empty State) -->
+        <table-footer-component
+          class="contents"
+          [showEmptyState]="rows.length === 0 && !isDataLoading"
+          [colspan]="columnsList.length + (hasCheckboxColumn ? 1 : 0) + (tableConfig.action_column.active ? 1 : 0)"
+        ></table-footer-component>
+      </table-body-component>
+
+      <!-- Collapsed Table State Placeholder -->
+      <tbody *ngIf="isTableCollapsed">
+        <tr class="border-b border-slate-200 bg-slate-50/70">
+          <td
+            [attr.colspan]="columnsList.length + (hasCheckboxColumn ? 1 : 0) + (tableConfig.action_column.active ? 1 : 0)"
+            class="py-10 px-4 text-center"
+          >
+            <div class="flex flex-col items-center justify-center gap-2">
+              <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
+              <div class="text-xs font-bold text-slate-700">{{ instanceLabel }} Collapsed ({{ rows.length }} rows hidden)</div>
+              <div class="text-[11px] text-slate-500">
+                Table rows and pagination are currently collapsed for {{ instanceLabel }}. Click
+                <button type="button" (click)="toggleTableCollapse()" class="text-blue-600 font-semibold hover:underline cursor-pointer">Expand</button>
+                or select Collapse from the Actions menu to restore view.
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table-component>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 3B. INTERACT WITH TABLE USING AI (Between Table and Pagination) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div
+      *ngIf="showAiChatSection && !isTableCollapsed"
+      class="border-t border-slate-200 bg-linear-to-b from-white via-indigo-50/15 to-slate-50/60 p-3 sm:px-4 space-y-2.5 animate-slide-up"
+    >
+      <!-- Header & Review Alert -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-linear-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs shrink-0">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-900 tracking-tight">Interact with Table using AI</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                Non-Destructive Guardrail
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500">Filter table data, propose draft edits, or generate relative sample records (max 5)</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Pending Review Alert (If AI proposed edits or generated rows) -->
+          <div *ngIf="hasPendingReviewRows" class="flex flex-wrap items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl shadow-2xs">
+            <span class="inline-flex w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span class="text-xs font-semibold text-amber-900">
+              {{ pendingReviewRowCount }} row(s) altered by AI require your review
+            </span>
+            <div class="flex items-center gap-1.5 ml-auto sm:ml-2">
+              <button
+                type="button"
+                (click)="markAllReviewed()"
+                class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold cursor-pointer transition-colors shadow-2xs"
+              >
+                ✓ Mark All Reviewed
+              </button>
+              <button
+                type="button"
+                (click)="revertAllAiChanges()"
+                class="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11px] font-medium cursor-pointer transition-colors"
+              >
+                Revert AI Changes
+              </button>
+            </div>
+          </div>
+
+          <!-- Close / Hide AI Section Button -->
+          <button
+            type="button"
+            (click)="toggleAiChatSection(false)"
+            class="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+            title="Hide AI Section"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Prompt Input Row -->
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1">
+          <input
+            type="text"
+            [(ngModel)]="aiChatQuery"
+            (keydown.enter)="submitAiQuery()"
+            [disabled]="isAiThinking"
+            placeholder="Ask AI to manipulate table data... e.g. 'show only active users', 'change pending to active', 'generate 3 sample users'"
+            class="w-full h-9 pl-3.5 pr-10 text-xs rounded-xl border border-slate-200 bg-white placeholder-slate-400 text-slate-800 shadow-2xs outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60 transition-all"
+          />
+          <button
+            *ngIf="aiChatQuery"
+            type="button"
+            (click)="aiChatQuery = ''"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <button
+          type="button"
+          (click)="submitAiQuery()"
+          [disabled]="!aiChatQuery.trim() || isAiThinking"
+          class="h-9 px-4 rounded-xl bg-linear-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shrink-0"
+        >
+          <svg *ngIf="!isAiThinking" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+          </svg>
+          <span *ngIf="!isAiThinking">Send</span>
+          <span *ngIf="isAiThinking" class="flex items-center gap-1.5">
+            <svg class="animate-spin w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            Thinking...
+          </span>
+        </button>
+      </div>
+
+      <!-- Quick Prompt Suggestion Chips -->
+      <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+        <span class="text-slate-400 text-[10px] font-medium uppercase tracking-wider">Quick Prompts:</span>
+        <button
+          type="button"
+          (click)="sendAiQuickPrompt('filter active users')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] shadow-2xs transition-colors cursor-pointer"
+        >
+          <span>✨ Filter: Active</span>
+        </button>
+        <button
+          type="button"
+          (click)="sendAiQuickPrompt('clear filters')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] shadow-2xs transition-colors cursor-pointer"
+        >
+          <span>🔄 Clear Filters</span>
+        </button>
+        <button
+          type="button"
+          (click)="sendAiQuickPrompt('change pending to active')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] shadow-2xs transition-colors cursor-pointer"
+        >
+          <span>⚡ Pending → Active</span>
+        </button>
+        <button
+          type="button"
+          (click)="sendAiQuickPrompt('generate 3 sample users')"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] shadow-2xs transition-colors cursor-pointer"
+        >
+          <span>➕ Generate 3 Test Users</span>
+        </button>
+      </div>
+
+      <!-- AI Response Card -->
+      <div
+        *ngIf="latestAiReply"
+        class="rounded-xl border border-indigo-100 bg-white p-3 shadow-2xs flex items-start justify-between gap-3 animate-slide-up"
+      >
+        <div class="flex items-start gap-2.5">
+          <div class="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center shrink-0 mt-0.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-2h2zm0-4h-2V7h2z"/>
+            </svg>
+          </div>
+          <div class="space-y-0.5">
+            <div class="text-[11px] font-bold text-violet-900">AI Assistant Response</div>
+            <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{{ latestAiReply }}</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="clearAiReply()"
+          class="text-slate-400 hover:text-slate-600 text-sm leading-none cursor-pointer shrink-0"
+          title="Dismiss reply"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- 4. PAGINATION COMPONENT                                         -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <pagination-component
+      *ngIf="tableConfig.pagination.active && !isTableCollapsed"
+      [pagination]="pagination"
+      [pageSizeOptions]="tableConfig.pagination.page_size_options"
+      [currentCount]="rows.length"
+      (pageChange)="onPaginationPageChange($event)"
+      (limitChange)="onPaginationLimitChange($event)"
+    ></pagination-component>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5. CREATE USER MODAL (Dynamic Form Driven by Column Modal Config)-->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">{{ cleanAddButtonName }} (via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_api }}</code></p>
+        </div>
+        <button
+          type="button"
+          (click)="showCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Dynamic Sections & Form Fields -->
+      <div class="space-y-4 text-xs max-h-[65vh] overflow-y-auto pr-1">
+        <div
+          *ngFor="let section of modalSections; trackBy: trackBySectionKey"
+          class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 space-y-3.5 shadow-2xs"
+        >
+          <!-- Horizontal Section Grid for fields inside this section -->
+          <div
+            class="grid gap-3.5"
+            [ngClass]="section.fields.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'"
+          >
+            <div *ngFor="let col of section.fields; trackBy: trackByColKey" class="space-y-1">
+              <!-- Label above, optional helper text underneath -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">
+                  {{ col.header_name }}
+                  <span *ngIf="col.modal?.required" class="text-rose-500 font-bold ml-0.5">*</span>
+                </label>
+                <p *ngIf="col.modal?.info_note" class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                  {{ col.modal?.info_note }}
+                </p>
+              </div>
+
+              <!-- List / Select Input (e.g. status) -->
+              <ng-container *ngIf="col.filter_type === 'list' && col.filter_data && col.filter_data.length > 0">
+                <select
+                  [(ngModel)]="createForm[col.key]"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 outline-none bg-white shadow-2xs transition-all cursor-pointer"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
+                >
+                  <option *ngFor="let opt of col.filter_data" [value]="opt.key">
+                    {{ opt.name }}
+                  </option>
+                </select>
+              </ng-container>
+
+              <!-- Date Range / Date Input -->
+              <ng-container *ngIf="col.filter_type === 'date_range'">
+                <input
+                  type="date"
+                  [(ngModel)]="createForm[col.key]"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
+                />
+              </ng-container>
+
+              <!-- Email Input -->
+              <ng-container *ngIf="col.key === 'email' || col.filter_key === 'user_email'">
+                <input
+                  type="email"
+                  [(ngModel)]="createForm[col.key]"
+                  [placeholder]="'Enter ' + col.header_name"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
+                />
+              </ng-container>
+
+              <!-- Standard Text Input -->
+              <ng-container *ngIf="col.filter_type !== 'list' && col.filter_type !== 'date_range' && col.key !== 'email' && col.filter_key !== 'user_email'">
+                <input
+                  type="text"
+                  [(ngModel)]="createForm[col.key]"
+                  [placeholder]="'Enter ' + col.header_name"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
+                />
+              </ng-container>
+
+              <!-- Field Validation Error Note -->
+              <p *ngIf="createFormErrors[col.key]" class="text-[11px] text-rose-600 font-medium pt-0.5">
+                {{ createFormErrors[col.key] }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="showCreateModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="submitCreateUser()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
+          Create Record
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5B. BATCH CREATE USERS MODAL (POST create_all_api)              -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showBatchCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Add Multiple Users (Batch via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_all_api }}</code></p>
+        </div>
+        <button
+          type="button"
+          (click)="showBatchCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        <div *ngIf="batchCreateErrors" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+          {{ batchCreateErrors }}
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-slate-200">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+              <tr>
+                <th class="px-3 py-2 w-8">#</th>
+                <th class="px-3 py-2 min-w-[130px]">First Name *</th>
+                <th class="px-3 py-2 min-w-[130px]">Last Name</th>
+                <th class="px-3 py-2 min-w-[190px]">Email *</th>
+                <th class="px-3 py-2 w-28">Status</th>
+                <th class="px-2 py-2 w-10 text-center">Act</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              <tr *ngFor="let u of batchUsers; let idx = index">
+                <td class="px-3 py-2 text-slate-400 font-mono text-[11px]">{{ idx + 1 }}</td>
+                <td class="px-2 py-1.5">
+                  <input
+                    type="text"
+                    [(ngModel)]="u.first_name"
+                    placeholder="First name"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                  />
+                </td>
+                <td class="px-2 py-1.5">
+                  <input
+                    type="text"
+                    [(ngModel)]="u.last_name"
+                    placeholder="Last name"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                  />
+                </td>
+                <td class="px-2 py-1.5">
+                  <input
+                    type="email"
+                    [(ngModel)]="u.email"
+                    placeholder="email@example.com"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                  />
+                </td>
+                <td class="px-2 py-1.5">
+                  <select
+                    [(ngModel)]="u.status"
+                    class="w-full h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 bg-white shadow-2xs cursor-pointer"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </td>
+                <td class="px-2 py-1.5 text-center">
+                  <button
+                    type="button"
+                    (click)="removeBatchRow(idx)"
+                    [disabled]="batchUsers.length <= 1"
+                    class="text-slate-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer p-1 rounded hover:bg-slate-100 text-sm font-bold transition-colors"
+                    title="Remove row"
+                  >
+                    &times;
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button
+          type="button"
+          (click)="addBatchRow()"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#436CF3] hover:text-[#365BD4] cursor-pointer pt-1 transition-colors"
+        >
+          <span>+ Add Another User Row</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+        <span class="text-xs text-slate-500 font-medium">{{ batchUsers.length }} user row(s) configured</span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="showBatchCreateModal = false"
+            class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            [disabled]="isSubmittingBatch"
+            (click)="submitBatchCreate()"
+            class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+          >
+            <span *ngIf="!isSubmittingBatch">Create All Records</span>
+            <span *ngIf="isSubmittingBatch">Creating...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5C. IMPORT USERS MODAL (File Upload to POST create_import_api)  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showImportCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Import Users (File Upload via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_import_api }}</code></p>
+        </div>
+        <button
+          type="button"
+          (click)="showImportCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- File Picker -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1.5">Select Excel or CSV File</label>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:border-slate-300 transition-colors bg-slate-50/50">
+            <input
+              type="file"
+              accept=".xlsx,.csv,.xls"
+              (change)="onImportCreateFileChange($event)"
+              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer"
+            />
+            <p *ngIf="importCreateFile" class="mt-2 text-[11px] font-medium text-emerald-600">
+              Selected: {{ importCreateFile.name }} ({{ (importCreateFile.size / 1024).toFixed(1) }} KB)
+            </p>
+            <p *ngIf="!importCreateFile" class="mt-1.5 text-[11px] text-slate-400">
+              Supported formats: .xlsx, .csv
+            </p>
+          </div>
+        </div>
+
+        <!-- Options Checkboxes -->
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2.5">
+          <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Import Options</div>
+          <label class="flex items-center gap-2.5 cursor-pointer text-slate-700">
+            <input
+              type="checkbox"
+              [(ngModel)]="importSkipDuplicates"
+              class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
+            />
+            <span>Skip duplicate records if email exists</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer text-slate-700">
+            <input
+              type="checkbox"
+              [(ngModel)]="importNotifyUsers"
+              class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
+            />
+            <span>Notify users upon account creation</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="showImportCreateModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          [disabled]="!importCreateFile || isSubmittingImportCreate"
+          (click)="submitImportCreate()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+        >
+          <span *ngIf="!isSubmittingImportCreate">Upload & Import Users</span>
+          <span *ngIf="isSubmittingImportCreate">Importing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5D. IMPORT UPDATES MODAL (File Upload to POST update_import_api)-->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showImportUpdateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Import Updates (File Upload via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.update_import_api }}</code></p>
+        </div>
+        <button
+          type="button"
+          (click)="showImportUpdateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- File Picker -->
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1.5">Select Excel or CSV File</label>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:border-slate-300 transition-colors bg-slate-50/50">
+            <input
+              type="file"
+              accept=".xlsx,.csv,.xls"
+              (change)="onImportUpdateFileChange($event)"
+              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer"
+            />
+            <p *ngIf="importUpdateFile" class="mt-2 text-[11px] font-medium text-emerald-600">
+              Selected: {{ importUpdateFile.name }} ({{ (importUpdateFile.size / 1024).toFixed(1) }} KB)
+            </p>
+            <p *ngIf="!importUpdateFile" class="mt-1.5 text-[11px] text-slate-400">
+              Supported formats: .xlsx, .csv
+            </p>
+          </div>
+        </div>
+
+        <!-- Identifier Key Selector -->
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2">
+          <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider">Identifier Key to match existing rows</label>
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+              <input
+                type="radio"
+                name="identifier_key"
+                value="email"
+                [(ngModel)]="importIdentifierKey"
+                class="accent-[#436CF3]"
+              />
+              <span>Match by Email</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+              <input
+                type="radio"
+                name="identifier_key"
+                value="id"
+                [(ngModel)]="importIdentifierKey"
+                class="accent-[#436CF3]"
+              />
+              <span>Match by ID</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="showImportUpdateModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          [disabled]="!importUpdateFile || isSubmittingImportUpdate"
+          (click)="submitImportUpdate()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+        >
+          <span *ngIf="!isSubmittingImportUpdate">Upload & Apply Updates</span>
+          <span *ngIf="isSubmittingImportUpdate">Updating...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 5E. VIEW ROW DETAILS POPUP MODAL (Screen Rows Navigation)       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showViewModal && currentViewRow" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+
+      <!-- Modal Header with Next/Prev Arrow Controls -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <!-- Navigation Arrow Left -->
+          <button
+            type="button"
+            (click)="prevViewRow()"
+            [disabled]="viewModalRowIndex === 0"
+            class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+            title="Previous Row (Left Arrow)"
+          >
+            &larr;
+          </button>
+
+          <!-- Current Row Position Indicator -->
+          <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-medium">
+            Row {{ viewModalRowIndex + 1 }} of {{ rows.length }}
+          </span>
+
+          <!-- Navigation Arrow Right -->
+          <button
+            type="button"
+            (click)="nextViewRow()"
+            [disabled]="viewModalRowIndex >= rows.length - 1"
+            class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+            title="Next Row (Right Arrow)"
+          >
+            &rarr;
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">ID: #{{ currentViewRow['id'] }}</span>
+          <button
+            type="button"
+            (click)="showViewModal = false"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Panel Toolbar Inside Popup (Consistent horizontal row like Action Panel) -->
+      <div class="flex items-center flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 shrink-0">Actions:</span>
+
+        <!-- Refresh Row -->
+        <button
+          type="button"
+          (click)="refreshCurrentViewRow()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shrink-0"
+          title="Refresh only this row via data_api"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Refresh</span>
+        </button>
+
+        <!-- Edit Row / Cancel Edit Toggle -->
+        <button
+          type="button"
+          (click)="editCurrentViewRow()"
+          [ngClass]="isViewModalEditing ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'"
+          class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer shrink-0"
+          [title]="isViewModalEditing ? 'Cancel in-place editing' : 'Make editable based on column editable configuration'"
+        >
+          <svg class="w-3.5 h-3.5" [ngClass]="isViewModalEditing ? 'text-amber-600' : 'text-slate-500'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path *ngIf="!isViewModalEditing" stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            <path *ngIf="isViewModalEditing" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>{{ isViewModalEditing ? 'Cancel Edit' : 'Edit' }}</span>
+        </button>
+
+        <!-- Save Changes Button (Visible in Edit Mode) -->
+        <button
+          *ngIf="isViewModalEditing"
+          type="button"
+          (click)="saveCurrentViewRowEdits()"
+          [disabled]="isSavingViewModalEdit"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-[#436CF3] bg-[#436CF3] hover:bg-[#365BD4] disabled:opacity-50 text-white px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
+        >
+          <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{{ isSavingViewModalEdit ? 'Saving...' : 'Save Changes' }}</span>
+        </button>
+
+        <!-- Disable Row -->
+        <button
+          type="button"
+          (click)="disableCurrentViewRow()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shrink-0"
+        >
+          <svg class="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+          <span>Disable</span>
+        </button>
+
+        <!-- Revert Row -->
+        <button
+          type="button"
+          (click)="revertCurrentViewRow()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shrink-0"
+        >
+          <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          <span>Revert</span>
+        </button>
+
+        <!-- Lock Row -->
+        <button
+          type="button"
+          (click)="lockCurrentViewRow()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shrink-0"
+        >
+          <span>{{ currentViewRow['locked'] ? '🔓 Unlock' : '🔒 Lock' }}</span>
+        </button>
+
+        <!-- Delete Row -->
+        <button
+          type="button"
+          (click)="deleteCurrentViewRow()"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/70 hover:bg-red-100 hover:border-red-300 text-red-600 px-2.5 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer shrink-0"
+        >
+          <svg class="w-3.5 h-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>Delete</span>
+        </button>
+      </div>
+
+      <!-- Fields Grid Display (Read-Only & In-Place Editable based on col.editable) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[55vh] overflow-y-auto pr-1">
+        <div
+          *ngFor="let col of allColumnsList"
+          [ngClass]="{
+            'px-3 py-2 rounded-lg border transition-all': true,
+            'border-blue-300 bg-blue-50/20 shadow-xs': isViewModalEditing && col.editable && col.key !== 'id',
+            'border-slate-200/80 bg-white hover:border-slate-300 shadow-2xs': !isViewModalEditing || !col.editable || col.key === 'id'
+          }"
+          class="flex flex-col justify-between min-h-[58px]"
+        >
+          <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-1">
+            <div class="flex items-center gap-1.5 truncate">
+              <span class="truncate">{{ col.header_name }}</span>
+              <span *ngIf="isViewModalEditing && (!col.editable || col.key === 'id')" class="px-1 py-0.5 rounded text-[8px] bg-slate-100 text-slate-500 font-normal shrink-0">
+                Read-only
+              </span>
+              <span *ngIf="isViewModalEditing && col.editable && col.key !== 'id'" class="px-1 py-0.5 rounded text-[8px] bg-blue-100 text-[#365BD4] font-semibold shrink-0">
+                Editable
+              </span>
+            </div>
+            <span class="font-mono text-[9px] text-slate-400 shrink-0">#{{ col.key }}</span>
+          </div>
+
+          <!-- READ-ONLY VIEW (When not in edit mode OR when column editable flag is false OR id) -->
+          <ng-container *ngIf="!isViewModalEditing || !col.editable || col.key === 'id'">
+            <!-- Status Badge -->
+            <div *ngIf="col.key === 'status'">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+                [ngClass]="getStatusBadgeClass(currentViewRow['status'], currentViewRow)"
+              >
+                {{ getStatusBadgeText(currentViewRow['status'], currentViewRow) }}
+              </span>
+            </div>
+
+            <!-- Boolean Badge -->
+            <div *ngIf="col.key !== 'status' && isBooleanCol(col, currentViewRow[col.key])">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
+                [ngClass]="currentViewRow[col.key] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-slate-100 text-slate-500 border border-slate-200/60'"
+              >
+                {{ currentViewRow[col.key] ? 'Yes (True)' : 'No (False)' }}
+              </span>
+            </div>
+
+            <!-- Normal text value -->
+            <div *ngIf="col.key !== 'status' && !isBooleanCol(col, currentViewRow[col.key])" class="text-xs font-semibold text-slate-900 break-words" [title]="currentViewRow[col.key] || ''">
+              {{ currentViewRow[col.key] !== undefined && currentViewRow[col.key] !== null && currentViewRow[col.key] !== '' ? currentViewRow[col.key] : '—' }}
+            </div>
+          </ng-container>
+
+          <!-- IN-PLACE EDIT CONTROL (When isViewModalEditing is true AND column editable is true AND col.key !== 'id') -->
+          <ng-container *ngIf="isViewModalEditing && col.editable && col.key !== 'id'">
+            <!-- Dropdown select for columns with options (enums, status, customer_type, etc.) -->
+            <div *ngIf="getColDropdownOptions(col).length > 0">
+              <select
+                [(ngModel)]="viewModalEditForm[col.key]"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer"
+              >
+                <option *ngFor="let opt of getColDropdownOptions(col)" [value]="opt.key">{{ opt.name }}</option>
+              </select>
+            </div>
+
+            <!-- Boolean select -->
+            <div *ngIf="getColDropdownOptions(col).length === 0 && isBooleanCol(col, currentViewRow[col.key])">
+              <select
+                [(ngModel)]="viewModalEditForm[col.key]"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer"
+              >
+                <option [ngValue]="true">Yes (True)</option>
+                <option [ngValue]="false">No (False)</option>
+              </select>
+            </div>
+
+            <!-- Number input -->
+            <div *ngIf="getColDropdownOptions(col).length === 0 && !isBooleanCol(col, currentViewRow[col.key]) && isNumericCol(col, currentViewRow[col.key])">
+              <input
+                type="number"
+                [(ngModel)]="viewModalEditForm[col.key]"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2.5 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                [placeholder]="col.header_name"
+              />
+            </div>
+
+            <!-- Date input -->
+            <div *ngIf="getColDropdownOptions(col).length === 0 && !isBooleanCol(col, currentViewRow[col.key]) && !isNumericCol(col, currentViewRow[col.key]) && isDateCol(col, currentViewRow[col.key])">
+              <input
+                type="date"
+                [(ngModel)]="viewModalEditForm[col.key]"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+              />
+            </div>
+
+            <!-- Standard text input -->
+            <div *ngIf="getColDropdownOptions(col).length === 0 && !isBooleanCol(col, currentViewRow[col.key]) && !isNumericCol(col, currentViewRow[col.key]) && !isDateCol(col, currentViewRow[col.key])">
+              <input
+                type="text"
+                [(ngModel)]="viewModalEditForm[col.key]"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2.5 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                [placeholder]="col.header_name"
+              />
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Footer Info & Actions -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400">
+        <span *ngIf="!isViewModalEditing">Use &larr; / &rarr; arrow keys to switch rows</span>
+        <span *ngIf="isViewModalEditing" class="text-[#365BD4] font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#436CF3] animate-pulse"></span>
+          <span>In-place editing row #{{ currentViewRow['id'] }}</span>
+        </span>
+
+        <div class="flex items-center gap-2">
+          <!-- When editing: Cancel & Save Changes -->
+          <button
+            *ngIf="isViewModalEditing"
+            type="button"
+            (click)="cancelViewModalEdit()"
+            class="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-semibold bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+          >
+            Cancel
+          </button>
+          <button
+            *ngIf="isViewModalEditing"
+            type="button"
+            (click)="saveCurrentViewRowEdits()"
+            [disabled]="isSavingViewModalEdit"
+            class="px-4 py-1.5 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-white font-semibold disabled:opacity-50 cursor-pointer transition-colors shadow-xs"
+          >
+            {{ isSavingViewModalEdit ? 'Saving...' : 'Save Changes' }}
+          </button>
+
+          <!-- When not editing: Close -->
+          <button
+            *ngIf="!isViewModalEditing"
+            type="button"
+            (click)="showViewModal = false"
+            class="px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-semibold bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 6. EDIT USER MODAL (End-to-End PUT update_api)                  -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showEditModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Edit User Record (via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.update_api }}</code></p>
+        </div>
+        <button
+          type="button"
+          (click)="showEditModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">User ID</label>
+          <input type="text" [value]="editForm.id" disabled class="w-full h-9 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-500 outline-none shadow-2xs cursor-not-allowed" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">First Name</label>
+          <input type="text" [(ngModel)]="editForm.first_name" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Last Name</label>
+          <input type="text" [(ngModel)]="editForm.last_name" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Email Address</label>
+          <input type="email" [(ngModel)]="editForm.email" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Account Status</label>
+          <select [(ngModel)]="editForm.status" class="w-full h-9 rounded-lg border border-slate-200 px-2 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="showEditModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="submitEditUser()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
+          Save via API
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 7. DELETE CONFIRMATION MODAL                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showDeleteConfirmModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+        <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Confirm Deletion (via {{ instanceLabel }})</h2>
+          <p class="text-[11px] text-slate-500">Permanently delete selected rows from database</p>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs text-slate-600">
+        <p>
+          Are you sure you want to permanently delete <strong class="text-slate-900">{{ deleteTargetRowIds.length }}</strong> selected row(s)? Both tables will reflect this change.
+        </p>
+        <div class="max-h-36 overflow-y-auto rounded-lg bg-slate-50 border border-slate-200 p-2 space-y-1">
+          <div *ngFor="let id of deleteTargetRowIds" class="flex items-center justify-between text-[11px] text-slate-700">
+            <span class="font-mono text-slate-500">#{{ id }}</span>
+            <span class="font-medium text-slate-900">{{ getRowDisplayName(id) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="cancelDelete()"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="confirmDeleteRows()"
+          class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
+          Confirm Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- 7B. SAVE VIEW MODAL                                             -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div
+    *ngIf="isSaveViewModalOpen"
+    class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4"
+    (click)="closeSaveViewModal()"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Save Current View ({{ instanceLabel }})</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Save current filters, pagination, pins & density as a preset. Both tables will have access to this view.</p>
+        </div>
+        <button
+          type="button"
+          (click)="closeSaveViewModal()"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">View Name</label>
+          <input
+            type="text"
+            [(ngModel)]="newViewName"
+            placeholder="e.g. Active Leads, Compact Review"
+            class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs transition-colors"
+            (keydown.enter)="onSaveViewSubmit()"
+          />
+        </div>
+
+        <!-- Summary of settings being captured -->
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2 text-xs text-slate-600">
+          <div class="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Settings to capture:</div>
+          <div class="flex flex-wrap gap-2 pt-0.5">
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
+              <span class="text-slate-400">Density:</span>
+              <span class="font-medium capitalize">{{ density }}</span>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
+              <span class="text-slate-400">Page size:</span>
+              <span class="font-medium">{{ pagination.limit }}</span>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
+              <span class="text-slate-400">Filters:</span>
+              <span class="font-medium">{{ getActiveFilterCount() }} active</span>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
+              <span class="text-slate-400">Pinned cols:</span>
+              <span class="font-medium">{{ getPinnedColumnCount() }}</span>
+            </span>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2.5 cursor-pointer select-none text-xs text-slate-700">
+          <input
+            type="checkbox"
+            [(ngModel)]="newViewIsDefault"
+            class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
+          />
+          <span>Set as default view for this table</span>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="closeSaveViewModal()"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          [disabled]="!newViewName.trim() || isSavingView"
+          (click)="onSaveViewSubmit()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-colors"
+        >
+          <span *ngIf="!isSavingView">Save View</span>
+          <span *ngIf="isSavingView">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 7C. AI SUMMARY & INSIGHTS MODAL                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showAiSummaryModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-linear-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-slate-900">AI Summary & Table Insights</h2>
+            <p class="text-[11px] text-slate-500">
+              <span *ngIf="selectedRowIds.size > 0" class="text-indigo-600 font-semibold">
+                Scoped to {{ selectedRowIds.size }} Selected Row(s)
+              </span>
+              <span *ngIf="selectedRowIds.size === 0" class="text-slate-600 font-semibold">
+                Scoped to Entire Table ({{ pagination.total }} records)
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeAiSummaryModal()"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isGeneratingAiSummary" class="py-12 flex flex-col items-center justify-center gap-3">
+        <div class="w-10 h-10 rounded-full border-3 border-violet-600 border-t-transparent animate-spin"></div>
+        <p class="text-xs font-semibold text-slate-700">Analyzing live table records...</p>
+        <p class="text-[11px] text-slate-400">Synthesizing dataset summary and extracting key highlights</p>
+      </div>
+
+      <!-- Loaded Content State -->
+      <div *ngIf="!isGeneratingAiSummary && aiSummaryData" class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <!-- Summary Title & Paragraph -->
+        <div class="rounded-xl border border-violet-100 bg-violet-50/40 p-4 space-y-2">
+          <div class="text-xs font-bold text-violet-950 flex items-center justify-between">
+            <span>{{ aiSummaryData.title }}</span>
+            <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+              {{ aiSummaryData.scope }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{{ aiSummaryData.summary }}</p>
+        </div>
+
+        <!-- Metrics Badges -->
+        <div *ngIf="aiSummaryData.metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50">
+            <div class="text-[10px] text-slate-400 font-medium uppercase">Scope</div>
+            <div class="text-sm font-bold text-slate-800">{{ aiSummaryData.metrics.scope_count }}</div>
+          </div>
+          <div class="p-2.5 rounded-xl border border-emerald-100 bg-emerald-50/50">
+            <div class="text-[10px] text-emerald-600 font-medium uppercase">Active</div>
+            <div class="text-sm font-bold text-emerald-700">{{ aiSummaryData.metrics.active || 0 }}</div>
+          </div>
+          <div class="p-2.5 rounded-xl border border-amber-100 bg-amber-50/50">
+            <div class="text-[10px] text-amber-600 font-medium uppercase">Pending</div>
+            <div class="text-sm font-bold text-amber-700">{{ aiSummaryData.metrics.pending || 0 }}</div>
+          </div>
+          <div class="p-2.5 rounded-xl border border-rose-100 bg-rose-50/50">
+            <div class="text-[10px] text-rose-600 font-medium uppercase">Inactive</div>
+            <div class="text-sm font-bold text-rose-700">{{ aiSummaryData.metrics.inactive || 0 }}</div>
+          </div>
+        </div>
+
+        <!-- Highlights List -->
+        <div *ngIf="aiSummaryData.highlights && aiSummaryData.highlights.length > 0" class="space-y-2">
+          <h3 class="text-xs font-bold text-slate-800 tracking-tight">Key Insights & Takeaways</h3>
+          <div class="space-y-1.5">
+            <div
+              *ngFor="let highlight of aiSummaryData.highlights"
+              class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs text-slate-700"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0"></span>
+              <span>{{ highlight }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          *ngIf="aiSummaryData"
+          (click)="copySummaryToClipboard()"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+          Copy Summary
+        </button>
+        <span *ngIf="!aiSummaryData"></span>
+
+        <button
+          type="button"
+          (click)="closeAiSummaryModal()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- 8. FLOATING TOAST NOTIFICATION SYSTEM (Scoped to this table)    -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none" *ngIf="toasts.length > 0">
+    <div
+      *ngFor="let toast of toasts"
+      class="pointer-events-auto bg-slate-900/95 backdrop-blur text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-800 flex items-start justify-between gap-3 transform transition-all duration-200 ease-out animate-slide-up"
+    >
+      <div class="space-y-0.5">
+        <div class="text-xs font-semibold text-white tracking-tight flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>[{{ instanceLabel }}] {{ toast.title }}</span>
+        </div>
+        <div *ngIf="toast.detail" class="text-[11px] text-slate-300 font-mono">
+          {{ toast.detail }}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="dismissToast(toast.id)"
+        class="text-slate-400 hover:text-white text-base leading-none cursor-pointer"
+      >
+        ×
+      </button>
+    </div>
+  </div>
+
+</div>

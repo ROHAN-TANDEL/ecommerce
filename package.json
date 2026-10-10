@@ -1,0 +1,9 @@
+{
+  "name": "ecomm-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate:angular-table": "node ECOMM/node_modules/tsx/dist/cli.mjs ECOMM/scripts/generate-angular-table.ts",
+    "generate:entity": "node ECOMM/node_modules/tsx/dist/cli.mjs ECOMM/scripts/generate-entity.ts"
+  }
+}

@@ -1,0 +1,160 @@
+find /Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src -name "*user*" -o -name "*User*" 2>/dev/null | grep -v node_modules | head -20
+
+
+ffind /Users/rohantandel/WebstormProjects/ECOMM/E 
+C
+COMM/src -name "*user*" -o -name "*User*" 2>/dev/null | grep -v node_modules | h 
+e
+ead -20
+
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/database/migrations/004_create_users.sql
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/migrations/client_management/master/005_create_client_users.sql
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/migrations/identity_management/master/002_create_users.sql
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/repository/UserRepository.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/validator/UserValidator.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/response/UserResponse.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/config/user.column.config.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/controller/UserController.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/service/UserService
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/service/UserService/UserServiceImpl.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/service/UserService/UserService.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/identity/routes/UserRoute.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user/UserMiddleware.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user/UserRoute.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user/UserRepository.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user/UserService.ts
+/Users/rohantandel/WebstormProjects/ECOMM/ECOMM/src/modules/user/UserController.ts
+
+rohantandel@Mac angular-guide %
+
+
+curl -s "http://localhost:3000/identity/management/users?page=1&limit=3" | python3 -c "import json,sys; d=json.load(sys.stdin); print('keys:', list(d.keys())); rows=d.get('data',[]); print('row count:', len(rows)); print('first row keys:', list(rows[0].keys()) if rows else 'no rows')"
+
+ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users?page=1&limit=3" | python3 -c "import json,sys; d=json.load(sys.stdin);  
+p
+print('keys:', list(d.keys())); rows=d.get('data',[]); print('row count:', len(r 
+o
+ows)); print('first row keys:', list(rows[0].keys()) if rows else 'no rows')"
+
+keys: ['user', 'pagination', 'message', 'status', 'code']
+row count: 0
+first row keys: no rows
+
+rohantandel@Mac angular-guide %
+
+
+
+curl -s "http://localhost:3000/identity/management/users/config/columns" | python3 -c "import json,sys; d=json.load(sys.stdin); print(list(d.keys()))"
+curl -s "http://localhost:3000/identity/management/users/config/table" | python3 -c "import json,sys; d=json.load(sys.stdin); k=list(d.keys())[0]; tc=d[k]; print('data_api:', tc.get('data_api')); print('config_api:', tc.get('config_api')); print('update_api:', tc.get('update_api'))"
+
+
+
+
+ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users/config/columns" | python3 -c "import json,sys; d=json.load(sys.stdin);  
+p
+print(list(d.keys()))"
+
+['first_name', 'last_name', 'email', 'status', 'created_at']
+%                                                                               
+ 
+
+rohantandel@Mac angular-guide % ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users/config/table" | python3 -c "import json,sys; d=json.load(sys.stdin); k= 
+l
+list(d.keys())[0]; tc=d[k]; print('data_api:', tc.get('data_api')); print('confi 
+g
+g_api:', tc.get('config_api')); print('update_api:', tc.get('update_api'))"
+
+data_api: /identity/management/users
+config_api: /identity/management/users/config/columns
+update_api: /identity/management/users/update/:id
+
+rohantandel@Mac angular-guide %
+Read File
+
+
+
+
+
+curl -s "http://localhost:3000/identity/management/users?page=1&limit=3" | python3 -c "import json,sys; d=json.load(sys.stdin); user=d.get('user',{}); print('user keys:', list(user.keys()) if isinstance(user,dict) else type(user))"
+
+
+
+
+ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users?page=1&limit=3" | python3 -c "import json,sys; d=json.load(sys.stdin);  
+u
+user=d.get('user',{}); print('user keys:', list(user.keys()) if isinstance(user, 
+d
+dict) else type(user))"
+
+user keys: <class 'list'>
+
+rohantandel@Mac angular-guide %
+
+
+
+
+
+curl -s "http://localhost:3000/identity/management/users?page=1&limit=2" | python3 -c "import json,sys; d=json.load(sys.stdin); rows=d.get('user',[]); pg=d.get('pagination',{}); print('row keys:', list(rows[0].keys()) if rows else 'empty'); print('pagination:', pg)"
+
+
+
+
+
+ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users?page=1&limit=2" | python3 -c "import json,sys; d=json.load(sys.stdin);  
+r
+rows=d.get('user',[]); pg=d.get('pagination',{}); print('row keys:', list(rows[0 
+]
+].keys()) if rows else 'empty'); print('pagination:', pg)"
+
+
+
+
+curl -s "http://localhost:3000/identity/management/users?page=1&limit=2"
+
+
+
+
+
+ccurl -s "http://localhost:3000/identity/manageme 
+n
+nt/users?page=1&limit=2"
+
+{"user":[{"id":"1","first_name":"Bent","last_name":"Dean","email":"alex@example.com","password_hash":"water@123","status":"INACTIVE","last_login_at":null,"created_at":"2026-10-02T07:05:41.061Z","updated_at":"2026-10-02T07:05:41.061Z","deleted_at":"2026-10-02T10:28:33.838Z"}],"pagination":{"page":1,"limit":2,"total":1,"totalPages":1},"message":null,"status":"success","code":200}
+rohantandel@Mac angular-guide %
+
+
+
+
+
+
+
+Read File
+
+app.routes.ts
+Read File
+
+UserRoute.ts
+Read File
+
+user.column.config.ts
+Read File
+
+UserController.ts
+
+
+Read File
+
+dashboard.ts
+
+

@@ -1,0 +1,330 @@
+{
+  "entity": "Client",
+  "table": "clients",
+  "product": "client_management",
+  "database": "master",
+  "table_key": "clients_table_5002",
+  "display_name": "Client Management",
+  "add_button_label": "+ Add Client",
+  "routePrefix": "/client/management",
+  "primary_key": {
+    "key": "id",
+    "type": "number",
+    "generated": true
+  },
+  "relations": [
+    {
+      "name": "partner",
+      "type": "belongsTo",
+      "target_entity": "Partner",
+      "target_table": "partners",
+      "foreign_key": "partner_id",
+      "target_key": "id",
+      "display_column": "name",
+      "display_alias": "partner_name",
+      "filter_enabled": true,
+      "lookup_api": "/client/management/partners/lookup"
+    },
+    {
+      "name": "client_users",
+      "type": "hasMany",
+      "target_entity": "ClientUser",
+      "target_table": "client_users",
+      "foreign_key": "client_id",
+      "count_alias": "user_count",
+      "child_route": "/client/management/users?client_id=:id",
+      "drilldown_action": {
+        "key": "view_users",
+        "name": "View Users",
+        "icon": "user_group",
+        "info_note": "View all users belonging to this client",
+        "api": "/client/management/users?client_id=:id",
+        "method": "GET",
+        "pinned": true,
+        "order": 1
+      }
+    },
+    {
+      "name": "client_products",
+      "type": "hasMany",
+      "target_entity": "ClientProduct",
+      "target_table": "client_products",
+      "foreign_key": "client_id",
+      "count_alias": "product_count",
+      "child_route": "/client/management/client-products?client_id=:id",
+      "drilldown_action": {
+        "key": "view_products",
+        "name": "View Products",
+        "icon": "cube",
+        "info_note": "View active subscriptions and external applications",
+        "api": "/client/management/client-products?client_id=:id",
+        "method": "GET",
+        "pinned": true,
+        "order": 2
+      }
+    }
+  ],
+  "columns": [
+    {
+      "key": "id",
+      "header_name": "ID",
+      "type": "number",
+      "sql_type": "BIGSERIAL PRIMARY KEY",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "80px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Client internal identifier",
+      "active": true
+    },
+    {
+      "key": "partner_name",
+      "header_name": "Partner",
+      "type": "string",
+      "filter_type": "search",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "190px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Managing partner / reseller organization",
+      "active": true,
+      "is_joined": true,
+      "join_source": {
+        "table": "master.partners",
+        "foreign_key": "partner_id",
+        "select": "name"
+      }
+    },
+    {
+      "key": "partner_id",
+      "header_name": "Partner ID",
+      "type": "number",
+      "sql_type": "BIGINT NOT NULL",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "text_code_1000",
+      "info_note": "ID of parent partner",
+      "active": false,
+      "modal": {
+        "order": 1,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Select parent partner organization"
+      }
+    },
+    {
+      "key": "client_code",
+      "header_name": "Client Code",
+      "type": "string",
+      "sql_type": "VARCHAR(100)",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "170px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Unique client reference code (e.g. CLI-LUMINA-101)",
+      "active": true,
+      "modal": {
+        "order": 2,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Unique client identifier"
+      }
+    },
+    {
+      "key": "client_name",
+      "header_name": "Client Name",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "multi_search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "220px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Trade name of client business",
+      "active": true,
+      "modal": {
+        "order": 3,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Client company name"
+      }
+    },
+    {
+      "key": "domain",
+      "header_name": "Domain / Host",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "200px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Custom domain or tenant hostname",
+      "active": true,
+      "modal": {
+        "order": 4,
+        "horizontal_section": "h_section_1",
+        "required": false
+      }
+    },
+    {
+      "key": "industry",
+      "header_name": "Industry",
+      "type": "string",
+      "sql_type": "VARCHAR(100)",
+      "filter_type": "list",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "150px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Industry vertical",
+      "active": true
+    },
+    {
+      "key": "status",
+      "header_name": "Status",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "status_badge",
+      "info_note": "Tenant operating status",
+      "active": true,
+      "dropdown_options": [
+        { "key": "ACTIVE", "name": "Active", "default": true },
+        { "key": "INACTIVE", "name": "Inactive" },
+        { "key": "SUSPENDED", "name": "Suspended" },
+        { "key": "PENDING", "name": "Pending" }
+      ],
+      "modal": {
+        "order": 5,
+        "horizontal_section": "h_section_2",
+        "required": true
+      }
+    },
+    {
+      "key": "user_count",
+      "header_name": "Users",
+      "type": "number",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "100px",
+      "cell_mode": "badge_count",
+      "info_note": "Total active users in this tenant",
+      "active": true,
+      "is_computed": true,
+      "relation_field": "client_users.count"
+    },
+    {
+      "key": "product_count",
+      "header_name": "Products",
+      "type": "number",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "badge_count",
+      "info_note": "Subscribed applications count",
+      "active": true,
+      "is_computed": true,
+      "relation_field": "client_products.count"
+    },
+    {
+      "key": "contact_person_name",
+      "header_name": "Client Lead",
+      "type": "string",
+      "sql_type": "VARCHAR(150)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "180px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Primary client point of contact",
+      "active": true,
+      "modal": {
+        "order": 6,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "email",
+      "header_name": "Email",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "200px",
+      "cell_mode": "text_code_2000",
+      "info_note": "Administrative email address",
+      "active": true,
+      "modal": {
+        "order": 7,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "max_users",
+      "header_name": "Max Users",
+      "type": "number",
+      "sql_type": "INTEGER",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Max licensed user seat limit",
+      "active": true
+    },
+    {
+      "key": "created_at",
+      "header_name": "Created On",
+      "type": "date",
+      "sql_type": "TIMESTAMPTZ",
+      "filter_type": "date_range",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "160px",
+      "cell_mode": "date_code_1000",
+      "info_note": "Onboarding date",
+      "active": true
+    }
+  ]
+}

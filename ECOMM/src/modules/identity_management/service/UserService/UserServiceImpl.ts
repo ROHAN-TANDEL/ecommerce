@@ -1,0 +1,148 @@
+import UserService from "./UserService";
+import db from "../../../../platformdb/facade.js";
+
+export class UserServiceImpl implements UserService {
+
+    private readonly userRepo:any;
+
+    constructor({userRepository}) {
+        this.userRepo = userRepository;
+    }
+
+    deleteUser() {}
+    updateUser() {}
+
+    async createUser(input)
+    {
+        if (!input?.status) {
+            input.status = 'ACTIVE';
+        }
+
+        return await this.userRepo.createUser(input);
+    }
+
+    async getUser(inputs)
+    {
+        return await this.userRepo.getUser(inputs);
+    }
+
+    async getUsers(page, limit, inputs: any = {})
+    {
+        try {
+            const offset = (page - 1) * limit;
+
+            const users = await this.userRepo.getUsers(limit, offset, inputs);
+
+            if (users?.message) {
+               throw new Error("Users not found");
+            }
+
+            const total = await this.userRepo.getTotalUsers(inputs);
+
+            return {
+                user : users,
+
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.max(1, Math.ceil(total / limit))
+                }
+            };
+
+        } catch (error) {
+            console.error({ message : 'Failed to fetch users:', error : error});
+
+            return {
+                message: 'Failed to fetch users'
+            };
+        }
+    }
+
+    async updateUser(id, inputs)
+    {
+        try {
+            const updatedUser = await this.userRepo.updateUser(id, inputs);
+            return updatedUser;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteUser(inputs)
+    {
+        try {
+            const deleted = await this.userRepo.deleteUser(inputs);
+            return deleted;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateUserStatus()
+    {
+        try {
+            const deleted = await this.userRepo.updateUserStatus(inputs);
+            return deleted;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+
+    async createBulkUsers(users) {
+        return await this.userRepo.createBulkUsers(users);
+    }
+
+    async createAllUsers(users) {
+        return await this.userRepo.createBulkUsers(users);
+    }
+
+    async importUsers(users: any[], options: any = {}) {
+        return await this.userRepo.importUsers(users, options);
+    }
+
+    async importUpdateUsers(updates: any[], options: any = {}) {
+        return await this.userRepo.importUpdateUsers(updates, options);
+    }
+
+    async updateBulkUsers(updates) {
+        return await this.userRepo.updateBulkUsers(updates);
+    }
+
+    async updateMatchingUsers(data, filters, excluded) {
+        return await this.userRepo.updateMatchingUsers(data, filters, excluded);
+    }
+
+    async deleteMatchingUsers(filters, excluded) {
+        return await this.userRepo.deleteMatchingUsers(filters, excluded);
+    }
+
+    async updateAllUsers(ids, data) {
+        return await this.userRepo.updateAllUsers(ids, data);
+    }
+
+    async deleteAllUsers(ids) {
+        return await this.userRepo.deleteAllUsers(ids);
+    }
+
+    async getViews(tableKey = 'users_table_1234', userId = null) {
+        return await this.userRepo.getViews(tableKey, userId);
+    }
+
+    async saveView(data: any) {
+        return await this.userRepo.saveView(data);
+    }
+
+    async getView(id: any) {
+        return await this.userRepo.getViewById(id);
+    }
+
+    async deleteView(id: any) {
+        return await this.userRepo.deleteView(id);
+    }
+
+    async setDefaultView(id: any, tableKey = 'users_table_1234', userId = null) {
+        return await this.userRepo.setDefaultView(id, tableKey, userId);
+    }
+}

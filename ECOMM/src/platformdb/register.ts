@@ -1,61 +1,47 @@
 import { register } from "./app.js";
+import { ClientUserRepository } from "../modules/client_management/repository/ClientUserRepository.js";
+import { ClientUserResponse } from "../modules/client_management/response/ClientUserResponse.js";
+import { ClientUserServiceImpl } from "../modules/client_management/service/ClientUserService/ClientUserServiceImpl.js";
+import { ClientUserController } from "../modules/client_management/controller/ClientUserController.js";
+import { ClientUserValidator } from "../modules/client_management/validator/ClientUserValidator.js";
 
-import { HealthRepository } from "../modules/identity/repository/HealthRepository.js";
-import { HealthService } from "../modules/identity/service/HealthService.js";
-import { HealthValidator } from "../modules/identity/validator/HealthValidator.js";
-import { HealthResponse } from "../modules/identity/response/HealthResponse.js";
-import { HealthController } from "../modules/identity/controller/HealthController.js";
+import { ClientProductRepository } from "../modules/client_management/repository/ClientProductRepository.js";
+import { ClientProductResponse } from "../modules/client_management/response/ClientProductResponse.js";
+import { ClientProductServiceImpl } from "../modules/client_management/service/ClientProductService/ClientProductServiceImpl.js";
+import { ClientProductController } from "../modules/client_management/controller/ClientProductController.js";
+import { ClientProductValidator } from "../modules/client_management/validator/ClientProductValidator.js";
 
-import { UserRepository } from "../modules/identity/repository/UserRepository.js";
-import { UserResponse } from "../modules/identity/response/UserResponse.js";
+import { ProductRepository } from "../modules/client_management/repository/ProductRepository.js";
+import { ProductResponse } from "../modules/client_management/response/ProductResponse.js";
+import { ProductServiceImpl } from "../modules/client_management/service/ProductService/ProductServiceImpl.js";
+import { ProductController } from "../modules/client_management/controller/ProductController.js";
+import { ProductValidator } from "../modules/client_management/validator/ProductValidator.js";
 
-import { ClientRepository } from "../modules/tenant/repository/ClientRepository.js";
-import { ClientService } from "../modules/tenant/service/ClientService.js";
-import { ClientValidator } from "../modules/tenant/validator/ClientValidator.js";
-import { ClientResponse } from "../modules/tenant/response/ClientResponse.js";
-import { ClientController } from "../modules/tenant/controller/ClientController.js";
+import { ClientRepository } from "../modules/client_management/repository/ClientRepository.js";
+import { ClientResponse } from "../modules/client_management/response/ClientResponse.js";
+import { ClientServiceImpl } from "../modules/client_management/service/ClientService/ClientServiceImpl.js";
+import { ClientController } from "../modules/client_management/controller/ClientController.js";
+import { ClientValidator } from "../modules/client_management/validator/ClientValidator.js";
 
-import { ProductRepository } from "../modules/tenant/repository/ProductRepository.js";
-import { ProductService } from "../modules/tenant/service/ProductService.js";
-import { ProductController } from "../modules/tenant/controller/ProductController.js";
+import { PartnerRepository } from "../modules/client_management/repository/PartnerRepository.js";
+import { PartnerResponse } from "../modules/client_management/response/PartnerResponse.js";
+import { PartnerServiceImpl } from "../modules/client_management/service/PartnerService/PartnerServiceImpl.js";
+import { PartnerController } from "../modules/client_management/controller/PartnerController.js";
+import { PartnerValidator } from "../modules/client_management/validator/PartnerValidator.js";
 
-import { BusinessRepository } from "../modules/tenant/repository/BusinessRepository.js";
-import { BusinessService } from "../modules/tenant/service/BusinessService.js";
-import { BusinessController } from "../modules/tenant/controller/BusinessController.js";
+import { CustomerRepository } from "../modules/identity_management/repository/CustomerRepository.js";
+import { CustomerResponse } from "../modules/identity_management/response/CustomerResponse.js";
+import { CustomerServiceImpl } from "../modules/identity_management/service/CustomerService/CustomerServiceImpl.js";
+import { CustomerController } from "../modules/identity_management/controller/CustomerController.js";
+import { CustomerValidator } from "../modules/identity_management/validator/CustomerValidator.js";
 
-import { BusinessProductRepository } from "../modules/tenant/repository/BusinessProductRepository.js";
-import { BusinessProductService } from "../modules/tenant/service/BusinessProductService.js";
-import { BusinessProductController } from "../modules/tenant/controller/BusinessProductController.js";
-import {SchemaController} from "../modules/tenant/controller/SchemaController.js";
-import {UserServiceImpl} from "../modules/identity/service/UserService/UserServiceImpl.js";
-import {UserController} from "../modules/identity/controller/UserController.js";
-import {UserValidator} from "../modules/identity/validator/UserValidator.js";
 
-register("schemaController", SchemaController);
+import { UserRepository } from "../modules/identity_management/repository/UserRepository.js";
+import { UserResponse } from "../modules/identity_management/response/UserResponse.js";
+import { UserServiceImpl } from "../modules/identity_management/service/UserService/UserServiceImpl.js";
+import { UserController } from "../modules/identity_management/controller/UserController.js";
+import { UserValidator } from "../modules/identity_management/validator/UserValidator.js";
 
-register("businessProductRepository", BusinessProductRepository);
-register("businessProductService", BusinessProductService);
-register("businessProductController", BusinessProductController);
-
-register("businessRepository", BusinessRepository);
-register("businessService", BusinessService);
-register("businessController", BusinessController);
-
-register("productRepository", ProductRepository);
-register("productService", ProductService);
-register("productController", ProductController);
-
-register("healthRepository", HealthRepository);
-register("healthService", HealthService);
-register("healthValidator", HealthValidator);
-register("healthResponse", HealthResponse);
-register("healthController", HealthController);
-
-register("clientRepository", ClientRepository);
-register("clientService", ClientService);
-register("clientValidator", ClientValidator);
-register("clientResponse", ClientResponse);
-register("clientController", ClientController);
 
 register("userController", UserController);
 register("userValidator", UserValidator);
@@ -63,5 +49,50 @@ register("userService", UserServiceImpl);
 register("userRepository", UserRepository);
 register("userResponse", UserResponse);
 
+
+
+register("customerController", CustomerController);
+register("customerValidator", CustomerValidator);
+register("customerService", CustomerServiceImpl);
+register("customerRepository", CustomerRepository);
+register("customerResponse", CustomerResponse);
+
+import { SidebarController } from "../modules/navigation/controller/SidebarController.js";
+register("sidebarController", SidebarController);
+
+
+register("partnerController", PartnerController);
+register("partnerValidator", PartnerValidator);
+register("partnerService", PartnerServiceImpl);
+register("partnerRepository", PartnerRepository);
+register("partnerResponse", PartnerResponse);
+
+
+register("clientController", ClientController);
+register("clientValidator", ClientValidator);
+register("clientService", ClientServiceImpl);
+register("clientRepository", ClientRepository);
+register("clientResponse", ClientResponse);
+
+
+register("productController", ProductController);
+register("productValidator", ProductValidator);
+register("productService", ProductServiceImpl);
+register("productRepository", ProductRepository);
+register("productResponse", ProductResponse);
+
+
+register("clientProductController", ClientProductController);
+register("clientProductValidator", ClientProductValidator);
+register("clientProductService", ClientProductServiceImpl);
+register("clientProductRepository", ClientProductRepository);
+register("clientProductResponse", ClientProductResponse);
+
+
+register("clientUserController", ClientUserController);
+register("clientUserValidator", ClientUserValidator);
+register("clientUserService", ClientUserServiceImpl);
+register("clientUserRepository", ClientUserRepository);
+register("clientUserResponse", ClientUserResponse);
 
 export default register;
