@@ -9,10 +9,25 @@ import { Live } from './bkp/pages/live/live';
 import { Principal } from './bkp/pages/principal/principal';
 import { Employees } from './bkp/pages/employees/employees';
 import { Customer } from './products/identity_management/customers/customers';
+import { Partner } from './products/client_management/partners/partners';
+import { Client } from './products/client_management/clients/clients';
+import { Product } from './products/client_management/products/products';
+import { ClientProduct } from './products/client_management/clientproducts/clientproducts';
+import { ClientUser } from './products/client_management/clientusers/clientusers';
 
 export const routes: Routes = [
     // Core Application Routes
-    { path: '',                        redirectTo: 'dashboard', pathMatch: 'full' },
+        { path: 'nexora/partners', component: Partner },
+    { path: 'products/client_management/partners', component: Partner },
+    { path: 'nexora/clients', component: Client },
+    { path: 'products/client_management/clients', component: Client },
+    { path: 'nexora/products', component: Product },
+    { path: 'products/client_management/products', component: Product },
+    { path: 'nexora/clientproducts', component: ClientProduct },
+    { path: 'products/client_management/clientproducts', component: ClientProduct },
+    { path: 'nexora/clientusers', component: ClientUser },
+    { path: 'products/client_management/clientusers', component: ClientUser },
+{ path: '',                        redirectTo: 'dashboard', pathMatch: 'full' },
     { path: 'login',                   component: Login },
     { path: 'dashboard',               component: Dashboard },
 
