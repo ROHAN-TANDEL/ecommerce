@@ -15,26 +15,30 @@ import { EnrichedColumn } from '../employees.types';
         (click)="toggleOpen($event)"
         [ngClass]="{
           'bg-slate-100 border-slate-300 text-slate-900': isOpen,
-          'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
+          'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen,
+          'w-8 px-0 justify-center': iconOnly,
+          'px-3': !iconOnly
         }"
-        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border text-xs font-medium shadow-2xs transition-colors cursor-pointer"
         [title]="infoNote || 'Columns configuration'"
       >
         <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
         </svg>
-        <span>{{ label }}</span>
-        <span class="text-[10px] text-slate-400 font-mono">({{ visibleCount }}/{{ columns.length }})</span>
-        <svg
-          class="w-3 h-3 text-slate-400 transition-transform shrink-0"
-          [class.rotate-180]="isOpen"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ng-container *ngIf="!iconOnly">
+          <span>{{ label }}</span>
+          <span class="text-[10px] text-slate-400 font-mono">({{ visibleCount }}/{{ columns.length }})</span>
+          <svg
+            class="w-3 h-3 text-slate-400 transition-transform shrink-0"
+            [class.rotate-180]="isOpen"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </ng-container>
       </button>
 
       <!-- Hover Tooltip -->
@@ -48,8 +52,11 @@ import { EnrichedColumn } from '../employees.types';
       <!-- Popover Dropdown -->
       <div
         *ngIf="isOpen"
-        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
-        class="absolute top-full mt-1.5 z-[110] w-64 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto"
+        [ngClass]="[
+          dropdownAlign === 'right' ? 'right-0' : 'left-0',
+          menuVAlign === 'bottom' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+        ]"
+        class="absolute z-[110] w-72 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[calc(100vh-100px)] overflow-x-hidden overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <div class="flex items-center justify-between pb-1 border-b border-slate-100">
@@ -76,18 +83,18 @@ import { EnrichedColumn } from '../employees.types';
         </div>
 
         <!-- Column Checkbox List with Controls (Hide, Pin, Readonly, Reorder) -->
-        <div class="max-h-64 overflow-y-auto space-y-1 py-1">
+        <div class="max-h-64 overflow-x-hidden overflow-y-auto space-y-1 py-1">
           <div
             *ngFor="let col of filteredColumns; let i = index; let first = first; let last = last"
             class="flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 text-xs transition-colors group/item"
           >
             <!-- Hide / Show Toggle -->
-            <label class="flex items-center gap-2 cursor-pointer flex-1 truncate select-none">
+            <label class="flex items-center gap-2 cursor-pointer flex-1 min-w-0 select-none">
               <input
                 type="checkbox"
                 [checked]="col.active !== false"
                 (change)="toggleColumn.emit(col.key)"
-                class="rounded border-slate-300 accent-slate-900 w-3.5 h-3.5 cursor-pointer"
+                class="rounded border-slate-300 accent-slate-900 w-3.5 h-3.5 cursor-pointer shrink-0"
               />
               <span class="truncate text-slate-700" [class.font-semibold]="col.active !== false" [class.opacity-50]="col.active === false">
                 {{ col.header_name }}
@@ -158,6 +165,7 @@ export class ColumnsComponent {
   @Input() label = 'Columns';
   @Input() infoNote?: string;
   @Input() columns: EnrichedColumn[] = [];
+  @Input() iconOnly = false;
 
   @Output() toggleColumn = new EventEmitter<string>();
   @Output() togglePin = new EventEmitter<string>();
@@ -165,8 +173,10 @@ export class ColumnsComponent {
   @Output() reorderColumn = new EventEmitter<{ colKey: string; direction: 'up' | 'down' }>();
   @Output() resetColumns = new EventEmitter<void>();
 
+  readonly menuId = 'columns_' + Math.random().toString(36).substring(2, 9);
   isOpen = false;
   dropdownAlign: 'left' | 'right' = 'left';
+  menuVAlign: 'top' | 'bottom' = 'top';
   searchQuery = '';
 
   constructor(private readonly elRef: ElementRef) {}
@@ -182,13 +192,16 @@ export class ColumnsComponent {
   }
 
   toggleOpen(e: MouseEvent): void {
-    e.stopPropagation();
     if (!this.isOpen) {
       const rect = this.elRef.nativeElement.getBoundingClientRect();
       const menuWidth = 270;
       const spaceRight = window.innerWidth - rect.left;
       const spaceLeft = rect.right;
       this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+
+      const spaceBottom = window.innerHeight - rect.bottom;
+      this.menuVAlign = (spaceBottom < 300 && rect.top >= spaceBottom) ? 'bottom' : 'top';
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.menuId }));
     }
     this.isOpen = !this.isOpen;
   }
@@ -201,6 +214,14 @@ export class ColumnsComponent {
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (this.isOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
+      this.isOpen = false;
+    }
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.menuId && this.isOpen) {
       this.isOpen = false;
     }
   }

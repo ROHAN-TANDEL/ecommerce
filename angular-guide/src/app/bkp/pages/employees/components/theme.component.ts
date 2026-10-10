@@ -89,6 +89,8 @@ export class ThemeComponent {
     { value: 'grey', label: 'grey', note: 'add grey them' },
   ];
 
+  readonly menuId = 'theme_' + Math.random().toString(36).substring(2, 9);
+
   constructor(private readonly elRef: ElementRef) {}
 
   toggleOpen(e: MouseEvent): void {
@@ -99,6 +101,7 @@ export class ThemeComponent {
       const spaceRight = window.innerWidth - rect.left;
       const spaceLeft = rect.right;
       this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.menuId }));
     }
     this.isOpen = !this.isOpen;
   }
@@ -114,5 +117,18 @@ export class ThemeComponent {
     if (!this.elRef.nativeElement.contains(e.target)) {
       this.isOpen = false;
     }
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.menuId) {
+      this.isOpen = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.isOpen = false;
   }
 }

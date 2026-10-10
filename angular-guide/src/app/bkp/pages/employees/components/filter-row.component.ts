@@ -724,8 +724,8 @@ import { EnrichedColumn, FilterDataItem } from '../employees.types';
       <!-- Action Column Placeholder (Sticky right, z-30, opaque) -->
       <th
         *ngIf="hasActionColumn"
-        style="width: 120px; min-width: 120px; max-width: 120px;"
-        class="w-[120px] min-w-[120px] max-w-[120px] px-2 py-2 bg-white sticky right-0 z-30 border-l border-slate-200 text-center"
+        style="width: 130px; min-width: 130px; max-width: 130px;"
+        class="w-[130px] min-w-[130px] max-w-[130px] px-2 py-2 bg-white sticky right-0 z-30 border-l border-slate-200 text-center shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
       >
         <svg class="w-3.5 h-3.5 text-slate-300 mx-auto" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="5" cy="12" r="1.5"></circle>

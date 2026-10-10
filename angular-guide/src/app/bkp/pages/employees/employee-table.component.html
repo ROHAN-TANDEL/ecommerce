@@ -13,7 +13,7 @@
     <button type="button" (click)="toggleFullscreen()" class="ml-2 text-slate-400 hover:text-white font-semibold cursor-pointer">✕ Exit</button>
   </div>
 
-  <div class="space-y-4">
+  <div class="space-y-3">
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- 1. HEADER SECTION & BUTTONS                                     -->
@@ -24,6 +24,8 @@
       [tableKey]="rawHeaderConfig?.title?.table_key || tableConfig.table_key"
       [apiStatus]="apiStatus"
       [description]="rawHeaderConfig?.title?.description || 'Component-based data architecture: granular headers, action components, cells, and filters.'"
+      [style.z-index]="showAddUserDropdown ? '150' : '50'"
+      class="relative"
     >
       <button-component
         *ngIf="rawHeaderConfig?.sync?.active !== false"
@@ -39,7 +41,7 @@
       </button-component>
 
       <!-- Add User Dropdown Button -->
-      <div class="relative inline-block text-left" *ngIf="tableConfig.enable_add_data_button && rawHeaderConfig?.add_button?.active !== false" (click)="$event.stopPropagation()">
+      <div #addUserDropdownContainer class="relative inline-block text-left z-[150]" *ngIf="tableConfig.enable_add_data_button && rawHeaderConfig?.add_button?.active !== false">
         <button-component
           variant="primary"
           size="md"
@@ -58,14 +60,15 @@
         <!-- Dropdown Menu Options (Config-Driven) -->
         <div
           *ngIf="showAddUserDropdown"
-          class="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl z-50 animate-slide-up space-y-1"
+          [ngClass]="addUserDropdownVAlign === 'bottom' ? 'bottom-full mb-2' : 'top-full mt-2'"
+          class="absolute right-0 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-2xl z-[160] animate-slide-up space-y-1 pointer-events-auto"
           (click)="$event.stopPropagation()"
         >
           <button
             *ngFor="let opt of headerAddDropdownOptions"
             type="button"
-            (click)="onHeaderAddOptionClick(opt)"
-            class="flex items-start gap-2.5 w-full p-2 rounded-lg text-left hover:bg-slate-50 transition-colors cursor-pointer group"
+            (click)="onHeaderAddOptionClick(opt, $event)"
+            class="flex items-start gap-2.5 w-full p-2 rounded-lg text-left hover:bg-slate-100 transition-colors cursor-pointer group select-none"
           >
             <div
               class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-slate-50 text-slate-500 border border-slate-200/80 group-hover:bg-blue-50 group-hover:text-[#436CF3] group-hover:border-blue-200 transition-colors"
@@ -84,7 +87,7 @@
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-slate-800">{{ opt.display_name }}</div>
+              <div class="text-xs font-semibold text-slate-800 group-hover:text-[#436CF3] transition-colors">{{ opt.display_name }}</div>
               <div class="text-[11px] text-slate-400 truncate">{{ opt.description }}</div>
             </div>
           </button>
@@ -121,6 +124,7 @@
           *ngIf="item.component === 'refresh_component'"
           [label]="item.name"
           [infoNote]="item.info_note"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (refresh)="bootstrapTable()"
         ></refresh-component>
 
@@ -129,6 +133,7 @@
           [label]="item.name"
           [infoNote]="item.info_note"
           [locked]="isLocked"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (lockToggle)="onLockToggle($event)"
         ></lock-component>
 
@@ -138,6 +143,7 @@
           [infoNote]="editButtonTooltip"
           [disabled]="selectedRowIds.size === 0"
           [editing]="isEditModeActive"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (edit)="onEditClick()"
         ></edit-component>
 
@@ -148,6 +154,7 @@
           [disabled]="!hasDirtyRows"
           [saving]="isSaving"
           [dirtyCount]="dirtyRowCount"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (save)="onSaveClick()"
         ></save-component>
 
@@ -156,6 +163,7 @@
           [label]="item.name"
           [infoNote]="item.info_note"
           [density]="density"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (densityChange)="onDensityChange($event)"
         ></density-component>
 
@@ -164,6 +172,7 @@
           [label]="item.name"
           [infoNote]="item.info_note"
           [active]="isLiveFeedActive"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (liveToggle)="onLiveToggle($event)"
         ></live-component>
 
@@ -182,6 +191,7 @@
           [label]="item.name"
           [infoNote]="item.info_note"
           [columns]="allColumnsList"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (toggleColumn)="toggleColumnVisibility($event)"
           (togglePin)="onToggleColumnPin($event)"
           (toggleReadonly)="onToggleColumnReadonly($event)"
@@ -198,6 +208,7 @@
           [activeViewId]="activeViewId"
           [activeViewName]="activeViewName"
           [isLoadingViews]="isLoadingViews"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (viewSelect)="onActionPanelSelect({ actionKey: 'view', optionKey: $event })"
         ></view-component>
 
@@ -208,6 +219,7 @@
           [actionKey]="item.key"
           [infoNote]="item.info_note"
           [options]="item.dropdown_options"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (optionSelect)="onActionPanelSelect($event)"
         ></options-dropdown-component>
 
@@ -218,6 +230,7 @@
           [label]="item.name"
           [infoNote]="getActionTooltip(item)"
           [disabled]="isActionDisabled(item.key)"
+          [iconOnly]="item.icon_only === true || String(item.icon_only) === 'true'"
           (btnClick)="onActionPanelSelect({ actionKey: item.key })"
         ></action-btn-component>
       </ng-container>
@@ -264,6 +277,7 @@
             *ngFor="let col of columnsList"
             class="contents"
             [column]="col"
+            [columnOptionsConfig]="rawColumnOptionsConfig"
             [sortDirection]="sortState[col.key]"
             (sortChange)="onHeaderSortClick($event)"
             (columnOption)="onColumnOptionSelect($event)"
@@ -273,8 +287,9 @@
           <!-- Action column header -->
           <th
             *ngIf="tableConfig.action_column.active"
-            style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-3.5 py-3 bg-slate-50 sticky right-0 z-20 border-b border-l border-slate-200 text-center text-xs font-semibold text-slate-700 tracking-normal"
+            [style.width]="actionColumnWidth"
+            [style.min-width]="actionColumnWidth"
+            class="px-3.5 py-3 bg-slate-50 sticky right-0 z-20 border-b border-l border-slate-200 text-right text-xs font-semibold text-slate-700 tracking-normal shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
           >
             Actions
           </th>
@@ -319,6 +334,7 @@
           [class.ring-1]="row['_needsReview']"
           [class.ring-inset]="row['_needsReview']"
           [class.ring-amber-300]="row['_needsReview']"
+          [class.opacity-75]="isRowDisabled(row)"
           [class.z-[60]]="activeRowActionId === row['id']"
           [class.relative]="activeRowActionId === row['id']"
           class="hover:bg-slate-100/60 transition-colors border-b border-slate-200/60"
@@ -360,25 +376,25 @@
             (valueChange)="onCellValueChange($event)"
           ></cell-component>
 
-          <!-- Sticky Action Column Cell with Kebab Popover & Review Badge -->
           <td
             *ngIf="tableConfig.action_column.active"
-            style="width: 120px; min-width: 120px; max-width: 120px;"
-            class="w-[120px] min-w-[120px] max-w-[120px] px-2 text-center sticky right-0 border-l border-b border-slate-200/60"
+            [style.width]="actionColumnWidth"
+            [style.min-width]="actionColumnWidth"
+            class="px-2.5 text-right sticky right-0 border-l border-b border-slate-200/80 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
             [class.z-[60]]="activeRowActionId === row['id']"
             [class.z-10]="activeRowActionId !== row['id']"
-            [class.bg-amber-50/60]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
-            [class.bg-slate-50/40]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
+            [class.bg-[#FEF3C7]]="row['_needsReview'] && !selectedRowIds.has(row['id'])"
+            [class.bg-slate-50]="!row['_needsReview'] && even && !selectedRowIds.has(row['id'])"
             [class.bg-white]="!row['_needsReview'] && !even && !selectedRowIds.has(row['id'])"
-            [class.bg-blue-50/60]="selectedRowIds.has(row['id'])"
+            [class.bg-[#EEF2FF]]="selectedRowIds.has(row['id'])"
           >
-            <div class="relative inline-flex items-center gap-1.5 justify-center text-left" (click)="$event.stopPropagation()">
+            <div class="relative flex items-center justify-end gap-1.5 w-full text-right" (click)="$event.stopPropagation()">
               <!-- Review Action Pill (When AI altered/generated row requires review) -->
               <button
                 *ngIf="row['_needsReview']"
                 type="button"
                 (click)="markRowReviewed(row, $event)"
-                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 transition-colors cursor-pointer shrink-0 shadow-2xs mr-auto"
                 title="Click to mark this AI altered row as reviewed"
               >
                 <svg class="w-2.5 h-2.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -390,13 +406,48 @@
               <!-- Reviewed Checkmark Tag -->
               <span
                 *ngIf="row['_reviewed'] && !row['_needsReview']"
-                class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 mr-auto"
                 title="AI changes reviewed"
               >
                 ✓ OK
               </span>
 
+              <!-- Pinned Row Actions (Right-aligned / right-to-left layout matching Action Panel) -->
+              <ng-container *ngFor="let act of pinnedRowActions">
+                <button
+                  type="button"
+                  (click)="onRowActionClick($event, act.key, row, act)"
+                  class="inline-flex items-center justify-center h-7 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer text-xs font-medium shrink-0"
+                  [ngClass]="{
+                    'w-7 px-0': act.icon_only,
+                    'px-2 gap-1.5': !act.icon_only,
+                    'text-red-600 hover:bg-red-50 hover:border-red-200': act.key === 'delete'
+                  }"
+                  [title]="act.info_note || act.name"
+                >
+                  <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                    <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                    <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                    <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                    <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg *ngSwitchCase="'copy'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    <svg *ngSwitchCase="'save'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                    <svg *ngSwitchCase="'download'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    <svg *ngSwitchCase="'upload'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                  </ng-container>
+                  <span *ngIf="!act.icon_only">{{ act.name }}</span>
+                </button>
+              </ng-container>
+
+              <!-- 3-Dots Menu Button for Unpinned Row Actions -->
               <button
+                *ngIf="unpinnedRowActions.length > 0 || pinnedRowActions.length > 0"
                 type="button"
                 (click)="toggleRowActionMenu($event, row['id'])"
                 class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition-colors cursor-pointer shrink-0"
@@ -411,26 +462,96 @@
 
               <div
                 *ngIf="activeRowActionId === row['id']"
-                class="absolute right-0 z-[100] w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-2xl space-y-0.5 text-left"
+                class="absolute right-0 z-[100] w-48 rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 text-left"
                 [class.top-full]="!isBottomRow(i)"
                 [class.mt-1]="!isBottomRow(i)"
                 [class.bottom-full]="isBottomRow(i)"
                 [class.mb-1]="isBottomRow(i)"
               >
-                <ng-container *ngFor="let act of activeRowActions">
+                <!-- Unpinned Actions (Executable & Pinnable to Row) -->
+                <ng-container *ngFor="let act of unpinnedRowActions">
                   <div *ngIf="act.key === 'delete'" class="my-1 border-t border-slate-100"></div>
-                  <button
-                    type="button"
-                    (click)="onRowActionClick($event, act.key, row, act)"
-                    class="flex w-full items-center px-2.5 py-1.5 text-xs rounded-lg capitalize transition-colors cursor-pointer"
-                    [class.text-red-600]="act.key === 'delete'"
+                  <div
+                    class="flex items-center justify-between gap-1.5 w-full px-2 py-1.5 text-xs rounded-lg transition-colors group/rowact hover:bg-slate-100"
                     [class.hover:bg-red-50]="act.key === 'delete'"
-                    [class.text-slate-700]="act.key !== 'delete'"
-                    [class.hover:bg-slate-100]="act.key !== 'delete'"
-                    [title]="act.info_note || act.name"
                   >
-                    {{ act.name }}
-                  </button>
+                    <button
+                      type="button"
+                      (click)="onRowActionClick($event, act.key, row, act)"
+                      class="flex flex-1 items-center gap-2 cursor-pointer text-left truncate"
+                      [class.text-red-600]="act.key === 'delete'"
+                      [class.text-slate-700]="act.key !== 'delete'"
+                      [title]="act.info_note || act.name"
+                    >
+                      <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                        <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                        <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                        <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                        <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg *ngSwitchCase="'copy'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        <svg *ngSwitchCase="'save'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        <svg *ngSwitchCase="'download'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        <svg *ngSwitchCase="'upload'" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                      </ng-container>
+                      <span class="truncate">{{ act.name }}</span>
+                    </button>
+                    <!-- Pin button to pin this action to the row -->
+                    <button
+                      type="button"
+                      (click)="toggleRowActionPin(act.key, $event)"
+                      class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-[#436CF3] hover:bg-blue-50 transition-colors cursor-pointer shrink-0"
+                      [title]="'Pin ' + act.name + ' to row'"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" />
+                      </svg>
+                    </button>
+                  </div>
+                </ng-container>
+
+                <!-- Pinned Actions Section (to allow unpinning directly from the menu) -->
+                <ng-container *ngIf="pinnedRowActions.length > 0">
+                  <div *ngIf="unpinnedRowActions.length > 0" class="my-1 border-t border-slate-100"></div>
+                  <div class="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider font-semibold text-slate-400">
+                    Pinned to row
+                  </div>
+                  <div
+                    *ngFor="let act of pinnedRowActions"
+                    class="flex items-center justify-between gap-1.5 w-full px-2 py-1 text-xs rounded-lg transition-colors group/pinnedact hover:bg-slate-100"
+                  >
+                    <div class="flex items-center gap-2 text-slate-600 truncate flex-1 min-w-0">
+                      <ng-container [ngSwitch]="getRowActionIconKey(act)">
+                        <svg *ngSwitchCase="'refresh'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <svg *ngSwitchCase="'disable'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <svg *ngSwitchCase="'enable'" class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg *ngSwitchCase="'revert'" class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" /></svg>
+                        <svg *ngSwitchCase="'view'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg *ngSwitchCase="'pin'" class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" /></svg>
+                        <svg *ngSwitchCase="'lock'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4" /></svg>
+                        <svg *ngSwitchCase="'edit'" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        <svg *ngSwitchCase="'delete'" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <svg *ngSwitchDefault class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /></svg>
+                      </ng-container>
+                      <span class="truncate">{{ act.name }}</span>
+                    </div>
+                    <!-- Unpin button -->
+                    <button
+                      type="button"
+                      (click)="toggleRowActionPin(act.key, $event)"
+                      class="w-5 h-5 flex items-center justify-center rounded text-amber-600 hover:text-slate-500 hover:bg-amber-50 transition-colors cursor-pointer shrink-0"
+                      [title]="'Unpin ' + act.name + ' from row'"
+                    >
+                      <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 4v2h5v4l1 1 1-1v-4h5v-2l-2-4z" />
+                      </svg>
+                    </button>
+                  </div>
                 </ng-container>
               </div>
             </div>
@@ -655,43 +776,50 @@
   <!-- 5. CREATE USER MODAL (Dynamic Form Driven by Column Modal Config)-->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <div *ngIf="showCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 class="text-sm font-bold text-slate-900">{{ cleanAddButtonName }} (via {{ instanceLabel }})</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.create_api }}</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_api }}</code></p>
         </div>
-        <button type="button" (click)="showCreateModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+        <button
+          type="button"
+          (click)="showCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
       </div>
 
-      <!-- Dynamic Sections & Horizontal Layout -->
-      <div class="space-y-4 text-xs max-h-[70vh] overflow-y-auto pr-1">
+      <!-- Dynamic Sections & Form Fields -->
+      <div class="space-y-4 text-xs max-h-[65vh] overflow-y-auto pr-1">
         <div
           *ngFor="let section of modalSections; trackBy: trackBySectionKey"
-          class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 space-y-3.5 shadow-2xs"
+          class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 space-y-3.5 shadow-2xs"
         >
           <!-- Horizontal Section Grid for fields inside this section -->
           <div
             class="grid gap-3.5"
             [ngClass]="section.fields.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'"
           >
-            <div *ngFor="let col of section.fields; trackBy: trackByColKey" class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-slate-800 tracking-tight">
+            <div *ngFor="let col of section.fields; trackBy: trackByColKey" class="space-y-1">
+              <!-- Label above, optional helper text underneath -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">
                   {{ col.header_name }}
-                  <span *ngIf="col.modal?.required" class="text-rose-500 font-bold">*</span>
+                  <span *ngIf="col.modal?.required" class="text-rose-500 font-bold ml-0.5">*</span>
                 </label>
-                <span *ngIf="col.modal?.info_note" class="text-[11px] text-slate-400 font-normal italic">
+                <p *ngIf="col.modal?.info_note" class="text-[11px] text-slate-500 mt-0.5 leading-snug">
                   {{ col.modal?.info_note }}
-                </span>
+                </p>
               </div>
 
               <!-- List / Select Input (e.g. status) -->
               <ng-container *ngIf="col.filter_type === 'list' && col.filter_data && col.filter_data.length > 0">
                 <select
                   [(ngModel)]="createForm[col.key]"
-                  class="w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none bg-white shadow-2xs transition-all cursor-pointer"
-                  [ngClass]="createFormErrors[col.key] ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 outline-none bg-white shadow-2xs transition-all cursor-pointer"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
                 >
                   <option *ngFor="let opt of col.filter_data" [value]="opt.key">
                     {{ opt.name }}
@@ -704,8 +832,8 @@
                 <input
                   type="date"
                   [(ngModel)]="createForm[col.key]"
-                  class="w-full h-10 rounded-xl border px-3 text-sm text-slate-800 outline-none bg-white shadow-2xs transition-all"
-                  [ngClass]="createFormErrors[col.key] ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
                 />
               </ng-container>
 
@@ -714,9 +842,9 @@
                 <input
                   type="email"
                   [(ngModel)]="createForm[col.key]"
-                  [placeholder]="col.modal?.info_note || ('Enter ' + col.header_name)"
-                  class="w-full h-10 rounded-xl border px-3.5 text-sm text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
-                  [ngClass]="createFormErrors[col.key] ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'"
+                  [placeholder]="'Enter ' + col.header_name"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
                 />
               </ng-container>
 
@@ -725,14 +853,14 @@
                 <input
                   type="text"
                   [(ngModel)]="createForm[col.key]"
-                  [placeholder]="col.modal?.info_note || ('Enter ' + col.header_name)"
-                  class="w-full h-10 rounded-xl border px-3.5 text-sm text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
-                  [ngClass]="createFormErrors[col.key] ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'"
+                  [placeholder]="'Enter ' + col.header_name"
+                  class="w-full h-9 rounded-lg border px-3 text-xs text-slate-800 placeholder-slate-400 outline-none bg-white shadow-2xs transition-all"
+                  [ngClass]="createFormErrors[col.key] ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100'"
                 />
               </ng-container>
 
               <!-- Field Validation Error Note -->
-              <p *ngIf="createFormErrors[col.key]" class="text-[11px] text-red-500 font-medium pt-0.5">
+              <p *ngIf="createFormErrors[col.key]" class="text-[11px] text-rose-600 font-medium pt-0.5">
                 {{ createFormErrors[col.key] }}
               </p>
             </div>
@@ -741,11 +869,19 @@
       </div>
 
       <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
-        <button type="button" (click)="showCreateModal = false" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">
+        <button
+          type="button"
+          (click)="showCreateModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
           Cancel
         </button>
-        <button type="button" (click)="submitCreateUser()" class="px-5 py-2 rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer shadow-xs transition-colors">
-          Create via API
+        <button
+          type="button"
+          (click)="submitCreateUser()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
+          Create Record
         </button>
       </div>
     </div>
@@ -755,17 +891,23 @@
   <!-- 5B. BATCH CREATE USERS MODAL (POST create_all_api)              -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <div *ngIf="showBatchCreateModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-6 space-y-4 animate-slide-up" (click)="$event.stopPropagation()">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 class="text-sm font-bold text-slate-900">Add Multiple Users (Batch via {{ instanceLabel }})</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.create_all_api }}</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_all_api }}</code></p>
         </div>
-        <button type="button" (click)="showBatchCreateModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+        <button
+          type="button"
+          (click)="showBatchCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
       </div>
 
       <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-        <div *ngIf="batchCreateErrors" class="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
+        <div *ngIf="batchCreateErrors" class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
           {{ batchCreateErrors }}
         </div>
 
@@ -774,9 +916,9 @@
             <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
               <tr>
                 <th class="px-3 py-2 w-8">#</th>
-                <th class="px-3 py-2">First Name *</th>
-                <th class="px-3 py-2">Last Name</th>
-                <th class="px-3 py-2">Email *</th>
+                <th class="px-3 py-2 min-w-[130px]">First Name *</th>
+                <th class="px-3 py-2 min-w-[130px]">Last Name</th>
+                <th class="px-3 py-2 min-w-[190px]">Email *</th>
                 <th class="px-3 py-2 w-28">Status</th>
                 <th class="px-2 py-2 w-10 text-center">Act</th>
               </tr>
@@ -789,7 +931,7 @@
                     type="text"
                     [(ngModel)]="u.first_name"
                     placeholder="First name"
-                    class="w-full h-8 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-slate-900"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
                   />
                 </td>
                 <td class="px-2 py-1.5">
@@ -797,7 +939,7 @@
                     type="text"
                     [(ngModel)]="u.last_name"
                     placeholder="Last name"
-                    class="w-full h-8 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-slate-900"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
                   />
                 </td>
                 <td class="px-2 py-1.5">
@@ -805,13 +947,13 @@
                     type="email"
                     [(ngModel)]="u.email"
                     placeholder="email@example.com"
-                    class="w-full h-8 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-slate-900"
+                    class="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs text-slate-800 bg-white focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
                   />
                 </td>
                 <td class="px-2 py-1.5">
                   <select
                     [(ngModel)]="u.status"
-                    class="w-full h-8 px-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:border-slate-900 bg-white"
+                    class="w-full h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 bg-white shadow-2xs cursor-pointer"
                   >
                     <option value="active">Active</option>
                     <option value="pending">Pending</option>
@@ -823,7 +965,7 @@
                     type="button"
                     (click)="removeBatchRow(idx)"
                     [disabled]="batchUsers.length <= 1"
-                    class="text-slate-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer text-sm font-bold"
+                    class="text-slate-400 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer p-1 rounded hover:bg-slate-100 text-sm font-bold transition-colors"
                     title="Remove row"
                   >
                     &times;
@@ -837,19 +979,19 @@
         <button
           type="button"
           (click)="addBatchRow()"
-          class="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer pt-1"
+          class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#436CF3] hover:text-[#365BD4] cursor-pointer pt-1 transition-colors"
         >
           <span>+ Add Another User Row</span>
         </button>
       </div>
 
       <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-        <span class="text-xs text-slate-500">{{ batchUsers.length }} user row(s) configured</span>
+        <span class="text-xs text-slate-500 font-medium">{{ batchUsers.length }} user row(s) configured</span>
         <div class="flex items-center gap-2">
           <button
             type="button"
             (click)="showBatchCreateModal = false"
-            class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors"
+            class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
           >
             Cancel
           </button>
@@ -857,9 +999,9 @@
             type="button"
             [disabled]="isSubmittingBatch"
             (click)="submitBatchCreate()"
-            class="px-5 py-2 rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+            class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
           >
-            <span *ngIf="!isSubmittingBatch">Create All via API</span>
+            <span *ngIf="!isSubmittingBatch">Create All Records</span>
             <span *ngIf="isSubmittingBatch">Creating...</span>
           </button>
         </div>
@@ -875,21 +1017,27 @@
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 class="text-sm font-bold text-slate-900">Import Users (File Upload via {{ instanceLabel }})</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.create_import_api }}</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.create_import_api }}</code></p>
         </div>
-        <button type="button" (click)="showImportCreateModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+        <button
+          type="button"
+          (click)="showImportCreateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
       </div>
 
       <div class="space-y-4 text-xs">
         <!-- File Picker -->
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Select Excel or CSV File</label>
-          <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-slate-400 transition-colors bg-slate-50/50">
+          <label class="block font-semibold text-slate-700 mb-1.5">Select Excel or CSV File</label>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:border-slate-300 transition-colors bg-slate-50/50">
             <input
               type="file"
               accept=".xlsx,.csv,.xls"
               (change)="onImportCreateFileChange($event)"
-              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
+              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer"
             />
             <p *ngIf="importCreateFile" class="mt-2 text-[11px] font-medium text-emerald-600">
               Selected: {{ importCreateFile.name }} ({{ (importCreateFile.size / 1024).toFixed(1) }} KB)
@@ -901,13 +1049,13 @@
         </div>
 
         <!-- Options Checkboxes -->
-        <div class="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-2.5">
-          <div class="text-[11px] font-bold uppercase text-slate-500">Import Options</div>
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2.5">
+          <div class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">Import Options</div>
           <label class="flex items-center gap-2.5 cursor-pointer text-slate-700">
             <input
               type="checkbox"
               [(ngModel)]="importSkipDuplicates"
-              class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+              class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
             />
             <span>Skip duplicate records if email exists</span>
           </label>
@@ -915,7 +1063,7 @@
             <input
               type="checkbox"
               [(ngModel)]="importNotifyUsers"
-              class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+              class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
             />
             <span>Notify users upon account creation</span>
           </label>
@@ -926,7 +1074,7 @@
         <button
           type="button"
           (click)="showImportCreateModal = false"
-          class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
         >
           Cancel
         </button>
@@ -934,7 +1082,7 @@
           type="button"
           [disabled]="!importCreateFile || isSubmittingImportCreate"
           (click)="submitImportCreate()"
-          class="px-5 py-2 rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
         >
           <span *ngIf="!isSubmittingImportCreate">Upload & Import Users</span>
           <span *ngIf="isSubmittingImportCreate">Importing...</span>
@@ -951,21 +1099,27 @@
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 class="text-sm font-bold text-slate-900">Import Updates (File Upload via {{ instanceLabel }})</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.update_import_api }}</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.update_import_api }}</code></p>
         </div>
-        <button type="button" (click)="showImportUpdateModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+        <button
+          type="button"
+          (click)="showImportUpdateModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
       </div>
 
       <div class="space-y-4 text-xs">
         <!-- File Picker -->
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Select Excel or CSV File</label>
-          <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-slate-400 transition-colors bg-slate-50/50">
+          <label class="block font-semibold text-slate-700 mb-1.5">Select Excel or CSV File</label>
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:border-slate-300 transition-colors bg-slate-50/50">
             <input
               type="file"
               accept=".xlsx,.csv,.xls"
               (change)="onImportUpdateFileChange($event)"
-              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
+              class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer"
             />
             <p *ngIf="importUpdateFile" class="mt-2 text-[11px] font-medium text-emerald-600">
               Selected: {{ importUpdateFile.name }} ({{ (importUpdateFile.size / 1024).toFixed(1) }} KB)
@@ -977,8 +1131,8 @@
         </div>
 
         <!-- Identifier Key Selector -->
-        <div class="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-2">
-          <label class="block text-[11px] font-bold uppercase text-slate-500">Identifier Key to match existing rows</label>
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2">
+          <label class="block text-[11px] font-bold uppercase text-slate-500 tracking-wider">Identifier Key to match existing rows</label>
           <div class="flex items-center gap-4">
             <label class="flex items-center gap-2 cursor-pointer text-slate-700">
               <input
@@ -986,7 +1140,7 @@
                 name="identifier_key"
                 value="email"
                 [(ngModel)]="importIdentifierKey"
-                class="accent-slate-900"
+                class="accent-[#436CF3]"
               />
               <span>Match by Email</span>
             </label>
@@ -996,7 +1150,7 @@
                 name="identifier_key"
                 value="id"
                 [(ngModel)]="importIdentifierKey"
-                class="accent-slate-900"
+                class="accent-[#436CF3]"
               />
               <span>Match by ID</span>
             </label>
@@ -1008,7 +1162,7 @@
         <button
           type="button"
           (click)="showImportUpdateModal = false"
-          class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
         >
           Cancel
         </button>
@@ -1016,7 +1170,7 @@
           type="button"
           [disabled]="!importUpdateFile || isSubmittingImportUpdate"
           (click)="submitImportUpdate()"
-          class="px-5 py-2 rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
         >
           <span *ngIf="!isSubmittingImportUpdate">Upload & Apply Updates</span>
           <span *ngIf="isSubmittingImportUpdate">Updating...</span>
@@ -1039,14 +1193,14 @@
             type="button"
             (click)="prevViewRow()"
             [disabled]="viewModalRowIndex === 0"
-            class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
             title="Previous Row (Left Arrow)"
           >
             &larr;
           </button>
 
           <!-- Current Row Position Indicator -->
-          <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 font-mono text-xs font-semibold">
+          <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-medium">
             Row {{ viewModalRowIndex + 1 }} of {{ rows.length }}
           </span>
 
@@ -1055,7 +1209,7 @@
             type="button"
             (click)="nextViewRow()"
             [disabled]="viewModalRowIndex >= rows.length - 1"
-            class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
             title="Next Row (Right Arrow)"
           >
             &rarr;
@@ -1063,13 +1217,13 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <span class="text-xs text-slate-400 font-mono">ID: #{{ currentViewRow['id'] }}</span>
+          <span class="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">ID: #{{ currentViewRow['id'] }}</span>
           <button
             type="button"
             (click)="showViewModal = false"
-            class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
           >
-            ×
+            &times;
           </button>
         </div>
       </div>
@@ -1112,7 +1266,7 @@
           type="button"
           (click)="saveCurrentViewRowEdits()"
           [disabled]="isSavingViewModalEdit"
-          class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors cursor-pointer shrink-0"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-[#436CF3] bg-[#436CF3] hover:bg-[#365BD4] disabled:opacity-50 text-white px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
         >
           <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -1167,27 +1321,27 @@
       </div>
 
       <!-- Fields Grid Display (Read-Only & In-Place Editable based on col.editable) -->
-      <div class="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[55vh] overflow-y-auto pr-1">
         <div
           *ngFor="let col of allColumnsList"
           [ngClass]="{
-            'p-3 rounded-xl border transition-all': true,
+            'px-3 py-2 rounded-lg border transition-all': true,
             'border-blue-300 bg-blue-50/20 shadow-xs': isViewModalEditing && col.editable && col.key !== 'id',
-            'border-slate-100 bg-slate-50/70': !isViewModalEditing || !col.editable || col.key === 'id'
+            'border-slate-200/80 bg-white hover:border-slate-300 shadow-2xs': !isViewModalEditing || !col.editable || col.key === 'id'
           }"
-          class="space-y-1.5"
+          class="flex flex-col justify-between min-h-[58px]"
         >
-          <div class="flex items-center justify-between text-[10px] font-semibold text-slate-400 uppercase">
+          <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 mb-1">
             <div class="flex items-center gap-1.5 truncate">
               <span class="truncate">{{ col.header_name }}</span>
-              <span *ngIf="isViewModalEditing && (!col.editable || col.key === 'id')" class="px-1 py-0.5 rounded text-[8px] bg-slate-200 text-slate-500 font-normal shrink-0">
+              <span *ngIf="isViewModalEditing && (!col.editable || col.key === 'id')" class="px-1 py-0.5 rounded text-[8px] bg-slate-100 text-slate-500 font-normal shrink-0">
                 Read-only
               </span>
-              <span *ngIf="isViewModalEditing && col.editable && col.key !== 'id'" class="px-1 py-0.5 rounded text-[8px] bg-blue-100 text-blue-700 font-semibold shrink-0">
+              <span *ngIf="isViewModalEditing && col.editable && col.key !== 'id'" class="px-1 py-0.5 rounded text-[8px] bg-blue-100 text-[#365BD4] font-semibold shrink-0">
                 Editable
               </span>
             </div>
-            <span class="font-mono text-[9px] text-slate-300 shrink-0">{{ col.key }}</span>
+            <span class="font-mono text-[9px] text-slate-400 shrink-0">#{{ col.key }}</span>
           </div>
 
           <!-- READ-ONLY VIEW (When not in edit mode OR when column editable flag is false OR id) -->
@@ -1195,10 +1349,10 @@
             <!-- Status Badge -->
             <div *ngIf="col.key === 'status'">
               <span
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-                [ngClass]="getStatusBadgeClass(currentViewRow['status'])"
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+                [ngClass]="getStatusBadgeClass(currentViewRow['status'], currentViewRow)"
               >
-                {{ currentViewRow['status'] || 'Unknown' }}
+                {{ getStatusBadgeText(currentViewRow['status'], currentViewRow) }}
               </span>
             </div>
 
@@ -1206,14 +1360,14 @@
             <div *ngIf="col.key !== 'status' && isBooleanCol(col, currentViewRow[col.key])">
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium"
-                [ngClass]="currentViewRow[col.key] ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                [ngClass]="currentViewRow[col.key] ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-slate-100 text-slate-500 border border-slate-200/60'"
               >
                 {{ currentViewRow[col.key] ? 'Yes (True)' : 'No (False)' }}
               </span>
             </div>
 
             <!-- Normal text value -->
-            <div *ngIf="col.key !== 'status' && !isBooleanCol(col, currentViewRow[col.key])" class="text-xs font-medium text-slate-800 truncate" [title]="currentViewRow[col.key] || ''">
+            <div *ngIf="col.key !== 'status' && !isBooleanCol(col, currentViewRow[col.key])" class="text-xs font-semibold text-slate-900 break-words" [title]="currentViewRow[col.key] || ''">
               {{ currentViewRow[col.key] !== undefined && currentViewRow[col.key] !== null && currentViewRow[col.key] !== '' ? currentViewRow[col.key] : '—' }}
             </div>
           </ng-container>
@@ -1224,7 +1378,7 @@
             <div *ngIf="getColDropdownOptions(col).length > 0">
               <select
                 [(ngModel)]="viewModalEditForm[col.key]"
-                class="w-full text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer"
               >
                 <option *ngFor="let opt of getColDropdownOptions(col)" [value]="opt.key">{{ opt.name }}</option>
               </select>
@@ -1234,7 +1388,7 @@
             <div *ngIf="getColDropdownOptions(col).length === 0 && isBooleanCol(col, currentViewRow[col.key])">
               <select
                 [(ngModel)]="viewModalEditForm[col.key]"
-                class="w-full text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer"
               >
                 <option [ngValue]="true">Yes (True)</option>
                 <option [ngValue]="false">No (False)</option>
@@ -1246,7 +1400,7 @@
               <input
                 type="number"
                 [(ngModel)]="viewModalEditForm[col.key]"
-                class="w-full text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2.5 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
                 [placeholder]="col.header_name"
               />
             </div>
@@ -1256,7 +1410,7 @@
               <input
                 type="date"
                 [(ngModel)]="viewModalEditForm[col.key]"
-                class="w-full text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
               />
             </div>
 
@@ -1265,7 +1419,7 @@
               <input
                 type="text"
                 [(ngModel)]="viewModalEditForm[col.key]"
-                class="w-full text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full h-8 text-xs rounded-lg border border-slate-200 bg-white px-2.5 text-slate-800 font-medium focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs"
                 [placeholder]="col.header_name"
               />
             </div>
@@ -1276,8 +1430,8 @@
       <!-- Footer Info & Actions -->
       <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-400">
         <span *ngIf="!isViewModalEditing">Use &larr; / &rarr; arrow keys to switch rows</span>
-        <span *ngIf="isViewModalEditing" class="text-blue-600 font-medium flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+        <span *ngIf="isViewModalEditing" class="text-[#365BD4] font-medium flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#436CF3] animate-pulse"></span>
           <span>In-place editing row #{{ currentViewRow['id'] }}</span>
         </span>
 
@@ -1287,7 +1441,7 @@
             *ngIf="isViewModalEditing"
             type="button"
             (click)="cancelViewModalEdit()"
-            class="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 cursor-pointer transition-colors"
+            class="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-semibold bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
           >
             Cancel
           </button>
@@ -1296,7 +1450,7 @@
             type="button"
             (click)="saveCurrentViewRowEdits()"
             [disabled]="isSavingViewModalEdit"
-            class="px-4 py-1.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors shadow-xs"
+            class="px-4 py-1.5 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-white font-semibold disabled:opacity-50 cursor-pointer transition-colors shadow-xs"
           >
             {{ isSavingViewModalEdit ? 'Saving...' : 'Save Changes' }}
           </button>
@@ -1306,7 +1460,7 @@
             *ngIf="!isViewModalEditing"
             type="button"
             (click)="showViewModal = false"
-            class="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 cursor-pointer transition-colors"
+            class="px-4 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-semibold bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
           >
             Close
           </button>
@@ -1324,31 +1478,37 @@
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 class="text-sm font-bold text-slate-900">Edit User Record (via {{ instanceLabel }})</h2>
-          <p class="text-[11px] text-slate-500">Endpoint: <code>{{ tableConfig.table_api.update_api }}</code></p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Endpoint: <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded font-mono">{{ tableConfig.table_api.update_api }}</code></p>
         </div>
-        <button type="button" (click)="showEditModal = false" class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer">×</button>
+        <button
+          type="button"
+          (click)="showEditModal = false"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+        >
+          &times;
+        </button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-medium text-slate-700 mb-1">User ID</label>
-          <input type="text" [value]="editForm.id" disabled class="w-full h-8 rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs text-slate-500 outline-none" />
+          <label class="block font-semibold text-slate-700 mb-1">User ID</label>
+          <input type="text" [value]="editForm.id" disabled class="w-full h-9 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-500 outline-none shadow-2xs cursor-not-allowed" />
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">First Name</label>
-          <input type="text" [(ngModel)]="editForm.first_name" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
+          <label class="block font-semibold text-slate-700 mb-1">First Name</label>
+          <input type="text" [(ngModel)]="editForm.first_name" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">Last Name</label>
-          <input type="text" [(ngModel)]="editForm.last_name" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
+          <label class="block font-semibold text-slate-700 mb-1">Last Name</label>
+          <input type="text" [(ngModel)]="editForm.last_name" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">Email Address</label>
-          <input type="email" [(ngModel)]="editForm.email" class="w-full h-8 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-slate-900" />
+          <label class="block font-semibold text-slate-700 mb-1">Email Address</label>
+          <input type="email" [(ngModel)]="editForm.email" class="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs" />
         </div>
         <div>
-          <label class="block font-medium text-slate-700 mb-1">Account Status</label>
-          <select [(ngModel)]="editForm.status" class="w-full h-8 rounded-lg border border-slate-200 px-2 text-xs outline-none focus:border-slate-900 bg-white">
+          <label class="block font-semibold text-slate-700 mb-1">Account Status</label>
+          <select [(ngModel)]="editForm.status" class="w-full h-9 rounded-lg border border-slate-200 px-2 text-xs text-slate-800 outline-none bg-white focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs cursor-pointer">
             <option value="active">Active</option>
             <option value="pending">Pending</option>
             <option value="inactive">Inactive</option>
@@ -1356,11 +1516,19 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-        <button type="button" (click)="showEditModal = false" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer">
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          (click)="showEditModal = false"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
+        >
           Cancel
         </button>
-        <button type="button" (click)="submitEditUser()" class="px-4 py-1.5 rounded-lg bg-slate-900 text-xs font-medium text-white hover:bg-slate-800 cursor-pointer shadow-xs">
+        <button
+          type="button"
+          (click)="submitEditUser()"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
+        >
           Save via API
         </button>
       </div>
@@ -1396,18 +1564,18 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
         <button
           type="button"
           (click)="cancelDelete()"
-          class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
         >
           Cancel
         </button>
         <button
           type="button"
           (click)="confirmDeleteRows()"
-          class="px-4 py-1.5 rounded-lg bg-red-600 text-xs font-medium text-white hover:bg-red-700 cursor-pointer shadow-xs"
+          class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
         >
           Confirm Delete
         </button>
@@ -1427,17 +1595,17 @@
       class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5"
       (click)="$event.stopPropagation()"
     >
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3">
         <div>
-          <h3 class="text-base font-semibold text-slate-900">Save Current View ({{ instanceLabel }})</h3>
+          <h3 class="text-sm font-bold text-slate-900">Save Current View ({{ instanceLabel }})</h3>
           <p class="text-xs text-slate-500 mt-0.5">Save current filters, pagination, pins & density as a preset. Both tables will have access to this view.</p>
         </div>
         <button
           type="button"
           (click)="closeSaveViewModal()"
-          class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
         >
-          ×
+          &times;
         </button>
       </div>
 
@@ -1448,49 +1616,49 @@
             type="text"
             [(ngModel)]="newViewName"
             placeholder="e.g. Active Leads, Compact Review"
-            class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+            class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#436CF3] focus:ring-1 focus:ring-blue-100 shadow-2xs transition-colors"
             (keydown.enter)="onSaveViewSubmit()"
           />
         </div>
 
         <!-- Summary of settings being captured -->
-        <div class="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-1.5 text-xs text-slate-600">
-          <div class="font-semibold text-slate-700 text-[11px] uppercase tracking-wider">Settings to capture:</div>
-          <div class="flex flex-wrap gap-2 pt-1">
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 space-y-2 text-xs text-slate-600">
+          <div class="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Settings to capture:</div>
+          <div class="flex flex-wrap gap-2 pt-0.5">
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
               <span class="text-slate-400">Density:</span>
               <span class="font-medium capitalize">{{ density }}</span>
             </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
               <span class="text-slate-400">Page size:</span>
               <span class="font-medium">{{ pagination.limit }}</span>
             </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
               <span class="text-slate-400">Filters:</span>
               <span class="font-medium">{{ getActiveFilterCount() }} active</span>
             </span>
-            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700">
+            <span class="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] border border-slate-200 text-slate-700 shadow-2xs">
               <span class="text-slate-400">Pinned cols:</span>
               <span class="font-medium">{{ getPinnedColumnCount() }}</span>
             </span>
           </div>
         </div>
 
-        <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700">
+        <label class="flex items-center gap-2.5 cursor-pointer select-none text-xs text-slate-700">
           <input
             type="checkbox"
             [(ngModel)]="newViewIsDefault"
-            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+            class="rounded border-slate-300 text-[#436CF3] focus:ring-[#436CF3] w-4 h-4 cursor-pointer"
           />
           <span>Set as default view for this table</span>
         </label>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
         <button
           type="button"
           (click)="closeSaveViewModal()"
-          class="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs"
         >
           Cancel
         </button>
@@ -1498,7 +1666,7 @@
           type="button"
           [disabled]="!newViewName.trim() || isSavingView"
           (click)="onSaveViewSubmit()"
-          class="px-4 py-1.5 rounded-lg bg-blue-600 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-colors"
         >
           <span *ngIf="!isSavingView">Save View</span>
           <span *ngIf="isSavingView">Saving...</span>
@@ -1535,9 +1703,9 @@
         <button
           type="button"
           (click)="closeAiSummaryModal()"
-          class="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
         >
-          ×
+          &times;
         </button>
       </div>
 
@@ -1602,7 +1770,7 @@
           type="button"
           *ngIf="aiSummaryData"
           (click)="copySummaryToClipboard()"
-          class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer transition-colors"
+          class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
         >
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -1614,7 +1782,7 @@
         <button
           type="button"
           (click)="closeAiSummaryModal()"
-          class="px-4 py-1.5 rounded-xl bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 cursor-pointer shadow-2xs transition-colors"
+          class="px-4 py-2 rounded-lg bg-[#436CF3] hover:bg-[#365BD4] text-xs font-semibold text-white cursor-pointer shadow-xs transition-colors"
         >
           Done
         </button>

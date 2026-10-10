@@ -37,8 +37,11 @@ import { ScrollerComponent } from './scroller.component';
       <!-- Dropdown Popover Menu (overflow-visible so submenus can fly out without clipping) -->
       <div
         *ngIf="isOpen"
-        [ngClass]="menuAlign === 'right' ? 'right-0' : 'left-0'"
-        class="absolute top-full mt-1.5 z-[100] w-60 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap overflow-visible"
+        [ngClass]="[
+          menuAlign === 'right' ? 'right-0' : 'left-0',
+          menuVAlign === 'bottom' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+        ]"
+        class="absolute z-[100] w-60 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl space-y-0.5 whitespace-nowrap overflow-visible"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-400 border-b border-slate-100 mb-1">
           {{ section.name }} Menu
@@ -146,7 +149,7 @@ import { ScrollerComponent } from './scroller.component';
               submenuAlign === 'right' ? 'left-full ml-1.5 before:-left-3' : 'right-full mr-1.5 before:-right-3',
               submenuVAlign === 'bottom' ? 'bottom-0' : 'top-0'
             ]"
-            class="before:absolute before:top-0 before:bottom-0 before:w-3 before:content-[''] absolute z-[110] w-64 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto"
+            class="before:absolute before:top-0 before:bottom-0 before:w-3 before:content-[''] absolute z-[110] w-72 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xl space-y-2 max-h-[min(420px,calc(100vh-80px))] overflow-x-hidden overflow-y-auto"
           >
             <div class="flex items-center justify-between pb-1 border-b border-slate-100">
               <span class="text-xs font-semibold text-slate-800">
@@ -173,18 +176,18 @@ import { ScrollerComponent } from './scroller.component';
             </div>
 
             <!-- Column Checkbox List with Up/Down Reordering -->
-            <div class="max-h-52 overflow-y-auto space-y-1 py-1">
+            <div class="max-h-56 overflow-x-hidden overflow-y-auto space-y-1 py-1">
               <div
                 *ngFor="let col of getFilteredColumns(); let i = index; let first = first; let last = last"
                 class="flex items-center justify-between px-2 py-1 rounded hover:bg-slate-50 text-xs transition-colors group/item"
                 (click)="$event.stopPropagation()"
               >
-                <label class="flex items-center gap-2 cursor-pointer flex-1 truncate select-none">
+                <label class="flex items-center gap-2 cursor-pointer flex-1 min-w-0 select-none">
                   <input
                     type="checkbox"
                     [checked]="col.active !== false"
                     (change)="onToggleColumnClick(col.key, $event)"
-                    class="rounded border-slate-300 accent-slate-900 w-3.5 h-3.5 cursor-pointer"
+                    class="rounded border-slate-300 accent-slate-900 w-3.5 h-3.5 cursor-pointer shrink-0"
                   />
                   <span class="truncate text-slate-700" [class.font-semibold]="col.active !== false">
                     {{ col.header_name }}
@@ -192,7 +195,7 @@ import { ScrollerComponent } from './scroller.component';
                 </label>
 
                 <!-- Reorder arrows -->
-                <div class="flex items-center gap-0.5 opacity-60 group-hover/item:opacity-100">
+                <div class="flex items-center gap-0.5 opacity-60 group-hover/item:opacity-100 shrink-0">
                   <button
                     type="button"
                     [disabled]="first"
@@ -362,8 +365,10 @@ export class DropdownSectionsComponent {
   @Output() resetColumns = new EventEmitter<void>();
   @Output() scrollTable = new EventEmitter<'left' | 'right' | 'start' | 'end'>();
 
+  readonly menuId = 'ds_' + Math.random().toString(36).substring(2, 9);
   isOpen = false;
   menuAlign: 'left' | 'right' = 'left';
+  menuVAlign: 'top' | 'bottom' = 'top';
   submenuAlign: 'left' | 'right' = 'right';
   submenuVAlign: 'top' | 'bottom' = 'top';
   activeSubmenuKey: string | null = null;
@@ -383,13 +388,19 @@ export class DropdownSectionsComponent {
   }
 
   toggleMenu(e: MouseEvent): void {
-    e.stopPropagation();
     if (!this.isOpen) {
       const rect = this.elRef.nativeElement.getBoundingClientRect();
       const menuWidth = 250;
       const spaceRight = window.innerWidth - rect.left;
       const spaceLeft = rect.right;
       this.menuAlign = spaceRight < menuWidth && spaceLeft >= spaceRight ? 'right' : 'left';
+
+      const estimatedHeight = 320;
+      const spaceBottom = window.innerHeight - rect.bottom;
+      const spaceTop = rect.top;
+      this.menuVAlign = (spaceBottom < estimatedHeight && spaceTop >= spaceBottom) ? 'bottom' : 'top';
+
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.menuId }));
     }
     this.isOpen = !this.isOpen;
     if (!this.isOpen) {
@@ -443,13 +454,13 @@ export class DropdownSectionsComponent {
     this.activeSubmenuKey = action.key;
     const rect = targetEl.getBoundingClientRect();
     const isColumnMenu = action.key === 'columns' || action.component === 'column_component';
-    const submenuWidth = isColumnMenu ? 280 : 220;
+    const submenuWidth = isColumnMenu ? 288 : 224;
     const spaceRight = window.innerWidth - rect.right;
     const spaceLeft = rect.left;
 
-    if (spaceRight >= submenuWidth + 10) {
+    if (spaceRight >= submenuWidth + 12) {
       this.submenuAlign = 'right';
-    } else if (spaceLeft >= submenuWidth + 10) {
+    } else if (spaceLeft >= submenuWidth + 12) {
       this.submenuAlign = 'left';
     } else {
       this.submenuAlign = spaceRight >= spaceLeft ? 'right' : 'left';
@@ -569,6 +580,19 @@ export class DropdownSectionsComponent {
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (this.isOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
+      this.isOpen = false;
+      this.activeSubmenuKey = null;
+      if (this.hoverTimeout) {
+        clearTimeout(this.hoverTimeout);
+        this.hoverTimeout = null;
+      }
+    }
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.menuId && this.isOpen) {
       this.isOpen = false;
       this.activeSubmenuKey = null;
       if (this.hoverTimeout) {

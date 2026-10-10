@@ -142,6 +142,9 @@ export interface ColumnConfigItem {
   cell_mode: 'text_code_1000' | 'text_code_2000' | 'text_code_3100' | 'text_code_4000' | string;
   filter_data?: FilterDataItem[];
   width?: string;
+  pinned?: boolean;
+  icon_only?: boolean;
+  icon?: string;
 }
 
 export type ColumnConfigMap = Record<string, ColumnConfigItem>;
@@ -157,6 +160,7 @@ export interface ActionItemConfig {
   active: boolean;
   info_note?: string;
   pinned?: boolean;
+  icon_only?: boolean;
   section: string;
   order: number;
   dropdown_default_value?: string;
@@ -284,6 +288,8 @@ export interface RowActionItem {
   name: string;
   active: boolean;
   info_note?: string;
+  pinned?: boolean;
+  icon_only?: boolean;
   api?: string;
   method?: string;
   icon?: string;
@@ -301,6 +307,8 @@ export interface ColumnOptionItem {
   name: string;
   active: boolean;
   info_note?: string;
+  pinned?: boolean;
+  icon_only?: boolean;
   icon?: string;
 }
 

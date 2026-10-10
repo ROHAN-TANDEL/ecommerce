@@ -14,9 +14,11 @@ import { ActionDropdownOption } from '../employees.types';
         (click)="toggleOpen($event)"
         [ngClass]="{
           'bg-slate-100 border-slate-300 text-slate-900': isOpen,
-          'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen
+          'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300': !isOpen,
+          'w-8 px-0 justify-center': iconOnly,
+          'px-3': !iconOnly
         }"
-        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border text-xs font-medium shadow-2xs transition-colors cursor-pointer"
         [title]="infoNote || label"
       >
         <ng-container [ngSwitch]="actionKey">
@@ -31,18 +33,19 @@ import { ActionDropdownOption } from '../employees.types';
           </svg>
         </ng-container>
 
-        <span>{{ label }}</span>
-
-        <svg
-          class="w-3 h-3 text-slate-400 transition-transform shrink-0"
-          [class.rotate-180]="isOpen"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ng-container *ngIf="!iconOnly">
+          <span>{{ label }}</span>
+          <svg
+            class="w-3 h-3 text-slate-400 transition-transform shrink-0"
+            [class.rotate-180]="isOpen"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </ng-container>
       </button>
 
       <!-- Hover Tooltip -->
@@ -56,8 +59,11 @@ import { ActionDropdownOption } from '../employees.types';
       <!-- Popover Menu -->
       <div
         *ngIf="isOpen"
-        [ngClass]="dropdownAlign === 'right' ? 'right-0' : 'left-0'"
-        class="absolute top-full mt-1.5 z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap max-h-[calc(100vh-100px)] overflow-y-auto"
+        [ngClass]="[
+          dropdownAlign === 'right' ? 'right-0' : 'left-0',
+          menuVAlign === 'bottom' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+        ]"
+        class="absolute z-[110] w-52 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl space-y-0.5 whitespace-nowrap max-h-[calc(100vh-100px)] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <div class="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase text-slate-400 border-b border-slate-100 mb-1">
@@ -86,21 +92,27 @@ export class OptionsDropdownComponent {
   @Input() actionKey = 'export';
   @Input() infoNote?: string;
   @Input() options: Record<string, ActionDropdownOption> = {};
+  @Input() iconOnly = false;
   @Output() optionSelect = new EventEmitter<{ actionKey: string; optionKey: string }>();
 
+  readonly menuId = 'opt_' + Math.random().toString(36).substring(2, 9);
   isOpen = false;
   dropdownAlign: 'left' | 'right' = 'left';
+  menuVAlign: 'top' | 'bottom' = 'top';
 
   constructor(private readonly elRef: ElementRef) {}
 
   toggleOpen(e: MouseEvent): void {
-    e.stopPropagation();
     if (!this.isOpen) {
       const rect = this.elRef.nativeElement.getBoundingClientRect();
       const menuWidth = 220;
       const spaceRight = window.innerWidth - rect.left;
       const spaceLeft = rect.right;
       this.dropdownAlign = (spaceRight < menuWidth && spaceLeft >= spaceRight) ? 'right' : 'left';
+
+      const spaceBottom = window.innerHeight - rect.bottom;
+      this.menuVAlign = (spaceBottom < 220 && rect.top >= spaceBottom) ? 'bottom' : 'top';
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.menuId }));
     }
     this.isOpen = !this.isOpen;
   }
@@ -113,6 +125,14 @@ export class OptionsDropdownComponent {
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (this.isOpen && !this.elRef.nativeElement.contains(e.target as Node)) {
+      this.isOpen = false;
+    }
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.menuId && this.isOpen) {
       this.isOpen = false;
     }
   }

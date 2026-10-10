@@ -5,8 +5,9 @@ import { CommonModule } from '@angular/common';
   selector: 'header-section-component',
   standalone: true,
   imports: [CommonModule],
+  styles: [':host { display: block; position: relative; z-index: 50; }'],
   template: `
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+    <header class="relative z-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       <div>
         <div class="flex items-center gap-2.5">
           <h1 class="text-sm font-semibold text-slate-900 tracking-tight">
@@ -41,7 +42,7 @@ import { CommonModule } from '@angular/common';
           </span>
         </div>
 
-        <p *ngIf="description" class="text-xs text-slate-500 mt-1 leading-normal">
+        <p *ngIf="description" class="text-[11px] text-slate-500 mt-0.5 leading-normal">
           {{ description }}
         </p>
       </div>

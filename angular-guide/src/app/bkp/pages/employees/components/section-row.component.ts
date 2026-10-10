@@ -90,8 +90,8 @@ import { EnrichedColumn } from '../employees.types';
       <!-- Action Column: Clear and Apply for Master Filters (Image 4) -->
       <th
         *ngIf="hasActionColumn"
-        style="width: 120px; min-width: 120px; max-width: 120px;"
-        class="w-[120px] min-w-[120px] max-w-[120px] px-2 py-1.5 bg-blue-50/90 sticky right-0 z-30 border-l border-blue-200 text-center"
+        style="width: 130px; min-width: 130px; max-width: 130px;"
+        class="w-[130px] min-w-[130px] max-w-[130px] px-2 py-1.5 bg-[#EFF6FF] sticky right-0 z-30 border-l border-blue-200 text-center shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]"
       >
         <div class="flex items-center justify-center gap-1.5">
           <button

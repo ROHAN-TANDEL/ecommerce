@@ -293,9 +293,9 @@ export class SidebarComponent implements OnInit {
   isItemActive(itemPath: string): boolean {
     const active = this.currentUrl();
     const [basePath] = itemPath.split('?');
-    if (basePath === '/users' && (active.includes('/emp') || active.includes('/users'))) return true;
-    if (basePath === '/clients' && (active.includes('/customers') || active.includes('/clients'))) return true;
-    if (basePath === '/partners' && (active.includes('/dashboard') || active.includes('/partners'))) return true;
+    if (basePath === '/users' && (active.startsWith('/users') || active.includes('/employees') || active.includes('/emp'))) return true;
+    if (basePath === '/clients' && (active.startsWith('/clients') || active.startsWith('/customers'))) return true;
+    if (basePath === '/partners' && (active.startsWith('/partners') || active === '/dashboard')) return true;
     return active === itemPath || active === basePath;
   }
 

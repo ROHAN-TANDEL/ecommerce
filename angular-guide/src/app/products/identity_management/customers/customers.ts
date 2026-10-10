@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MasterTableComponent } from '../../../bkp/pages/employees/employee-table.component';
@@ -16,16 +16,6 @@ export class Customer implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  @ViewChildren(MasterTableComponent) tables!: QueryList<MasterTableComponent>;
-
-  get table1(): MasterTableComponent | undefined {
-    return this.tables?.first;
-  }
-
-  get table2(): MasterTableComponent | undefined {
-    return this.tables?.last;
-  }
-
   title = 'Customer Management';
   user_table_key = 'customers_table_1234';
   table_identifier = 'customers_instance';
@@ -35,10 +25,10 @@ export class Customer implements OnInit {
   isLoading = true;
 
   ngOnInit(): void {
-    this.userTableConfig();
+    this.fetchTableConfig();
   }
 
-  userTableConfig(): void {
+  fetchTableConfig(): void {
     const configApi = `http://localhost:3000${this.basePath}/config/table`;
     this.isLoading = true;
 

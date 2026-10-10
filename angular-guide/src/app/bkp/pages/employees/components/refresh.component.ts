@@ -11,7 +11,11 @@ import { CommonModule } from '@angular/common';
         type="button"
         [disabled]="disabled || refreshing"
         (click)="onClick($event)"
-        class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-3 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        [ngClass]="{
+          'w-8 px-0 justify-center': iconOnly,
+          'px-3': !iconOnly
+        }"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 active:bg-slate-100 active:scale-[0.99] transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         [title]="infoNote || label"
       >
         <svg
@@ -21,7 +25,7 @@ import { CommonModule } from '@angular/common';
         >
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        <span>{{ label }}</span>
+        <span *ngIf="!iconOnly">{{ label }}</span>
       </button>
 
       <!-- Hover Tooltip -->
@@ -39,6 +43,7 @@ export class RefreshComponent {
   @Input() infoNote?: string;
   @Input() disabled = false;
   @Input() refreshing = false;
+  @Input() iconOnly = false;
   @Output() refresh = new EventEmitter<void>();
 
   onClick(e: MouseEvent): void {

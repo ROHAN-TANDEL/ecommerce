@@ -165,7 +165,7 @@
           <!-- Hover Tooltip for Collapsed Mode -->
           <div
             *ngIf="collapsed()"
-            class="hidden group-hover:block absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-medium rounded-md shadow-md whitespace-nowrap z-50">
+            class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1 bg-slate-900 text-white text-[11px] font-medium rounded-md shadow-lg whitespace-nowrap z-50 hidden group-hover:block">
             {{ item.display_name || item.name }}
           </div>
         </div>

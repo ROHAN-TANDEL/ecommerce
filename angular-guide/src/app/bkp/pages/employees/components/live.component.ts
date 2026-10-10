@@ -13,9 +13,11 @@ import { CommonModule } from '@angular/common';
         (click)="onClick($event)"
         [ngClass]="{
           'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100': active,
-          'bg-white text-slate-700 border-slate-200 hover:bg-slate-50': !active
+          'bg-white text-slate-700 border-slate-200 hover:bg-slate-50': !active,
+          'w-8 px-0 justify-center': iconOnly,
+          'px-3': !iconOnly
         }"
-        class="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+        class="inline-flex h-8 items-center gap-1.5 rounded-lg border text-xs font-medium shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
         [title]="infoNote || (label + ' Feed')"
       >
         <span class="relative flex h-2 w-2">
@@ -28,7 +30,7 @@ import { CommonModule } from '@angular/common';
             [ngClass]="active ? 'bg-emerald-500' : 'bg-slate-400'"
           ></span>
         </span>
-        <span>{{ label }}</span>
+        <span *ngIf="!iconOnly">{{ label }}</span>
       </button>
 
       <!-- Hover Tooltip -->
@@ -46,6 +48,7 @@ export class LiveComponent {
   @Input() infoNote?: string;
   @Input() disabled = false;
   @Input() active = false;
+  @Input() iconOnly = false;
   @Output() liveToggle = new EventEmitter<boolean>();
 
   onClick(e: MouseEvent): void {

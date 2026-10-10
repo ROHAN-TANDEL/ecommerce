@@ -14,19 +14,20 @@ import { EnrichedColumn } from '../employees.types';
       [style.min-width]="column.computedWidth"
       [style.left]="column.stickyLeft || null"
       [class.sticky]="column.isFrozen"
-      [class.z-20]="column.isFrozen && isDropdownOpen"
+      [class.z-30]="isDropdownOpen"
       [class.z-10]="column.isFrozen && !isDropdownOpen"
       [class.border-r]="column.isFrozen"
       [class.border-slate-200]="column.isFrozen"
-      [class.bg-slate-50/70]="column.isFrozen && isEven && !isSelected"
+      [class.bg-slate-50]="column.isFrozen && isEven && !isSelected"
       [class.bg-white]="column.isFrozen && !isEven && !isSelected"
-      [class.bg-blue-50/60]="column.isFrozen && isSelected"
+      [class.bg-[#EEF2FF]]="column.isFrozen && isSelected"
       [class.py-1.5]="density === 'compact'"
       [class.py-2.5]="density === 'comfortable'"
       [class.py-3.5]="density === 'spacious'"
       [class.text-xs]="density === 'compact'"
       [class.text-[13px]]="density === 'comfortable'"
       [class.text-sm]="density === 'spacious'"
+      [class.text-right]="isNumericCell()"
       class="px-3.5 align-middle truncate transition-colors duration-100 overflow-visible relative text-slate-700 border-b border-slate-200/60"
     >
       <!-- Edit Mode: Contextual inline edit control matching table theme (Image 1) -->
@@ -112,24 +113,24 @@ import { EnrichedColumn } from '../employees.types';
         <!-- CELL MODE 3: text_code_3100 (Status Badge) -->
         <ng-container *ngIf="column.cell_mode === 'text_code_3100'">
           <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium capitalize shrink-0 shadow-2xs"
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider shrink-0 shadow-2xs"
             [ngClass]="{
-              'bg-emerald-50/80 text-emerald-700 border border-emerald-200/70 ring-1 ring-emerald-500/10': (row[column.key] || '').toLowerCase() === 'active',
-              'bg-amber-50/80 text-amber-700 border border-amber-200/70 ring-1 ring-amber-500/10': (row[column.key] || '').toLowerCase() === 'pending',
-              'bg-slate-100/80 text-slate-600 border border-slate-200/70 ring-1 ring-slate-400/10': (row[column.key] || '').toLowerCase() === 'inactive',
-              'bg-rose-50/80 text-rose-700 border border-rose-200/70 ring-1 ring-rose-500/10': (row[column.key] || '').toLowerCase() === 'suspended' || (row[column.key] || '').toLowerCase() === 'deleted'
+              'bg-emerald-50/80 text-emerald-700 border border-emerald-200/70 ring-1 ring-emerald-500/10': isStatusActive(),
+              'bg-amber-50/80 text-amber-700 border border-amber-200/70 ring-1 ring-amber-500/10': isStatusPending(),
+              'bg-slate-100/90 text-slate-600 border border-slate-200/80 ring-1 ring-slate-400/10': isStatusInactive(),
+              'bg-rose-50/80 text-rose-700 border border-rose-200/70 ring-1 ring-rose-400/15': isStatusDisabled() || isStatusSuspended()
             }"
           >
             <span
               class="w-1.5 h-1.5 rounded-full shrink-0"
               [ngClass]="{
-                'bg-emerald-500': (row[column.key] || '').toLowerCase() === 'active',
-                'bg-amber-500': (row[column.key] || '').toLowerCase() === 'pending',
-                'bg-slate-400': (row[column.key] || '').toLowerCase() === 'inactive',
-                'bg-rose-500': (row[column.key] || '').toLowerCase() === 'suspended' || (row[column.key] || '').toLowerCase() === 'deleted'
+                'bg-emerald-500': isStatusActive(),
+                'bg-amber-500': isStatusPending(),
+                'bg-slate-400': isStatusInactive(),
+                'bg-rose-500': isStatusDisabled() || isStatusSuspended()
               }"
             ></span>
-            <span class="truncate">{{ row[column.key] }}</span>
+            <span class="truncate">{{ getStatusDisplay() }}</span>
           </span>
         </ng-container>
 
@@ -171,11 +172,73 @@ export class CellComponent {
   selectOption(optKey: string, e: MouseEvent): void {
     e.stopPropagation();
     this.isDropdownOpen = false;
+    if (this.column?.key === 'status') {
+      if (optKey.toLowerCase() === 'active') {
+        this.row['disabled'] = false;
+      } else if (optKey.toLowerCase() === 'disabled') {
+        this.row['disabled'] = true;
+      }
+    }
     this.onModelChange(optKey);
+  }
+
+  isRowDisabled(): boolean {
+    return this.row?.['disabled'] === true || String(this.row?.['disabled']).toLowerCase() === 'true';
+  }
+
+  getStatusRaw(): string {
+    return String(this.row?.[this.column?.key] || '').trim().toLowerCase();
+  }
+
+  isStatusDisabled(): boolean {
+    const raw = this.getStatusRaw();
+    return raw === 'disabled' || (this.column?.key === 'status' && this.isRowDisabled());
+  }
+
+  isStatusInactive(): boolean {
+    const raw = this.getStatusRaw();
+    return raw === 'inactive' && !this.isRowDisabled();
+  }
+
+  isStatusActive(): boolean {
+    return this.getStatusRaw() === 'active' && !this.isRowDisabled();
+  }
+
+  isStatusPending(): boolean {
+    return this.getStatusRaw() === 'pending';
+  }
+
+  isStatusSuspended(): boolean {
+    const raw = this.getStatusRaw();
+    return raw === 'suspended' || raw === 'deleted';
+  }
+
+  getStatusDisplay(): string {
+    if (this.column?.key === 'status' && this.isRowDisabled()) {
+      return 'DISABLED';
+    }
+    const val = String(this.row?.[this.column?.key] || '').trim();
+    return val ? val.toUpperCase() : '';
+  }
+
+  isNumericCell(): boolean {
+    if (!this.column) return false;
+    if (this.column.filter_type === 'single_number' || this.column.filter_type === 'number_range') {
+      return true;
+    }
+    const val = this.row ? this.row[this.column.key] : null;
+    if (typeof val === 'number') return true;
+    if (typeof val === 'string' && val.trim() !== '' && !isNaN(Number(val)) && !val.includes('-') && !val.includes('/')) {
+      return true;
+    }
+    return false;
   }
 
   isOptionSelected(optKey: string): boolean {
     const raw = String(this.row[this.column.key] || '').toLowerCase().trim();
+    if (this.column?.key === 'status' && this.isRowDisabled() && optKey.toLowerCase() === 'disabled') {
+      return true;
+    }
     return raw === optKey.toLowerCase();
   }
 

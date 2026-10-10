@@ -9,6 +9,7 @@ import {
   Output,
   EventEmitter,
   ViewChild,
+  ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -670,6 +671,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         api: '/identity/management/users/:id',
         method: 'GET',
         icon: 'refresh',
+        pinned: true,
+        icon_only: true,
         order: 1,
       },
       disable: {
@@ -680,6 +683,8 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         api: '/identity/management/users/update/:id',
         method: 'PUT',
         icon: 'ban',
+        pinned: true,
+        icon_only: true,
         order: 2,
       },
       revert: {
@@ -773,6 +778,9 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
   sectionGroups: SectionActionGroup[] = [];
 
   @ViewChild(TableComponent) tableComponent?: TableComponent;
+  @ViewChild('addUserDropdownContainer') addUserDropdownContainer?: ElementRef<HTMLElement>;
+  readonly addUserMenuId = 'add_user_' + Math.random().toString(36).substring(2, 9);
+  addUserDropdownVAlign: 'top' | 'bottom' = 'top';
 
   // Table Data & Pagination (Local instance)
   rows: Record<string, any>[] = [];
@@ -840,9 +848,80 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     const acts = this.rawRowActionsConfig?.actions;
     if (!acts) return [];
     return Object.keys(acts)
-      .map(k => ({ ...acts[k], key: acts[k].key || k }))
+      .map(k => {
+        const item = acts[k];
+        return {
+          ...item,
+          key: item.key || k,
+          pinned: item.pinned === true || String(item.pinned) === 'true',
+          icon_only: item.icon_only === true || String(item.icon_only) === 'true',
+        };
+      })
       .filter(a => a.active !== false)
       .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  }
+
+  get pinnedRowActions(): RowActionItem[] {
+    return this.activeRowActions.filter(a => a.pinned);
+  }
+
+  get unpinnedRowActions(): RowActionItem[] {
+    return this.activeRowActions.filter(a => !a.pinned);
+  }
+
+  get actionColumnWidth(): string {
+    let width = 24; // Base padding
+    if (this.unpinnedRowActions.length > 0 || this.pinnedRowActions.length > 0) {
+      width += 36; // 3-dots kebab menu trigger button (28px + 8px gap)
+    }
+    for (const act of this.pinnedRowActions) {
+      if (act.icon_only) {
+        width += 34; // 28px square button + 6px gap
+      } else {
+        const textLen = (act.name || act.key || '').length;
+        width += Math.max(72, textLen * 8 + 36);
+      }
+    }
+    return `${Math.max(120, width)}px`;
+  }
+
+  getRowActionIconKey(act: RowActionItem): string {
+    const rawIcon = (act.icon || '').toLowerCase();
+    const rawKey = (act.key || '').toLowerCase();
+    const rawName = (act.name || '').toLowerCase();
+
+    if (rawIcon.includes('refresh') || rawKey.includes('refresh') || rawName.includes('refresh') || rawIcon.includes('sync')) return 'refresh';
+    if (rawIcon.includes('ban') || rawIcon.includes('disable') || rawKey.includes('disable') || rawName.includes('disable')) return 'disable';
+    if (rawIcon.includes('enable') || rawKey.includes('enable') || rawName.includes('enable')) return 'enable';
+    if (rawIcon.includes('undo') || rawIcon.includes('revert') || rawKey.includes('revert') || rawName.includes('revert')) return 'revert';
+    if (rawIcon.includes('eye') || rawIcon.includes('view') || rawKey.includes('view') || rawName.includes('view')) return 'view';
+    if (rawIcon.includes('pin') || rawKey.includes('pin') || rawName.includes('pin')) return 'pin';
+    if (rawIcon.includes('lock') || rawKey.includes('lock') || rawName.includes('lock')) return 'lock';
+    if (rawIcon.includes('edit') || rawIcon.includes('pencil') || rawKey.includes('edit') || rawName.includes('edit')) return 'edit';
+    if (rawIcon.includes('trash') || rawIcon.includes('delete') || rawKey.includes('delete') || rawName.includes('delete') || rawIcon.includes('remove')) return 'delete';
+    if (rawIcon.includes('save') || rawKey.includes('save') || rawName.includes('save')) return 'save';
+    if (rawIcon.includes('copy') || rawKey.includes('copy') || rawName.includes('copy')) return 'copy';
+    if (rawIcon.includes('download') || rawKey.includes('download') || rawName.includes('download')) return 'download';
+    if (rawIcon.includes('upload') || rawKey.includes('upload') || rawName.includes('upload')) return 'upload';
+    if (rawIcon.includes('share') || rawKey.includes('share') || rawName.includes('share')) return 'share';
+    return act.icon || act.key || 'default';
+  }
+
+  toggleRowActionPin(actionKey: string, e?: MouseEvent): void {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (!this.rawRowActionsConfig?.actions) return;
+    const act = this.rawRowActionsConfig.actions[actionKey];
+    if (!act) return;
+    const isPinned = act.pinned === true || String(act.pinned) === 'true';
+    act.pinned = !isPinned;
+    this.cdr.markForCheck();
+    this.showToast(
+      act.pinned ? 'Row Action Pinned' : 'Row Action Unpinned',
+      `"${act.name || actionKey}" ${act.pinned ? 'pinned to row' : 'moved to kebab menu'}`,
+      'row'
+    );
   }
 
   onHeaderSyncClick(): void {
@@ -851,20 +930,25 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     this.showToast('Header Sync Triggered', 'Refreshing table configuration and dataset from API', 'header');
   }
 
-  onHeaderAddOptionClick(opt: HeaderDropdownOption): void {
+  onHeaderAddOptionClick(opt: HeaderDropdownOption, e?: MouseEvent): void {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     this.showAddUserDropdown = false;
-    const popup = opt.popup_component;
-    if (popup === 'create_user_modal') {
+    const popup = (opt.popup_component || opt.key || '').toLowerCase();
+    if ((popup.includes('create') && !popup.includes('batch') && !popup.includes('import')) || opt.key === 'single_add') {
       this.openCreateModal();
-    } else if (popup === 'batch_create_modal') {
+    } else if (popup.includes('batch') || opt.key === 'batch_add') {
       this.openBatchCreateModal();
-    } else if (popup === 'import_create_modal') {
+    } else if (popup.includes('import_create') || opt.key === 'import_create') {
       this.openImportCreateModal();
-    } else if (popup === 'import_update_modal') {
+    } else if (popup.includes('import_update') || opt.key === 'import_update') {
       this.openImportUpdateModal();
     } else {
       this.openCreateModal();
     }
+    this.cdr.markForCheck();
   }
 
   onToggleColumnPin(colKey: string): void {
@@ -1175,13 +1259,22 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     return [];
   }
 
-  getStatusBadgeClass(status: any): string {
-    const s = String(status || '').toLowerCase();
-    if (s === 'active') return 'bg-emerald-100 text-emerald-800';
-    if (s === 'pending') return 'bg-amber-100 text-amber-800';
-    if (s === 'suspended') return 'bg-rose-100 text-rose-800';
-    if (s === 'inactive') return 'bg-slate-200 text-slate-700';
-    return 'bg-slate-100 text-slate-700';
+  getStatusBadgeClass(status: any, row?: Record<string, any>): string {
+    const s = String(status || '').toLowerCase().trim();
+    const isDisabled = s === 'disabled' || (row && (row['disabled'] === true || String(row['disabled']).toLowerCase() === 'true'));
+    if (isDisabled) return 'bg-rose-50/80 text-rose-700 border border-rose-200/70';
+    if (s === 'active') return 'bg-emerald-50/80 text-emerald-700 border border-emerald-200/70';
+    if (s === 'pending') return 'bg-amber-50/80 text-amber-700 border border-amber-200/70';
+    if (s === 'suspended' || s === 'deleted') return 'bg-rose-50/80 text-rose-700 border border-rose-200/70';
+    if (s === 'inactive') return 'bg-slate-100/90 text-slate-600 border border-slate-200/80';
+    return 'bg-slate-100 text-slate-700 border border-slate-200/60';
+  }
+
+  getStatusBadgeText(status: any, row?: Record<string, any>): string {
+    const s = String(status || '').toLowerCase().trim();
+    const isDisabled = s === 'disabled' || (row && (row['disabled'] === true || String(row['disabled']).toLowerCase() === 'true'));
+    if (isDisabled) return 'DISABLED';
+    return String(status || 'UNKNOWN').trim().toUpperCase();
   }
 
   readonly String = String;
@@ -1469,13 +1562,16 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     const list: EnrichedColumn[] = Object.keys(this.rawColumnConfig)
       .map(key => {
         const item = this.rawColumnConfig[key];
+        const isPinned = item.pinned === true || String(item.pinned) === 'true' || !!(item.freez && item.freez.freez_side === 'left');
         return {
           ...item,
           key,
           active: item.active !== false && String(item.active) !== 'false',
           editable: item.editable === true || String(item.editable).toLowerCase() === 'true',
           computedWidth: item.width || '180px',
-          isFrozen: !!(item.freez && item.freez.freez_side === 'left'),
+          isFrozen: isPinned,
+          pinned: isPinned,
+          icon_only: item.icon_only === true || String(item.icon_only) === 'true',
         };
       })
       .sort((a, b) => a.order - b.order);
@@ -1513,7 +1609,12 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
         const isActive = item.active === true || String(item.active) === 'true';
         return isPinned && isActive;
       })
-      .map(key => ({ ...actionsMap[key], key }))
+      .map(key => ({
+        ...actionsMap[key],
+        key,
+        pinned: true,
+        icon_only: actionsMap[key].icon_only === true || String(actionsMap[key].icon_only) === 'true',
+      }))
       .sort((a, b) => {
         if (a.order !== b.order) return a.order - b.order;
         return actionKeys.indexOf(a.key) - actionKeys.indexOf(b.key);
@@ -1570,14 +1671,27 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
   // ── Global Document Click Listener ──────────────────────────────────
   // ── Global Document Click & Keydown Listeners ────────────────────────
-  @HostListener('document:click')
-  onDocumentClick(): void {
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(e?: MouseEvent): void {
+    if (e && this.addUserDropdownContainer?.nativeElement?.contains(e.target as Node)) {
+      // Internal click inside Add User dropdown or trigger
+    } else {
+      this.showAddUserDropdown = false;
+    }
     this.actionsMenuOpen = false;
     this.activeSubmenuKey = null;
     this.activeFilterDropdownKey = null;
     this.activeRowActionId = null;
-    this.showAddUserDropdown = false;
     this.cdr.markForCheck();
+  }
+
+  @HostListener('document:nexora:menu-open', ['$event'])
+  onCoordinatedMenuOpen(e: Event): void {
+    const detail = (e as CustomEvent).detail;
+    if (detail !== this.addUserMenuId && this.showAddUserDropdown) {
+      this.showAddUserDropdown = false;
+      this.cdr.markForCheck();
+    }
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -1594,6 +1708,14 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
     } else if (e.key === 'Escape') {
       this.showAddUserDropdown = false;
       this.activeRowActionId = null;
+      this.showCreateModal = false;
+      this.showBatchCreateModal = false;
+      this.showImportCreateModal = false;
+      this.showImportUpdateModal = false;
+      this.showEditModal = false;
+      this.showDeleteConfirmModal = false;
+      this.showAiSummaryModal = false;
+      this.isSaveViewModalOpen = false;
       this.cdr.markForCheck();
     }
   }
@@ -1719,8 +1841,21 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
 
   // ── Add User Dropdown & Batch / File Import Methods ─────────────────
   toggleAddUserDropdown(e?: MouseEvent): void {
-    if (e) e.stopPropagation();
-    this.showAddUserDropdown = !this.showAddUserDropdown;
+    if (e) {
+      e.stopPropagation();
+    }
+    if (this.showAddUserDropdown) {
+      this.showAddUserDropdown = false;
+    } else {
+      if (this.addUserDropdownContainer) {
+        const rect = this.addUserDropdownContainer.nativeElement.getBoundingClientRect();
+        const spaceBottom = window.innerHeight - rect.bottom;
+        const estimatedHeight = 260;
+        this.addUserDropdownVAlign = (spaceBottom < estimatedHeight && rect.top >= spaceBottom) ? 'bottom' : 'top';
+      }
+      this.showAddUserDropdown = true;
+      document.dispatchEvent(new CustomEvent('nexora:menu-open', { detail: this.addUserMenuId }));
+    }
     this.cdr.markForCheck();
   }
 
@@ -3572,7 +3707,18 @@ export class EmployeeTableComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.showToast(`[Row Action] ${optionKey}`, `Row: ${row['first_name']} ${row['last_name']}`, 'row');
+    // 9. Generic API row action execution
+    if (actionItem?.api) {
+      const endpoint = actionItem.api.replace(':id', String(row['id']));
+      this.broadcastAction('VIEW', false, actionItem.name || optionKey, `Executed ${actionItem.name || optionKey} on row #${row['id']}`);
+      this.showToast(actionItem.name || optionKey, `Action executed on User #${row['id']}`, 'row');
+      this.actionClicked.emit({ actionKey: optionKey, value: row });
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.showToast(`[Row Action] ${actionItem?.name || optionKey}`, `Row: ${row['first_name']} ${row['last_name']}`, 'row');
+    this.actionClicked.emit({ actionKey: optionKey, value: row });
   }
 
   toggleSelectAll(): void {
