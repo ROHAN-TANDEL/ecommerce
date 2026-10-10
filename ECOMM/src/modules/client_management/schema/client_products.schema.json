@@ -1,0 +1,288 @@
+{
+  "entity": "ClientProduct",
+  "table": "client_products",
+  "product": "client_management",
+  "database": "master",
+  "table_key": "client_products_table_5004",
+  "display_name": "Client Subscriptions",
+  "add_button_label": "+ Assign Product",
+  "routePrefix": "/client/management",
+  "primary_key": {
+    "key": "id",
+    "type": "number",
+    "generated": true
+  },
+  "relations": [
+    {
+      "name": "client",
+      "type": "belongsTo",
+      "target_entity": "Client",
+      "target_table": "clients",
+      "foreign_key": "client_id",
+      "target_key": "id",
+      "display_column": "client_name",
+      "display_alias": "client_name",
+      "filter_enabled": true
+    },
+    {
+      "name": "product",
+      "type": "belongsTo",
+      "target_entity": "Product",
+      "target_table": "products",
+      "foreign_key": "product_id",
+      "target_key": "id",
+      "display_column": "name",
+      "display_alias": "product_name",
+      "filter_enabled": true
+    }
+  ],
+  "row_actions": [
+    {
+      "key": "launch_product",
+      "name": "Launch App",
+      "active": true,
+      "info_note": "Open external application in new browser tab",
+      "api": "/client/management/client-products/:id/launch",
+      "method": "GET",
+      "icon": "external_link",
+      "pinned": true,
+      "icon_only": false,
+      "order": 1,
+      "action_type": "redirect"
+    }
+  ],
+  "columns": [
+    {
+      "key": "id",
+      "header_name": "ID",
+      "type": "number",
+      "sql_type": "BIGSERIAL PRIMARY KEY",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "80px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Subscription record ID",
+      "active": true
+    },
+    {
+      "key": "client_name",
+      "header_name": "Client Name",
+      "type": "string",
+      "filter_type": "search",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "200px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Subscribed client business",
+      "active": true,
+      "is_joined": true,
+      "join_source": {
+        "table": "master.clients",
+        "foreign_key": "client_id",
+        "select": "client_name"
+      }
+    },
+    {
+      "key": "client_id",
+      "header_name": "Client ID",
+      "type": "number",
+      "sql_type": "BIGINT NOT NULL",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "text_code_1000",
+      "active": false,
+      "modal": {
+        "order": 1,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Select target client"
+      }
+    },
+    {
+      "key": "product_name",
+      "header_name": "Product",
+      "type": "string",
+      "filter_type": "search",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "180px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Assigned SaaS application",
+      "active": true,
+      "is_joined": true,
+      "join_source": {
+        "table": "master.products",
+        "foreign_key": "product_id",
+        "select": "name"
+      }
+    },
+    {
+      "key": "product_id",
+      "header_name": "Product ID",
+      "type": "number",
+      "sql_type": "BIGINT NOT NULL",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "text_code_1000",
+      "active": false,
+      "modal": {
+        "order": 2,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Select SaaS product"
+      }
+    },
+    {
+      "key": "license_type",
+      "header_name": "License",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "130px",
+      "cell_mode": "text_code_1000",
+      "info_note": "License package tier",
+      "active": true,
+      "dropdown_options": [
+        { "key": "FREE_TRIAL", "name": "Free Trial" },
+        { "key": "STANDARD", "name": "Standard", "default": true },
+        { "key": "PRO", "name": "Pro" },
+        { "key": "ENTERPRISE", "name": "Enterprise" }
+      ],
+      "modal": {
+        "order": 3,
+        "horizontal_section": "h_section_1",
+        "required": true
+      }
+    },
+    {
+      "key": "status",
+      "header_name": "Status",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "status_badge",
+      "info_note": "Subscription status",
+      "active": true,
+      "dropdown_options": [
+        { "key": "ACTIVE", "name": "Active", "default": true },
+        { "key": "INACTIVE", "name": "Inactive" },
+        { "key": "SUSPENDED", "name": "Suspended" },
+        { "key": "EXPIRED", "name": "Expired" }
+      ],
+      "modal": {
+        "order": 4,
+        "horizontal_section": "h_section_1",
+        "required": true
+      }
+    },
+    {
+      "key": "max_seats",
+      "header_name": "Max Seats",
+      "type": "number",
+      "sql_type": "INTEGER",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Licensed seats limit",
+      "active": true,
+      "modal": {
+        "order": 5,
+        "horizontal_section": "h_section_2",
+        "required": true
+      }
+    },
+    {
+      "key": "allocated_seats",
+      "header_name": "Used Seats",
+      "type": "number",
+      "sql_type": "INTEGER",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "110px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Currently assigned seats",
+      "active": true
+    },
+    {
+      "key": "external_tenant_id",
+      "header_name": "External Tenant ID",
+      "type": "string",
+      "sql_type": "VARCHAR(150)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "180px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Tenant slug / ID in external application",
+      "active": true,
+      "modal": {
+        "order": 6,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "effective_launch_url",
+      "header_name": "Launch URL",
+      "type": "string",
+      "filter_type": "search",
+      "editable": false,
+      "required": false,
+      "sorting": false,
+      "column_resize": true,
+      "width": "240px",
+      "cell_mode": "text_code_2000",
+      "info_note": "Resolved application destination URL",
+      "active": true,
+      "is_computed": true
+    },
+    {
+      "key": "valid_to",
+      "header_name": "Expires On",
+      "type": "date",
+      "sql_type": "TIMESTAMPTZ",
+      "filter_type": "single_date",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "150px",
+      "cell_mode": "date_code_1000",
+      "info_note": "Subscription expiry date",
+      "active": true
+    }
+  ]
+}

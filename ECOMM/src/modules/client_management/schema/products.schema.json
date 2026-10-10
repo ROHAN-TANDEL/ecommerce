@@ -1,0 +1,224 @@
+{
+  "entity": "Product",
+  "table": "products",
+  "product": "client_management",
+  "database": "master",
+  "table_key": "products_table_5003",
+  "display_name": "SaaS Products",
+  "add_button_label": "+ Add Product",
+  "routePrefix": "/client/management",
+  "primary_key": {
+    "key": "id",
+    "type": "number",
+    "generated": true
+  },
+  "relations": [
+    {
+      "name": "client_products",
+      "type": "hasMany",
+      "target_entity": "ClientProduct",
+      "target_table": "client_products",
+      "foreign_key": "product_id",
+      "count_alias": "subscribed_clients_count",
+      "child_route": "/client/management/client-products?product_id=:id"
+    }
+  ],
+  "columns": [
+    {
+      "key": "id",
+      "header_name": "ID",
+      "type": "number",
+      "sql_type": "BIGSERIAL PRIMARY KEY",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "80px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Internal product ID",
+      "active": true
+    },
+    {
+      "key": "product_code",
+      "header_name": "Product Code",
+      "type": "string",
+      "sql_type": "VARCHAR(100)",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "150px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Identifier key (e.g. ECOMM, CRM, ANALYTICS)",
+      "active": true,
+      "modal": {
+        "order": 1,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Unique application key"
+      }
+    },
+    {
+      "key": "name",
+      "header_name": "Product Name",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "multi_search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "220px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Application display title",
+      "active": true,
+      "modal": {
+        "order": 2,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Name of the software application"
+      }
+    },
+    {
+      "key": "category",
+      "header_name": "Category",
+      "type": "enum",
+      "sql_type": "VARCHAR(100)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "160px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Product functional category",
+      "active": true,
+      "dropdown_options": [
+        { "key": "COMMERCE", "name": "Commerce & Stores", "default": true },
+        { "key": "SALES_MARKETING", "name": "Sales & CRM" },
+        { "key": "BUSINESS_INTELLIGENCE", "name": "Analytics & BI" },
+        { "key": "SUPPLY_CHAIN", "name": "Inventory & Logistics" }
+      ],
+      "modal": {
+        "order": 3,
+        "horizontal_section": "h_section_1",
+        "required": true
+      }
+    },
+    {
+      "key": "status",
+      "header_name": "Status",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "status_badge",
+      "info_note": "Product release status",
+      "active": true,
+      "dropdown_options": [
+        { "key": "ACTIVE", "name": "Active", "default": true },
+        { "key": "BETA", "name": "Beta" },
+        { "key": "INACTIVE", "name": "Inactive" },
+        { "key": "DEPRECATED", "name": "Deprecated" }
+      ],
+      "modal": {
+        "order": 4,
+        "horizontal_section": "h_section_1",
+        "required": true
+      }
+    },
+    {
+      "key": "version",
+      "header_name": "Version",
+      "type": "string",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "100px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Current deployed software version",
+      "active": true
+    },
+    {
+      "key": "external_launch_url",
+      "header_name": "External Launch URL",
+      "type": "string",
+      "sql_type": "TEXT",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": false,
+      "column_resize": true,
+      "width": "260px",
+      "cell_mode": "text_code_2000",
+      "info_note": "Base launch / redirection destination endpoint",
+      "active": true,
+      "modal": {
+        "order": 5,
+        "horizontal_section": "h_section_2",
+        "required": true,
+        "info_note": "E.g. https://crm.nexora.io/launch"
+      }
+    },
+    {
+      "key": "sso_client_id",
+      "header_name": "SSO Client ID",
+      "type": "string",
+      "sql_type": "VARCHAR(150)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": false,
+      "column_resize": true,
+      "width": "180px",
+      "cell_mode": "text_code_1000",
+      "info_note": "OAuth / OpenID SSO Client ID",
+      "active": true,
+      "modal": {
+        "order": 6,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "subscribed_clients_count",
+      "header_name": "Active Subscriptions",
+      "type": "number",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "150px",
+      "cell_mode": "badge_count",
+      "info_note": "Clients currently entitled to this app",
+      "active": true,
+      "is_computed": true,
+      "relation_field": "client_products.count"
+    },
+    {
+      "key": "created_at",
+      "header_name": "Created On",
+      "type": "date",
+      "sql_type": "TIMESTAMPTZ",
+      "filter_type": "date_range",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "160px",
+      "cell_mode": "date_code_1000",
+      "info_note": "Product creation timestamp",
+      "active": true
+    }
+  ]
+}

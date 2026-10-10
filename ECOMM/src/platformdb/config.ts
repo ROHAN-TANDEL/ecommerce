@@ -39,7 +39,7 @@ export default class Config {
                 }
             },
             client_management: {
-                routes: [],
+                routes: [, "PartnerRoute", "ClientRoute", "ProductRoute", "ClientProductRoute", "ClientUserRoute"],
                 identification: '/client/management',
                 database: {
                     master: {

@@ -100,6 +100,23 @@ export interface ColumnDefinition {
   freez?: { freez_side: string; order: number };
 }
 
+export interface EntityRelation {
+  name: string;
+  type: 'belongsTo' | 'hasMany' | 'manyToMany';
+  target_entity: string;
+  target_table: string;
+  foreign_key: string;
+  target_key?: string;
+  display_column?: string;
+  display_alias?: string;
+  count_alias?: string;
+  child_route?: string;
+  parent_route?: string;
+  filter_enabled?: boolean;
+  lookup_api?: string;
+  drilldown_action?: any;
+}
+
 export interface EntityConfig {
   entityName: string;       // e.g. "Customer"
   tableName: string;        // e.g. "customers"
@@ -113,6 +130,8 @@ export interface EntityConfig {
   addButtonLabel: string;   // e.g. "+ Add Customer"
   primaryKey: { key: string; type: string; generated: boolean };
   columns: ColumnDefinition[];
+  relations?: EntityRelation[];
+  row_actions?: any[];
   autoRegister: boolean;
   dryRun: boolean;
   forceOverwrite: boolean;
@@ -166,6 +185,8 @@ function parseArgs(): EntityConfig {
   let addButtonLabel = '';
   let primaryKey = { key: 'id', type: 'uuid', generated: true };
   let columns: ColumnDefinition[] = [];
+  let relations: EntityRelation[] = [];
+  let rowActions: any[] = [];
   let autoRegister = true;
   let dryRun = false;
   let forceOverwrite = false;
@@ -197,6 +218,8 @@ function parseArgs(): EntityConfig {
       if (json.routePrefix) routePrefix = json.routePrefix;
       if (json.outputDir || json.path) outputDir = json.outputDir || json.path;
       if (json.columns && Array.isArray(json.columns)) columns = json.columns;
+      if (json.relations && Array.isArray(json.relations)) relations = json.relations;
+      if (json.row_actions && Array.isArray(json.row_actions)) rowActions = json.row_actions;
     } else if (a === '--name' || a === '-n') {
       entityName = args[++i];
     } else if (a === '--table' || a === '-t') {
@@ -259,6 +282,8 @@ function parseArgs(): EntityConfig {
     addButtonLabel,
     primaryKey,
     columns,
+    relations,
+    row_actions: rowActions,
     autoRegister,
     dryRun,
     forceOverwrite
@@ -536,10 +561,52 @@ ${headerFilters}
 `;
 }
 
-// 4. Row Actions Config (100% matched with UserRowActionsConfig)
+// 4. Row Actions Config (Supports relational drilldowns & custom actions)
 function generateRowActionsConfig(cfg: EntityConfig): string {
-  const { entityName, tableName, routePrefix } = cfg;
+  const { entityName, tableName, routePrefix, relations, row_actions } = cfg;
   const snake = toSnakeCase(entityName);
+
+  let extraActionsStr = '';
+  let currentOrder = 9;
+
+  // 1. Relational drilldown actions (e.g. view_clients, view_users, view_products)
+  if (relations && relations.length > 0) {
+    for (const rel of relations) {
+      if (rel.drilldown_action) {
+        const da = rel.drilldown_action;
+        extraActionsStr += `,\n        ${da.key}: {
+            key: "${da.key}",
+            name: "${da.name}",
+            active: ${da.active !== undefined ? da.active : true},
+            info_note: "${da.info_note || da.name}",
+            api: "${da.api}",
+            method: "${da.method || 'GET'}",
+            icon: "${da.icon || 'arrow_forward'}",
+            pinned: ${!!da.pinned},
+            icon_only: ${!!da.icon_only},
+            order: ${da.order || currentOrder++}
+        }`;
+      }
+    }
+  }
+
+  // 2. Custom schema row actions (e.g. launch_product)
+  if (row_actions && row_actions.length > 0) {
+    for (const ra of row_actions) {
+      extraActionsStr += `,\n        ${ra.key}: {
+            key: "${ra.key}",
+            name: "${ra.name}",
+            active: ${ra.active !== undefined ? ra.active : true},
+            info_note: "${ra.info_note || ra.name}",
+            api: "${ra.api}",
+            method: "${ra.method || 'GET'}",
+            icon: "${ra.icon || 'bolt'}",
+            pinned: ${!!ra.pinned},
+            icon_only: ${!!ra.icon_only},
+            order: ${ra.order || currentOrder++}${ra.action_type ? `,\n            action_type: "${ra.action_type}"` : ''}
+        }`;
+    }
+  }
 
   return `export const ${entityName}RowActionsConfig = {
     active: true,
@@ -552,6 +619,8 @@ function generateRowActionsConfig(cfg: EntityConfig): string {
             api: "${routePrefix}/${tableName}/:id",
             method: "GET",
             icon: "refresh",
+            pinned: true,
+            icon_only: true,
             order: 1
         },
         disable: {
@@ -622,7 +691,7 @@ function generateRowActionsConfig(cfg: EntityConfig): string {
             method: "DELETE",
             icon: "trash",
             order: 8
-        }
+        }${extraActionsStr}
     }
 };
 `;
@@ -1430,12 +1499,67 @@ ${createFields}
 `;
 }
 
-// 8. Database Repository (100% PascalCase plural methods matching Service)
+// 8. Database Repository (Supports flexible relational joins & child queries)
 function generateRepository(cfg: EntityConfig): string {
-  const { entityName, tableName, database, tableKey, columns } = cfg;
+  const { entityName, tableName, database, tableKey, columns, relations } = cfg;
   const entityPlural = toPascalCase(toPlural(entityName));
   const dbAccess = `db.${database || 'master'}`;
   const validSortCols = columns.map(c => `'${c.key}'`).join(', ');
+
+  // Compute relational SQL structures
+  let selectCols = `master.${tableName}.*`;
+  let joinsSql = '';
+  let groupBySql = '';
+  let childMethods = '';
+
+  if (relations && relations.length > 0) {
+    const selects: string[] = [`master.${tableName}.*`];
+    const joins: string[] = [];
+    let hasAggregate = false;
+
+    relations.forEach((rel, idx) => {
+      const alias = `rel_${idx + 1}_${rel.target_table}`;
+      if (rel.type === 'belongsTo') {
+        joins.push(`LEFT JOIN master.${rel.target_table} ${alias} ON ${alias}.${rel.target_key || 'id'} = master.${tableName}.${rel.foreign_key}`);
+        if (rel.display_column && rel.display_alias) {
+          selects.push(`${alias}.${rel.display_column} AS ${rel.display_alias}`);
+        }
+        childMethods += `
+    async get${entityPlural}By${toPascalCase(rel.foreign_key)}(foreignId: any, limit: number = 25, offset: number = 0) {
+        try {
+            const query = \`SELECT ${selects.join(', ')} FROM master.${tableName} ${joins.join(' ')} WHERE master.${tableName}.${rel.foreign_key} = $1${hasAggregate ? ` GROUP BY master.${tableName}.id` : ''} ORDER BY master.${tableName}.created_at DESC LIMIT $2 OFFSET $3\`;
+            const result = await ${dbAccess}.query(query, [foreignId, limit, offset]);
+            return result?.rows || [];
+        } catch (error) {
+            console.error('[${entityName}Repository:get${entityPlural}By${toPascalCase(rel.foreign_key)}] Error:', error);
+            return [];
+        }
+    }
+`;
+      } else if (rel.type === 'hasMany' && rel.count_alias) {
+        hasAggregate = true;
+        joins.push(`LEFT JOIN master.${rel.target_table} ${alias} ON ${alias}.${rel.foreign_key} = master.${tableName}.id`);
+        selects.push(`COUNT(DISTINCT ${alias}.id)::int AS ${rel.count_alias}`);
+
+        childMethods += `
+    async get${toPascalCase(rel.target_table)}By${entityName}Id(parentId: any, limit: number = 25, offset: number = 0) {
+        try {
+            const query = \`SELECT * FROM master.${rel.target_table} WHERE ${rel.foreign_key} = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3\`;
+            const result = await ${dbAccess}.query(query, [parentId, limit, offset]);
+            return result?.rows || [];
+        } catch (error) {
+            console.error('[${entityName}Repository:get${toPascalCase(rel.target_table)}By${entityName}Id] Error:', error);
+            return [];
+        }
+    }
+`;
+      }
+    });
+
+    selectCols = selects.join(', ');
+    joinsSql = joins.length > 0 ? ` ${joins.join(' ')}` : '';
+    groupBySql = hasAggregate ? ` GROUP BY master.${tableName}.id` : '';
+  }
 
   return `import db from "../../../platformdb/facade.js";
 import { MasterFilterConfig, ${entityName}FilterConfig } from "../config/${toSnakeCase(entityName)}.filter.config.js";
@@ -1461,7 +1585,7 @@ export class ${entityName}Repository {
 
     async get${entityName}(id: any) {
         try {
-            const query = \`SELECT * FROM master.${tableName} WHERE id = $1 LIMIT 1\`;
+            const query = \`SELECT ${selectCols} FROM master.${tableName}${joinsSql} WHERE master.${tableName}.id = $1${groupBySql} LIMIT 1\`;
             const result = await ${dbAccess}.query(query, [id]);
             return result?.rows?.[0] || null;
         } catch (error) {
@@ -1475,21 +1599,22 @@ export class ${entityName}Repository {
             const inputValues: any[] = [];
             const filterInputs = { ...inputs, values: inputValues };
 
-            let query = \`SELECT * FROM master.${tableName} WHERE 1=1\`;
+            let query = \`SELECT ${selectCols} FROM master.${tableName}${joinsSql} WHERE 1=1\`;
             query += MasterFilterConfig(filterInputs, inputValues);
             query += ${entityName}FilterConfig(filterInputs, inputValues);
+            query += \`${groupBySql}\`;
 
             const validSortColumns = [${validSortCols}];
-            let sortClause = ' ORDER BY created_at DESC';
+            let sortClause = ' ORDER BY master.${tableName}.created_at DESC';
 
             if (inputs?.sort && typeof inputs.sort === 'object' && !Array.isArray(inputs.sort)) {
                 const col = inputs.sort.column || inputs.sort.field || Object.keys(inputs.sort)[0];
                 const dir = inputs.sort.order || inputs.sort.direction || Object.values(inputs.sort)[0];
                 if (validSortColumns.includes(col)) {
-                    sortClause = \` ORDER BY \${col} \${String(dir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC'}\`;
+                    sortClause = \` ORDER BY master.${tableName}.\${col} \${String(dir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC'}\`;
                 }
             } else if (typeof inputs?.sort === 'string' && validSortColumns.includes(inputs.sort)) {
-                sortClause = \` ORDER BY \${inputs.sort} ASC\`;
+                sortClause = \` ORDER BY master.${tableName}.\${inputs.sort} ASC\`;
             }
 
             query += sortClause;
@@ -1509,7 +1634,7 @@ export class ${entityName}Repository {
             const inputValues: any[] = [];
             const filterInputs = { ...inputs, values: inputValues };
 
-            let query = \`SELECT COUNT(*) as total FROM master.${tableName} WHERE 1=1\`;
+            let query = \`SELECT COUNT(DISTINCT master.${tableName}.id) as total FROM master.${tableName}${joinsSql} WHERE 1=1\`;
             query += MasterFilterConfig(filterInputs, inputValues);
             query += ${entityName}FilterConfig(filterInputs, inputValues);
 
@@ -1520,6 +1645,7 @@ export class ${entityName}Repository {
             return 0;
         }
     }
+${childMethods}
 
     async update${entityName}(id: any, data: any) {
         try {

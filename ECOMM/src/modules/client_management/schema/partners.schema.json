@@ -1,0 +1,294 @@
+{
+  "entity": "Partner",
+  "table": "partners",
+  "product": "client_management",
+  "database": "master",
+  "table_key": "partners_table_5001",
+  "display_name": "Partner Management",
+  "add_button_label": "+ Add Partner",
+  "routePrefix": "/client/management",
+  "primary_key": {
+    "key": "id",
+    "type": "number",
+    "generated": true
+  },
+  "relations": [
+    {
+      "name": "clients",
+      "type": "hasMany",
+      "target_entity": "Client",
+      "target_table": "clients",
+      "foreign_key": "partner_id",
+      "count_alias": "client_count",
+      "child_route": "/client/management/clients?partner_id=:id",
+      "drilldown_action": {
+        "key": "view_clients",
+        "name": "View Clients",
+        "icon": "users",
+        "info_note": "View all clients managed by this partner",
+        "api": "/client/management/clients?partner_id=:id",
+        "method": "GET",
+        "pinned": true,
+        "order": 1
+      }
+    }
+  ],
+  "columns": [
+    {
+      "key": "id",
+      "header_name": "ID",
+      "type": "number",
+      "sql_type": "BIGSERIAL PRIMARY KEY",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "90px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Partner internal ID",
+      "active": true
+    },
+    {
+      "key": "partner_code",
+      "header_name": "Partner Code",
+      "type": "string",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "160px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Unique partner reference code (e.g. PTR-APEX-01)",
+      "active": true,
+      "modal": {
+        "order": 1,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Enter partner code",
+        "error_note": "Partner code is required"
+      }
+    },
+    {
+      "key": "name",
+      "header_name": "Partner Name",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "multi_search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "220px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Display trade name of the partner organization",
+      "active": true,
+      "modal": {
+        "order": 2,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Enter partner name",
+        "error_note": "Partner name is required"
+      }
+    },
+    {
+      "key": "partner_tier",
+      "header_name": "Tier",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "130px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Partner partnership tier level",
+      "active": true,
+      "dropdown_options": [
+        { "key": "STANDARD", "name": "Standard", "default": true },
+        { "key": "SILVER", "name": "Silver" },
+        { "key": "GOLD", "name": "Gold" },
+        { "key": "PLATINUM", "name": "Platinum" },
+        { "key": "STRATEGIC", "name": "Strategic" }
+      ],
+      "modal": {
+        "order": 3,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Select partner tier"
+      }
+    },
+    {
+      "key": "status",
+      "header_name": "Status",
+      "type": "enum",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "status_badge",
+      "info_note": "Account operational status",
+      "active": true,
+      "dropdown_options": [
+        { "key": "ACTIVE", "name": "Active", "default": true },
+        { "key": "INACTIVE", "name": "Inactive" },
+        { "key": "SUSPENDED", "name": "Suspended" },
+        { "key": "ONBOARDING", "name": "Onboarding" }
+      ],
+      "modal": {
+        "order": 4,
+        "horizontal_section": "h_section_1",
+        "required": true,
+        "info_note": "Account status"
+      }
+    },
+    {
+      "key": "client_count",
+      "header_name": "Total Clients",
+      "type": "number",
+      "filter_type": "numeric",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "120px",
+      "cell_mode": "badge_count",
+      "info_note": "Number of active clients enrolled under this partner",
+      "active": true,
+      "is_computed": true,
+      "relation_field": "clients.count"
+    },
+    {
+      "key": "email",
+      "header_name": "Primary Email",
+      "type": "string",
+      "sql_type": "VARCHAR(255)",
+      "filter_type": "search",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "220px",
+      "cell_mode": "text_code_2000",
+      "info_note": "Partner organization contact email",
+      "active": true,
+      "modal": {
+        "order": 5,
+        "horizontal_section": "h_section_2",
+        "required": true,
+        "info_note": "Enter partner contact email"
+      }
+    },
+    {
+      "key": "phone",
+      "header_name": "Phone",
+      "type": "string",
+      "sql_type": "VARCHAR(50)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": false,
+      "column_resize": true,
+      "width": "150px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Contact telephone number",
+      "active": true,
+      "modal": {
+        "order": 6,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "contact_person_name",
+      "header_name": "Contact Lead",
+      "type": "string",
+      "sql_type": "VARCHAR(150)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "180px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Key account executive or manager",
+      "active": true,
+      "modal": {
+        "order": 7,
+        "horizontal_section": "h_section_2",
+        "required": false
+      }
+    },
+    {
+      "key": "billing_currency",
+      "header_name": "Currency",
+      "type": "string",
+      "sql_type": "CHAR(3)",
+      "filter_type": "list",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "100px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Billing currency code",
+      "active": true,
+      "dropdown_options": [
+        { "key": "USD", "name": "USD ($)", "default": true },
+        { "key": "EUR", "name": "EUR (€)" },
+        { "key": "GBP", "name": "GBP (£)" }
+      ]
+    },
+    {
+      "key": "commission_rate",
+      "header_name": "Commission (%)",
+      "type": "number",
+      "sql_type": "NUMERIC(5, 2)",
+      "filter_type": "numeric",
+      "editable": true,
+      "required": true,
+      "sorting": true,
+      "column_resize": true,
+      "width": "130px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Reseller partner commission percentage",
+      "active": true
+    },
+    {
+      "key": "country",
+      "header_name": "Country",
+      "type": "string",
+      "sql_type": "VARCHAR(100)",
+      "filter_type": "search",
+      "editable": true,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "140px",
+      "cell_mode": "text_code_1000",
+      "info_note": "Country of operation",
+      "active": true
+    },
+    {
+      "key": "created_at",
+      "header_name": "Created On",
+      "type": "date",
+      "sql_type": "TIMESTAMPTZ",
+      "filter_type": "date_range",
+      "editable": false,
+      "required": false,
+      "sorting": true,
+      "column_resize": true,
+      "width": "160px",
+      "cell_mode": "date_code_1000",
+      "info_note": "Record creation timestamp",
+      "active": true
+    }
+  ]
+}
